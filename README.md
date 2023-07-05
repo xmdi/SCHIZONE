@@ -1,5 +1,6 @@
 # SCHIZONE
 
+
 ## Scientific Computing Homemade Implementation ZONE
 
 DIY implementations of "scientific" computing algorithms. Educational videos attached. Everything provided AMDG.
