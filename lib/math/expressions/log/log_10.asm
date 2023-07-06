@@ -1,6 +1,9 @@
 %ifndef LOG_10
 %define LOG_10
 
+; dependency
+%include "lib/math/expressions/log/log_e.asm"
+
 align 16
 
 log_10:
@@ -26,23 +29,30 @@ log_10:
 	mov rcx,rax
 	add rcx,rdx
 	shr rcx,1
+	cmp rcx,rax
+	je .converged
 	comisd xmm0,[.lookup_table+8*rcx]
 	ja .shrink_up
 	jb .shrink_down
-	; found an exact match
-	sub rcx,324
-	cvtsi2sd xmm0,rcx
+.converged:
+	; down to just 2 options
+	comisd xmm0,[.lookup_table+8*rax]
+	jne .not_rax
+	sub rax,324
+	cvtsi2sd xmm0,rax
+	jmp .pop
+.not_rax:
+	comisd xmm0,[.lookup_table+8*rdx]
+	jne .not_found
+	sub rdx,324
+	cvtsi2sd xmm0,rdx
 	jmp .pop
 
 .shrink_up:
-	cmp rax,rcx
-	je .not_found
 	mov rax,rcx
 	jmp .bisection_loop
 
 .shrink_down:
-	cmp rdx,rcx
-	je .not_found
 	mov rdx,rcx
 	jmp .bisection_loop
 
@@ -53,6 +63,7 @@ log_10:
 	pop rdx
 	pop rcx
 	pop rax
+
 	ret
 
 .ret_NaN:

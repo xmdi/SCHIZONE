@@ -18,7 +18,7 @@ log_e:
 	pxor xmm2,xmm2	; {xmm2}=zero for comparison
 	comisd xmm0,xmm2
 	jbe .ret_NaN
-	comid xmm0,[.one]
+	comisd xmm0,[.one]
 	je .ret_zero
 
 	; preserve other registers
