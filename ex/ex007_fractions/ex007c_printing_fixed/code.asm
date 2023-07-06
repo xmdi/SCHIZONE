@@ -49,8 +49,8 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/print_float.asm"
-; void print_float(int {rdi}, double {xmm0}, int {rsi});
+%include "lib/io/print_fixed.asm"
+; void print_fixed(int {rdi}, int {rsi}, int {rdx});
 
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
@@ -63,107 +63,25 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 START:
-	
+
 	mov rdi,SYS_STDOUT
-	mov rcx,10
-	cvtsi2sd xmm1,rcx
+	mov rbx,[.x]
+	mov r15,17
+
+.loop:
+	
+	mov rsi,rbx
+	mov rdx,8
+	call print_fixed
+
+	mov rsi,.grammar
 	mov rdx,1
-
-; first loop
-
-	movsd xmm0,[.x]
-	mov r14,7
-
-.outer_loop1:
-	divsd xmm0,xmm1
-	mov r15,9
-
-.inner_loop1:
-	
-	mov rsi,r15
-	call print_float
-
-	mov rsi,.grammar
 	call print_chars
+
+	sal rbx,1
 
 	dec r15
-	jnz .inner_loop1
-
-	mov rsi,.grammar+1
-	call print_chars
-	
-	dec r14
-	jnz .outer_loop1
-
-	mov rsi,.grammar+1
-	call print_chars
-	
-; second loop
-
-	movsd xmm0,[.y]
-	mov r14,7
-
-.outer_loop2:
-	divsd xmm0,xmm1
-	mov r15,9
-
-.inner_loop2:
-	
-	mov rsi,r15
-	call print_float
-
-	mov rsi,.grammar
-	call print_chars
-
-	dec r15
-	jnz .inner_loop2
-
-	mov rsi,.grammar+1
-	call print_chars
-	
-	dec r14
-	jnz .outer_loop2
-
-	mov rsi,.grammar+1
-	call print_chars
-	
-; special cases
-	
-	; +0.0
-	movsd xmm0,[.zero]
-	call print_float
-
-	mov rsi,.grammar
-	call print_chars
-
-	; -0.0
-	movsd xmm0,[.neg_zero]
-	call print_float
-
-	mov rsi,.grammar
-	call print_chars
-
-	; Inf
-	movsd xmm0,[.inf]
-	call print_float
-
-	mov rsi,.grammar
-	call print_chars
-
-	; -Inf
-	movsd xmm0,[.neg_inf]
-	call print_float
-
-	mov rsi,.grammar
-	call print_chars
-
-	; NaN
-	pxor xmm0,xmm0	
-	divsd xmm0,xmm0
-	call print_float
-
-	mov rsi,.grammar+1
-	call print_chars
+	jnz .loop
 
 	; flush print buffer
 	call print_buffer_flush
@@ -172,19 +90,11 @@ START:
 	call exit	
 
 .grammar:
-	db ` \n`
+	db `\n`
+
 .x:
-	dq 12345.6789
-.y:
-	dq 1000.0		; this is why we have lookup tables
-.inf:
-	dq 0x7FF0000000000000 ; +Inf
-.neg_inf:
-	dq 0xFFF0000000000000 ; -Inf
-.zero:
-	dq 0.0
-.neg_zero:
-	dq -0.0
+	db 0x01	; one byte of fraction: 1/256
+	db 0x80	; one byte of integer: 128
 
 END:
 

@@ -50,6 +50,7 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/io/print_float_scientific.asm"
+; void print_float_scientific(int {rdi}, double {xmm0}, int {rsi});
 
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
