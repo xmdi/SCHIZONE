@@ -1,13 +1,14 @@
-%ifndef PRINT_FLOAT
-%define PRINT_FLOAT
+%ifndef PRINT_FLOAT_SCIENTIFIC
+%define PRINT_FLOAT_SCIENTIFIC
 
 ; dependencies
 %include "lib/io/print_chars.asm"
 %include "lib/math/expressions/log/log_10.asm"
 
-print_float:
-; void print_float(int {rdi}, double {xmm0}, int {rsi});
-; 	Prints {rsi} significant digits of {xmm0} to file descriptor {rdi}.
+print_float_scientific:
+; void print_float_scientific(int {rdi}, double {xmm0}, int {rsi});
+; 	Prints {rsi} significant digits of {xmm0} to file descriptor {rdi}
+;	in scientific notation.
 
 	sub rsp,112
 	movdqu [rsp+96],xmm0
@@ -50,116 +51,75 @@ print_float:
 	psllq xmm0,1
 	psrlq xmm0,1		; abs({xmm0})
 
-	mov rax,10
-	cvtsi2sd xmm3,rax	; radix for decimal in {xmm3}
-
+;	print exponent
+	mov rbp,rsp
 	mov rax,rdx
-	inc rax		; {rax}=exponent+1 (digits to left of the decimal)
-
-	cmp rax,rsi
-	jge .huge_number 	; more digits to left of decimal than sig figs,
-				; so we need to pad extra zeros to the right
-
-	cmp rax,0		; number entirely to right of decimal
-	jle .small_number	; so we need to prepend 0. ...
-
-
-.medium_number:	; otherwise, our float sig figs will surround the decimal
-		; (aka, UVW.XYZ)
-	mov r8,rsi
-	sub r8,rax	; {r8}=digits to right of the decimal
-.medium_number_shift_loop:
-	mulsd xmm0,xmm3		; {xmm0}*=10.0f until out of decimals
-	dec r8
-	jnz .medium_number_shift_loop
-.medium_number_shifted:
-	mov r8,rsi
-	sub r8,rax	; {r8}=digits to right of the decimal
-	mov rbp,rsp
-	cvtsd2si rax,xmm0	; round to nearest integer!
+	test rax,rax
+	jns .positive_exponent	; {rax} positive exponent
+	neg rax
+.positive_exponent:		
+	mov r8,rdx		; save original exponent in {r8}
 	mov rcx,10		; integer radix for decimal in {rcx}
-.medium_number_print_loop:
+.exponent_loop:
 	xor rdx,rdx
 	div rcx
 	add dl,48
-	dec r8
 	dec rsp
 	mov [rsp],dl
-	test r8,r8
-	jnz .medium_number_not_decimal_point
-	dec rsp
-	mov byte [rsp],46
-.medium_number_not_decimal_point:
 	test rax,rax
-	jnz .medium_number_print_loop
-	pxor xmm0,xmm0
-	comisd xmm0,xmm8		; TODO! CAN WE DO THIS ON ITSELF?
-	jc .write
+	jnz .exponent_loop
+	test r8,r8
+	jns .no_negative_sign_in_exponent
 	dec rsp
 	mov byte [rsp],45
-	jmp .write
+.no_negative_sign_in_exponent:
 
-.small_number:
-	mov r8,rax	; {r8}=zeros between decimal and number
+	dec rsp
+	mov byte [rsp],101	; "e" for exponent
+
+;	shift the number {rsi}-1-exp digits (base-10) to the left
+	cvtsi2sd xmm3,rcx
 	neg r8
-.small_number_shift_loop:
-	mulsd xmm0,xmm3		; {xmm0}*=10.0f until out of decimals
-	dec rsi
-	jnz .small_number_shift_loop
-.small_number_shifted:
-	mov rbp,rsp
-	cvtsd2si rax,xmm0	; round to nearest integer!
-	mov rcx,10		; integer radix for decimal in {rcx}
-.small_number_print_loop:
-	xor rdx,rdx
-	div rcx
-	add dl,48
-	dec rsp
-	mov [rsp],dl
-	test rax,rax
-	jnz .small_number_print_loop
-	test r8,r8
-	jz .small_number_no_zeros
-.small_number_zeros_loop:
-	dec rsp
-	mov byte [rsp],48	; push "0"
-	dec r8	
-	jnz .small_number_zeros_loop
-.small_number_no_zeros:	
-	dec rsp
-	mov byte [rsp],46	; push "."
-	dec rsp
-	mov byte [rsp],48	; push "0"
-	pxor xmm0,xmm0
-	comisd xmm0,xmm8		; TODO! CAN WE DO THIS ON ITSELF?
-	jc .write
-	dec rsp
-	mov byte [rsp],45
-	jmp .write
-
-.huge_number:
-	mov r8,rax
-	sub r8,rsi		; {r8} contains zeros after our number
-	mov rbp,rsp
-	cvtsd2si rax,xmm0	; round to nearest integer!
-	mov rcx,10		; integer radix for decimal in {rcx}
-	test r8,r8
-	jz .huge_number_print_loop
-.huge_number_zeros_loop:
-	xor rdx,rdx
-	div rcx
-	dec rsp
-	mov byte [rsp],48	; push "0"
 	dec r8
-	jnz .huge_number_zeros_loop
-.huge_number_print_loop:
+	add r8,rsi		; {r8} now counts the leftward shift amount
+	cmp r8,0
+	jg .shift_up_loop
+	je .done_shifting
+.shift_down_loop:
+	divsd xmm0,xmm3		; {xmm0}/=10.0f until out of decimals
+	inc r8
+	jnz .shift_down_loop
+	jmp .done_shifting
+.shift_up_loop:
+	mulsd xmm0,xmm3		; {xmm0}*=10.0f until out of decimals
+	dec r8
+	jnz .shift_up_loop
+.done_shifting:
+;	print {rsi}-1 digits of the number
+	dec rsi	
+	cvtsd2si rax,xmm0	; round to nearest integer!
+	mov rcx,10		; integer radix for decimal in {rcx}
+	test rsi,rsi
+	jz .decimal_point
+.number_print_loop:
+	xor rdx,rdx
+	div rcx
+	add dl,48
+	dec rsp
+	mov [rsp],dl
+	dec rsi
+	jnz .number_print_loop	
+.decimal_point:
+	dec rsp
+	mov byte [rsp],46	; decimal point
+.last_digits: ; this loop may execute twice for certain powers of 10
 	xor rdx,rdx
 	div rcx
 	add dl,48
 	dec rsp
 	mov [rsp],dl
 	test rax,rax
-	jnz .huge_number_print_loop
+	jnz .last_digits
 	pxor xmm0,xmm0
 	comisd xmm0,xmm8		; TODO! CAN WE DO THIS ON ITSELF?
 	jc .write
