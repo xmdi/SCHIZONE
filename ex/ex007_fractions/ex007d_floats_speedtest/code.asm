@@ -72,7 +72,8 @@ FLOATING_POINT_BISECT:
 
 	movsd xmm2,xmm1
 	addsd xmm2,xmm0
-	divsd xmm2,[TWO]
+;	divsd xmm2,[TWO]
+	mulsd xmm2,[HALF]
 	
 	movsd xmm3,xmm2
 	mulsd xmm3,xmm3
@@ -123,6 +124,8 @@ ONE:
 	dq 1.0
 TWO:
 	dq 2.0
+HALF:
+	dq 0.5
 TOLERANCE:
 	dq 0.0000001
 
