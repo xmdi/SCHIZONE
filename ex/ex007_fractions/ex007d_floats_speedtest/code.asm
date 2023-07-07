@@ -49,11 +49,11 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/print_fixed.asm"
-; void print_fixed(int {rdi}, int {rsi}, int {rdx});
-
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
+
+%include "lib/io/print_float.asm"
+; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -62,41 +62,69 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+align 16
+FLOATING_POINT_BISECT:
+	
+	movsd xmm3,xmm1
+	subsd xmm3,xmm0
+	comisd xmm3,[TOLERANCE]
+	jbe .ret
+
+	movsd xmm2,xmm1
+	addsd xmm2,xmm0
+	divsd xmm2,[TWO]
+	
+	movsd xmm3,xmm2
+	mulsd xmm3,xmm3
+
+	comisd xmm3,[TWO]
+	jbe .shrink_up
+.shrink_down:
+	movsd xmm1,xmm2
+	jmp FLOATING_POINT_BISECT
+align 16
+.shrink_up:
+	movsd xmm0,xmm2
+	jmp FLOATING_POINT_BISECT
+align 16
+.ret:
+	movsd xmm0,xmm2
+	ret
+
 START:
 
-	mov rdi,SYS_STDOUT
-	mov rbx,[.x]
-	;neg rbx	; uncomment to try negatives
-	mov r15,17
+	mov r15,100000000
 
-.loop:
-	
-	mov rsi,rbx
-	mov rdx,8
-	call print_fixed
+align 16
+.loop_floating_point:
+	movsd xmm0,[ONE]
+	movsd xmm1,[TWO]
+
+	call FLOATING_POINT_BISECT
+
+	dec r15
+	jnz .loop_floating_point
+
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
 
 	mov rsi,.grammar
 	mov rdx,1
 	call print_chars
 
-	;sal rbx,1	; uncomment to multiply number by 2
-	sar rbx,1	; uncomment to divide number by 2
-
-	dec r15
-	jnz .loop
-
-	; flush print buffer
 	call print_buffer_flush
 
-	xor dil,dil
 	call exit	
 
 .grammar:
 	db `\n`
-
-.x:
-	db 0x01	; one byte of fraction: 1/256
-	db 0x80	; one byte of integer: 128
+ONE:
+	dq 1.0
+TWO:
+	dq 2.0
+TOLERANCE:
+	dq 0.0000001
 
 END:
 

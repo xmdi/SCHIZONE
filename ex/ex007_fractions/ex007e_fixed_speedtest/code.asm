@@ -49,11 +49,11 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/print_fixed.asm"
-; void print_fixed(int {rdi}, int {rsi}, int {rdx});
-
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
+
+%include "lib/io/print_fixed.asm"
+; void print_fixed(int {rdi}, int {rsi}, int {rdx});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -62,41 +62,72 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+align 16
+FIXED_POINT_BISECT:
+	
+	mov rcx,rsi
+	sub rcx,rdi
+	;cmp rcx,1	; could cheat here, but let's be fair
+	cmp rcx,[TOLERANCE_FIXED]
+	jbe .ret
+
+	mov rdx,rsi
+	add rdx,rdi
+	shr rdx,1	; faster divide than floating point
+
+	mov rcx,rdx
+	imul rcx,rcx	
+	shr rcx,24
+
+	cmp rcx,[TWO_FIXED]
+	jbe .shrink_up
+.shrink_down:
+	mov rsi,rdx
+	jmp FIXED_POINT_BISECT
+align 16
+.shrink_up:
+	mov rdi,rdx
+	jmp FIXED_POINT_BISECT
+align 16
+.ret:
+	mov rax,rdx
+	ret
+
 START:
 
-	mov rdi,SYS_STDOUT
-	mov rbx,[.x]
-	;neg rbx	; uncomment to try negatives
-	mov r15,17
+	mov r15,100000000
 
-.loop:
-	
-	mov rsi,rbx
-	mov rdx,8
+align 16
+.loop_fixed_point:
+	mov rdi,[ONE_FIXED]
+	mov rsi,[TWO_FIXED]
+
+	call FIXED_POINT_BISECT
+
+	dec r15
+	jnz .loop_fixed_point
+
+	mov rdi,SYS_STDOUT
+	mov rsi,rax
+	mov rdx,24
 	call print_fixed
 
 	mov rsi,.grammar
 	mov rdx,1
 	call print_chars
 
-	;sal rbx,1	; uncomment to multiply number by 2
-	sar rbx,1	; uncomment to divide number by 2
-
-	dec r15
-	jnz .loop
-
-	; flush print buffer
 	call print_buffer_flush
 
-	xor dil,dil
 	call exit	
 
 .grammar:
 	db `\n`
-
-.x:
-	db 0x01	; one byte of fraction: 1/256
-	db 0x80	; one byte of integer: 128
+ONE_FIXED:
+	dq 16777216 ; 1<<24
+TWO_FIXED:
+	dq 33554432 ; 1<<25
+TOLERANCE_FIXED:
+	dq 1 ; 1
 
 END:
 

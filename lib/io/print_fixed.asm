@@ -38,6 +38,13 @@ print_fixed:
 
 	; print numerator
 	mov rsi,[rsp+16]
+
+	test rsi,rsi
+	jns .numerator_inverted
+
+	neg rsi
+
+.numerator_inverted:
 	mov rdx,-1
 	shl rdx,cl
 	not rdx			; {rdx} mask off integer part

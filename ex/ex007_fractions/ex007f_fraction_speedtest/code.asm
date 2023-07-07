@@ -49,11 +49,11 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/print_fixed.asm"
-; void print_fixed(int {rdi}, int {rsi}, int {rdx});
-
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
+
+%include "lib/io/print_fraction.asm"
+; void print_fraction(int {rdi}, int {rsi}, int {rdx});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -62,41 +62,64 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+align 16
+FRACTIONAL_BISECT:
+;	cmp ebp,16777216 ; 2^-24 = 7 decimal places
+	cmp cl,24
+	jge .done
+	shl eax,1		; {eax} lower bound numerator
+	shl ebx,1		; {ebx} upper bound numerator
+	mov edx,eax		
+	inc cl
+	inc edx			; {edx} midpoint numerator
+	shl ebp,1		; {ebp} global denominator
+	shl esi,2		; {esi} double squared denominator
+	imul edx,edx		; {edi} midpoint numerator squared
+	cmp edx,esi		; evaluate guess
+	jl .shrink_up
+.shrink_down:
+	dec ebx
+	jmp FRACTIONAL_BISECT
+align 16
+.shrink_up:
+	inc eax
+	jmp FRACTIONAL_BISECT
+align 16
+.done:
+	ret
+
 START:
 
-	mov rdi,SYS_STDOUT
-	mov rbx,[.x]
-	;neg rbx	; uncomment to try negatives
-	mov r15,17
+	mov r15,100000000
 
-.loop:
-	
-	mov rsi,rbx
-	mov rdx,8
-	call print_fixed
+align 16
+.loop_fractional:
+	mov eax,1
+	xor cl,cl
+	mov ebx,2
+	mov ebp,1
+	mov esi,2
+	call FRACTIONAL_BISECT
+
+	dec r15
+	jnz .loop_fractional
+
+	mov rdi,SYS_STDOUT
+	mov rsi,rax
+	mov rdx,rbp
+	call print_fraction
 
 	mov rsi,.grammar
 	mov rdx,1
 	call print_chars
 
-	;sal rbx,1	; uncomment to multiply number by 2
-	sar rbx,1	; uncomment to divide number by 2
-
-	dec r15
-	jnz .loop
-
-	; flush print buffer
 	call print_buffer_flush
 
-	xor dil,dil
+	mov rdi,FRACTIONAL_BISECT
 	call exit	
 
 .grammar:
 	db `\n`
-
-.x:
-	db 0x01	; one byte of fraction: 1/256
-	db 0x80	; one byte of integer: 128
 
 END:
 

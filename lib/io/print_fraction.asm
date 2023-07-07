@@ -30,6 +30,6 @@ print_fraction:
 	ret		; return
 
 .grammar:
-	db `\n`
+	db `/`
 
 %endif

@@ -1,9 +1,14 @@
-## User Input
+## Representing Fractions
 
-In [ex006a](ex006a_stdin), we read and parse newline-buffered input from stdin.
+In [ex007a](ex007a_printing_floats), we test out a routine to print a diverse set of double-precision floating-point numbers, including special cases.
 
-In [ex006b](ex006b_capture_keypresses), we toggle the terminal into raw mode, and handle certain keypresses without newline-buffering.
+In [ex007b](ex007b_scientific_floats), we repeat the above with scientific notation.
 
-In [ex006c](ex006c_game), we implement a game that takes user keypress input and reads from a high-score file.
+In [ex007c](ex007c_printing_fixed), we test out a routine to print fixed-point numbers.
 
-In [ex006d](ex006d_piped_stdin), we handle input that is passed into our program via stdin from the command line.
+In [ex007d](ex007d_floats_speedtest), we test the speed of floating-point with a 100,000,000 iterations of a bisection algorithm to compute sqrt(2). (Note, the main attraction of floats comes from having hardware implementation and parallelizability.)
+
+In [ex007e](ex007e_fixed_speedtest), we test the speed of fixed-point with a 100,000,000 iterations of a bisection algorithm to compute sqrt(2).
+
+In [ex007f](ex007f_fraction_speedtest), we test the speed of fractions with a 100,000,000 iterations of a bisection algorithm to compute sqrt(2).
+
