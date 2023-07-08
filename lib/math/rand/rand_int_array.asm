@@ -1,10 +1,12 @@
-%ifndef RAND_INT
-%define RAND_INT
+%ifndef RAND_INT_ARRAY
+%define RAND_INT_ARRAY
 
-rand_int:
-; signed long {rax} rand_int(signed long {rdi}, signed long {rsi});
-; 	Returns in {rax} a random integer between {rdi} and {rsi} such that
-;	{rdi}<={rax}<={rsi}.
+rand_int_array:
+; void rand_int_array(long* {rdi}, int {rsi}, uint {rdx}, 
+;			signed long {rcx}, signed long {r8});
+; 	Places {rdx} random integers in an array starting at {rdi} with 
+;	({rsi}+8) bytes between elements. The random values will satisfy
+;	{rcx}<={value}<={r8}.
 
 	push rdi
 	push rsi
