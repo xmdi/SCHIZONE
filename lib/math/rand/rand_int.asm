@@ -16,7 +16,7 @@ rand_int:
 
 	xor rdx,rdx	; zero out high bits for divisionn
 	sub rsi,rdi	; range of possible values in {rsi}
-	div rsi		; overflow remainder in {rsi}
+	div rsi		; overflow remainder in {rdx}
 	add rdi,rdx	; adjust remainder to start of range
 
 	mov rax,rdi	; final value back in {rax}

@@ -11,18 +11,29 @@ rand_int_array:
 	push rdi
 	push rsi
 	push rdx
+	push r8
+	push r9
 
-	inc rsi		; increase upper bound by 1
+	mov r9,rdx	; store counter in {r9}
+	inc r8		; increase upper bound by 1
+	sub r8,rcx	; range of possible values in {r8}
 
+.loop:
 	rdrand rax	; random 64-bit value in {rax}
 
 	xor rdx,rdx	; zero out high bits for divisionn
-	sub rsi,rdi	; range of possible values in {rsi}
-	div rsi		; overflow remainder in {rsi}
-	add rdi,rdx	; adjust remainder to start of range
+	div r8		; overflow remainder in {rdx}
+	add rdx,rcx	; adjust remainder to start of range
 
-	mov rax,rdi	; final value back in {rax}
+	mov [rdi],rdx	; place random integer into array
+	add rdi,8	; go onto next array target
+	add rdi,rsi	; extra offset between elements
+	
+	dec r9
+	jnz .loop
 
+	pop r9
+	pop r8
 	pop rdx
 	pop rsi
 	pop rdi
