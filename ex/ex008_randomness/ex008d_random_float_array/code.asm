@@ -49,16 +49,11 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/math/rand/rand_int_array.asm"
-; void rand_int_array(long* {rdi}, int {rsi}, uint {rdx}, 
-;	signed long {rcx}, signed long {r8});
+%include "lib/math/rand/rand_float_array.asm"
+; void rand_float_array(double {xmm0}, double {xmm1}, double* {rdi},
+;	int {rsi}, int {rdx});
 
-%include "lib/io/print_int_d.asm"
-; void print_int_d(int {rdi}, int {rsi});
-
-%include "lib/io/print_array_int.asm"
-; void print_array_int(int {rdi}, int* {rsi}, int {rdx}, int {rcx}, int {r8}
-;	void* {r9});
+%include "lib/io/print_float_array.asm"
 
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
@@ -72,21 +67,20 @@ PROGRAM_HEADER:
 
 START:
 
-	mov rdi,.array	; address of first array
-	xor rsi,rsi	; extra offset between elements
-	mov rdx,16	; number of elements
-	xor rcx,rcx	; lower bound of 0 in {rcx}
-	mov r8,1000	; upper bound of 100 in {r8}
-	call rand_int_array ; generate random array
-
-	; print random numbers
-	mov rdi,SYS_STDOUT
-	mov rsi,.array
+	; generate array of random floats
+	movsd xmm0,[.zero]
+	movsd xmm1,[.hundred]
+	mov rdi,.array
+	xor rsi,rsi
 	mov rdx,16
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_int_d
-	call print_array_int
+	call rand_float_array
+
+	; print random number
+	mov rdi,SYS_STDOUT
+	
+
+
+	call print_float_array
 
 	; flush print buffer
 	call print_buffer_flush
@@ -95,8 +89,10 @@ START:
 	xor dil,dil
 	call exit	
 
-.array:
-	times 16 dq 0
+.zero:
+	dq 0.0
+.hundred:
+	dq 100.0
 
 END:
 

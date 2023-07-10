@@ -4,7 +4,7 @@
 rand_int_array:
 ; void rand_int_array(long* {rdi}, int {rsi}, uint {rdx}, 
 ;			signed long {rcx}, signed long {r8});
-; 	Places {rdx} random integers in an array starting at {rdi} with 
+; Places {rdx} random integers in an array starting at {rdi} with 
 ;	({rsi}+8) bytes between elements. The random values will satisfy
 ;	{rcx}<={value}<={r8}.
 
@@ -20,6 +20,8 @@ rand_int_array:
 
 .loop:
 	rdrand rax	; random 64-bit value in {rax}
+	jnc .loop	; don't seem to need this, but might as well put it
+			; (carry flag indicates we are done generating number)
 
 	xor rdx,rdx	; zero out high bits for divisionn
 	div r8		; overflow remainder in {rdx}

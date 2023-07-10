@@ -12,7 +12,11 @@ rand_int:
 
 	inc rsi		; increase upper bound by 1
 
+.loop:
 	rdrand rax	; random 64-bit value in {rax}
+	jnc .loop	; this doesn't seem to be necessary, but we will put it
+			; anyway. wait for the carry flag to be set,
+			; indicating we have a valid random number in {rax}	
 
 	xor rdx,rdx	; zero out high bits for divisionn
 	sub rsi,rdi	; range of possible values in {rsi}
