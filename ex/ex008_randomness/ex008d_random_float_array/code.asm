@@ -53,7 +53,9 @@ PROGRAM_HEADER:
 ; void rand_float_array(double {xmm0}, double {xmm1}, double* {rdi},
 ;	int {rsi}, int {rdx});
 
-%include "lib/io/print_float_array.asm"
+%include "lib/io/print_array_float.asm"
+; void print_array_float(int {rdi}, int* {rsi}, int {rdx}, int {rcx}, int {r8}
+;	void* {r9});
 
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
@@ -77,10 +79,13 @@ START:
 
 	; print random number
 	mov rdi,SYS_STDOUT
-	
-
-
-	call print_float_array
+	mov rsi,.array
+	mov rdx,16
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,8
+	call print_array_float
 
 	; flush print buffer
 	call print_buffer_flush
@@ -93,6 +98,8 @@ START:
 	dq 0.0
 .hundred:
 	dq 100.0
+.array:
+	times 16 dq 0
 
 END:
 

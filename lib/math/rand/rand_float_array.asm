@@ -26,9 +26,9 @@ rand_float_array:
 	mulsd xmm2,[.tiny]	; convert our number with a very small increment
 
 	mulsd xmm2,xmm1	; extend the float over the entire range
-	addsd xmm0,xmm2 ; offset the float by the minimum value
+	addsd xmm2,xmm0 ; offset the float by the minimum value
 
-	movsd [rdi],xmm0; place this element in the array
+	movsd [rdi],xmm2; place this element in the array
 	add rdi,8	; move onto the next target address
 	add rdi,rsi	
 
