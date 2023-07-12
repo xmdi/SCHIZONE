@@ -63,6 +63,10 @@ PROGRAM_HEADER:
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
 
+%include "lib/io/read_chars.asm"
+%include "lib/io/parse_int.asm"
+%include "lib/io/strlen.asm"
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -74,48 +78,61 @@ PRINT_CASES:
 	mov rdi,SYS_STDOUT
 	xor r15,r15
 .loop:
-	; print 'CASE '
+	; print '['
 	mov rsi,.grammar
-	mov rdx,5
+	mov rdx,1
 	call print_chars
 
 	; print case number
 	mov rsi,r15 
 	call print_int_d
 
-	; print ':'
-	mov rsi,.grammar+5
+	; print ']'
+	mov rsi,.grammar+1
 	mov rdx,1
+	call print_chars
+
+	; print ': '
+	mov rsi,.grammar+2
+	mov rdx,2
 	call print_chars
 
 	; determine if we know the value
 	mov rsi,[STATUSES+8*r15]
+	cmp r15,rbx
+	je .selected_value
 	test rsi,rsi
 	jnz .known_value
 .unknown_value:
 	; print '???'
-	mov rsi,.grammar+6
+	mov rsi,.grammar+4
 	mov rdx,3
 	call print_chars
 	jmp .value_printed
 .known_value:
 	; print '$'
-	mov rsi,.grammar+11
+	mov rsi,.grammar+9
 	mov rdx,1
 	call print_chars
 	; print value
 	mov rsi,[STATUSES+8*r15]
 	call print_int_d
+	jmp .value_printed
+.selected_value:
+	; print "YOURS"
+	mov rsi,.grammar+10
+	mov rdx,5
+	call print_chars
 .value_printed:
 	test r15,1	; check if we are a multiple of 2
 	jz .print_tab
 .print_newline:	; print newline
-	mov rsi,.grammar+10
+	mov rsi,.grammar+8
 	mov rdx,1
 	call print_chars
 	jmp .trailing_grammar_printed
 .print_tab:	; print tab
-	mov rsi,.grammar+9
+	mov rsi,.grammar+7
 	mov rdx,1
 	call print_chars
 .trailing_grammar_printed:
@@ -124,9 +141,8 @@ PRINT_CASES:
 	cmp r15,26
 	jl .loop
 	ret
-
 .grammar:
-	db `CASE :???\t\n$`
+	db `[]: ???\t\n$YOURS`
 
 PRINT_INFO:
 	; print instructions
@@ -173,12 +189,39 @@ START:
 	cmp r15,26
 	jl .shuffle_loop
 
+	; print out cases
+	call PRINT_CASES
+
+	; ask user to pick one
+	mov rdi,SYS_STDOUT
+	mov rsi,.pick_a_case
+	mov rdx,19
+	call print_chars
+
+	call print_buffer_flush
+
+	mov rdi,SYS_STDIN
+	mov rsi,READ_BUFFER
+	mov rdx,2
+	call read_chars
+
+
+
+	call exit
+
+
+	mov rbx,-1		; case selection
+	mov rbx,7		; case selection
+
 	; game loop
 .game_loop:
 
 	mov qword [STATUSES+160],1000000
 
 	call PRINT_CASES
+
+
+
 	call PRINT_INFO
 	call print_buffer_flush
 	call exit
@@ -196,6 +239,12 @@ START:
 
 	xor dil,dil
 	call exit	
+
+.pick_a_case:
+	db `\npick a case 0-25:\n`
+
+READ_BUFFER:
+	times 2 db 0
 
 SHUFFLE_ARRAY:
 	times 26 dq 0
