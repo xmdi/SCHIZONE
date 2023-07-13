@@ -44,7 +44,7 @@ parse_int:
 	movzx rbx, byte [rdi]	; grab current byte
 	sub rbx,48
 	cmp rbx,9
-	jb .not_hex
+	jbe .not_hex
 	sub rbx,39
 .not_hex:
 	imul rcx
