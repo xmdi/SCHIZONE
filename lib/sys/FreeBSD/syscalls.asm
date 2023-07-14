@@ -7,6 +7,7 @@
 %define SYS_UNLINK 10
 %define SYS_CHMOD 15
 %define SYS_IOCTL 54
+%define SYS_GETRANDOM 563
 
 ; file descriptors
 %define SYS_STDIN 0
