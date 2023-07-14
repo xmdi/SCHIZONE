@@ -275,7 +275,7 @@ START:
 
 	; compute the expected value
 	mov rax,3418416	; sum of all the cases
-	mov r15,25
+	xor r15,r15
 	mov r14,26	; number of unknown cases
 .expected_value_loop:
 	mov rcx,[STATUSES+8*r15]	; status in {rcx}
@@ -284,8 +284,9 @@ START:
 	sub rax,rcx
 	dec r14
 .unknown_case:
-	dec r15
-	jnz .expected_value_loop
+	inc r15
+	cmp r15,26
+	jl .expected_value_loop
 	cmp r14,1	; if only 1 case left, walk away
 	jbe .walk_away
 	xor rdx,rdx

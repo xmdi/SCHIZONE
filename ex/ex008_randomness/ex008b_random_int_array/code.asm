@@ -76,7 +76,7 @@ START:
 	xor rsi,rsi	; extra offset between elements
 	mov rdx,16	; number of elements
 	xor rcx,rcx	; lower bound of 0 in {rcx}
-	mov r8,1000	; upper bound of 100 in {r8}
+	mov r8,1000	; upper bound of 1000 in {r8}
 	call rand_int_array ; generate random array
 
 	; print random numbers
