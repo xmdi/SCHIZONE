@@ -49,6 +49,12 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/time/tick.asm"
+; uint {rax} tick(void);
+
+%include "lib/time/tock.asm"
+; uint {rax} tock(void);
+
 %include "lib/io/print_int_d.asm"
 ; void print_int_d(int {rdi}, int {rsi});
 
@@ -64,38 +70,32 @@ PROGRAM_HEADER:
 
 START:
 
-	mov rax,1	; get feature information for the CPU
-	cpuid
+	mov r15,1000000000
 
-	test rdx,1<<4	; check if the RDTSC support bit is set high
-	jz .rdtsc_unsupported
-
-	lfence		; force all instructions to finish
-	rdtsc		; get timestamp counter value in edx:eax
-
-	shl rdx,32	; combine the 2x 32-bit values into 1x 64-bit value
-	or rax,rdx
-	
-	; print timestamp counter value
+	; print number of iterations we are doing	
 	mov rdi,SYS_STDOUT
-	mov rsi,rax
+	mov rsi,r15
 	call print_int_d
-
-	; print newline
-	mov rsi,.grammar+18
-	mov rdx,1
-	call print_chars
-	
-	jmp .done
-
-.rdtsc_unsupported:
-	; print that RDTSC is unsupported
-	mov rdi,SYS_STDOUT
 	mov rsi,.grammar
+	mov rdx,30
+	call print_chars
+
+	call tick	; save the initial timestamp counter value
+
+.loop:	; the loop we are timing
+
+	dec r15
+	jnz .loop
+
+	call tock	; compute the cycles elapsed since "tick"
+
+	; print number of cycles elapsed
+	mov rsi,rax
+	call print_int_d	
+	mov rsi,.grammar+29
 	mov rdx,19
 	call print_chars
-	
-.done:
+
 	; flush print buffer
 	call print_buffer_flush
 
@@ -104,7 +104,7 @@ START:
 	call exit	
 
 .grammar:
-	db `RDTSC unsupported.\n`
+	db ` loop iterations completed in reference cycles.\n`
 
 END:
 

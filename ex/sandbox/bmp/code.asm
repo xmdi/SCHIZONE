@@ -49,11 +49,14 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/print_int_d.asm"
-; void print_int_d(int {rdi}, int {rsi});
+%include "lib/io/file_open.asm"
+
 
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
+
+%include "lib/io/print_int_d.asm"
+; void print_int_d(int {rdi}, int {rsi});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -64,47 +67,64 @@ PROGRAM_HEADER:
 
 START:
 
-	mov rax,1	; get feature information for the CPU
-	cpuid
+	; open `test.bmp`
+	mov rdi,.filename
+	mov rsi,SYS_CREATE_FILE+SYS_READ_WRITE
+	mov rdx,SYS_DEFAULT_PERMISSIONS
+	call file_open
+	mov r15,rax	; save file descriptor in {r15}
 
-	test rdx,1<<4	; check if the RDTSC support bit is set high
-	jz .rdtsc_unsupported
-
-	lfence		; force all instructions to finish
-	rdtsc		; get timestamp counter value in edx:eax
-
-	shl rdx,32	; combine the 2x 32-bit values into 1x 64-bit value
-	or rax,rdx
-	
-	; print timestamp counter value
-	mov rdi,SYS_STDOUT
-	mov rsi,rax
-	call print_int_d
-
-	; print newline
-	mov rsi,.grammar+18
-	mov rdx,1
+	; print image into descriptor
+	mov rdi,r15
+	mov rsi,.bmp_header
+	mov rdx,.bmp_end-.bmp_header
 	call print_chars
-	
-	jmp .done
 
-.rdtsc_unsupported:
-	; print that RDTSC is unsupported
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar
-	mov rdx,19
-	call print_chars
-	
-.done:
-	; flush print buffer
+	mov rdi,r15
 	call print_buffer_flush
 
-	; exit
 	xor dil,dil
-	call exit	
 
-.grammar:
-	db `RDTSC unsupported.\n`
+	mov rdi,.bmp_end-.bmp_header
+	call exit
+
+.filename:
+	db `test.bmp\0` 
+
+.bmp_header:
+	db `BM`
+	dd .bmp_end-.bmp_header ; filesize in bytes
+	dw 0
+	dw 0
+	dd 62		; start address of image data in bmp
+
+.bitmapinfoheader:
+	dd 40		; size of this header
+	dd 1280		; bitmap width
+	dd 720		; bitmap height
+	dw 1		; number of color planes
+	;dw 24		; number of bits per pixel (n)
+	dw 8		; number of bits per pixel (n)
+	dd 0		; compression method
+	dd 0		; image size, dummy 0 permitted for BI_RGB (no compr.)
+	dd 1		; horizontal pixels per meter
+	dd 1		; vertical pixels per meter
+	dd 2		; number of colors (0=2^n)
+	dd 0		; ignored
+
+.color_table:
+	db 0xFF,0xB2,0x66,0x00	; windows light-blue
+	db 0x66,0xB2,0xFF,0x00	; windows light-blue
+
+.image_data:
+%rep 720
+	%rep 1280
+		;db 0xFF,0xB2,0x66
+		db 0x0
+	%endrep
+%endrep
+
+.bmp_end:
 
 END:
 
