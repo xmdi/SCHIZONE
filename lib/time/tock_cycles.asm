@@ -1,13 +1,13 @@
-%ifndef TOCK
-%define TOCK
+%ifndef TOCK_CYCLES
+%define TOCK_CYCLES
 
 ; dependency
-%include "lib/time/tick.asm"
+%include "lib/time/tick_cycles.asm"
 
-tock:
-; uint {rax} tock(void);
+tock_cycles:
+; uint {rax} tock_cycles(void);
 ; 	Returns difference between current and saved timestamp counter value
-;	at [TICK_TIMESTAMP] in {rax}.
+;	at [tick_cycles.tick] in {rax}.
 
 	push rdx
 
@@ -16,7 +16,7 @@ tock:
 	shl rdx,32
 	or rax,rdx	; slide {edx} into high part of {rax}
 	
-	sub rax,[TICK_TIMESTAMP]	; subtract off saved value
+	sub rax,[tick_cycles.tick]	; subtract off saved value
 
 	pop rdx
 

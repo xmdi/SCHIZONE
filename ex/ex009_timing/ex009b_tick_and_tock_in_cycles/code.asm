@@ -49,11 +49,11 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/time/tick.asm"
-; uint {rax} tick(void);
+%include "lib/time/tick_cycles.asm"
+; uint {rax} tick_cycles(void);
 
-%include "lib/time/tock.asm"
-; uint {rax} tock(void);
+%include "lib/time/tock_cycles.asm"
+; uint {rax} tock_cycles(void);
 
 %include "lib/io/print_int_d.asm"
 ; void print_int_d(int {rdi}, int {rsi});
@@ -80,14 +80,14 @@ START:
 	mov rdx,30
 	call print_chars
 
-	call tick	; save the initial timestamp counter value
+	call tick_cycles; save the initial timestamp counter cycle value
 
 .loop:	; the loop we are timing
 
 	dec r15
 	jnz .loop
 
-	call tock	; compute the cycles elapsed since "tick"
+	call tock_cycles; compute the cycles elapsed since "tick_cycles"
 
 	; print number of cycles elapsed
 	mov rsi,rax

@@ -7,6 +7,7 @@
 %define SYS_EXIT 60
 %define SYS_UNLINK 87
 %define SYS_CHMOD 90
+%define SYS_GETTIMEOFDAY 96
 %define SYS_GETRANDOM 318
 
 ; file descriptors
