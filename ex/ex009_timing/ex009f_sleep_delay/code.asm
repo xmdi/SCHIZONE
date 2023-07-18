@@ -49,8 +49,8 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-;%include "lib/time/sleep.asm"
-; void sleep(int {rdi});
+%include "lib/time/sleep.asm"
+; void sleep(uint {rdi});
 
 %include "lib/io/print_int_d.asm"
 ; void print_int_d(int {rdi}, int {rsi});
@@ -72,7 +72,7 @@ START:
 
 	; sleep for that delay
 	mov rdi,r15
-;	call sleep
+	call sleep
 
 	; print that we waited
 	mov rdi,SYS_STDOUT
