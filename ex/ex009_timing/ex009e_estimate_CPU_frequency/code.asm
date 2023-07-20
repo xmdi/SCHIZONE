@@ -76,7 +76,7 @@ PROGRAM_HEADER:
 
 START:
 
-	mov r15,1000000000
+	mov r15,1000000000	; number of iterations
 
 	; print number of iterations we are doing	
 	mov rdi,SYS_STDOUT

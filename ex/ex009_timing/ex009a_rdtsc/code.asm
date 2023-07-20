@@ -71,10 +71,10 @@ START:
 	jz .rdtsc_unsupported
 
 	lfence		; force all instructions to finish
-	rdtsc		; get timestamp counter value in edx:eax
+	rdtsc		; get timestamp counter value in {edx:eax}
 
 	shl rdx,32	; combine the 2x 32-bit values into 1x 64-bit value
-	or rax,rdx
+	or rax,rdx	; {rax} now contains the cycle count
 	
 	; print timestamp counter value
 	mov rdi,SYS_STDOUT
@@ -88,7 +88,7 @@ START:
 	
 	jmp .done
 
-.rdtsc_unsupported:
+.rdtsc_unsupported:	; jump target without rdtsc support
 	; print that RDTSC is unsupported
 	mov rdi,SYS_STDOUT
 	mov rsi,.grammar
