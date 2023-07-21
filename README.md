@@ -19,7 +19,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | JUN 30, 2023 | [User Input](ex/ex006_user_input) | [EP. 006](https://youtu.be/PXTgtQN2CMg) |
 | JUL 07, 2023 | [Fractions](ex/ex007_fractions) | [EP. 007](https://youtu.be/MgbPiniv1g0) |
 | JUL 14, 2023 | [Randomness](ex/ex008_randomness) | [EP. 008](https://youtu.be/oKt_r7PIBX0) |
-| JUL 21, 2023 | [Timing](ex/ex009_timing) | [EP. 009](https://youtu.be/) |
+| JUL 21, 2023 | [Timing](ex/ex009_timing) | [EP. 009](https://youtu.be/_Bo09H7EoHY) |
 
 
 ### NOTE 0: 
