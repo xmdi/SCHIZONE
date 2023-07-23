@@ -9,7 +9,7 @@ matrix_scale_in_place:
 	push rdi
 	push rsi
 
-.loop:				; loop over {rdx} elements
+.loop:				; loop over {rsi} elements
 	mulsd [rdi],xmm0	; scale element by {xmm0}
 	add rdi,8
 	dec rsi
