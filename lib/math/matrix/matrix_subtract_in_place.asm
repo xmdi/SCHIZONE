@@ -13,8 +13,9 @@ matrix_subtract_in_place:
 	movdqu [rsp],xmm0
 
 .loop:				; loop over {rdx} elements
-	movsd xmm0,[rsi]	; grab element from second matrix
-	subsd [rdi],xmm0	; subtract it from the first matrix
+	movsd xmm0,[rdi]	; grab element from first matrix
+	subsd xmm0,[rsi]	; subtract off element from second matrix
+	movsd [rdi],xmm0	; move it to the first matrix
 	add rsi,8		; go onto next element
 	add rdi,8
 	dec rdx

@@ -14,7 +14,8 @@ matrix_add_in_place:
 
 .loop:				; loop over {rdx} elements
 	movsd xmm0,[rsi]	; grab element from second matrix
-	addsd [rdi],xmm0	; add it to the first matrix
+	addsd xmm0,[rdi]	; add it to element from first matrix
+	movsd [rdi],xmm0	; move it to the first matrix
 	add rsi,8		; go onto next element
 	add rdi,8
 	dec rdx

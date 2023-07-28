@@ -257,7 +257,7 @@ START:
 .grammar0:
 	db `\nInitial Matrix=\n`
 .grammar1:
-	db `\nInitial Row Vectorx=\n`
+	db `\nInitial Row Vector=\n`
 .grammar2:
 	db `\nInitial Column Vector=\n`
 .grammar3:

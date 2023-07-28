@@ -8,13 +8,19 @@ matrix_scale_in_place:
 
 	push rdi
 	push rsi
+	sub rsp,16
+	movdqu [rsp],xmm1
 
 .loop:				; loop over {rsi} elements
-	mulsd [rdi],xmm0	; scale element by {xmm0}
+	movsd xmm1,[rdi]	; grab element from matrix
+	mulsd xmm1,xmm0		; scale element by {xmm0}
+	movsd [rdi],xmm1	; drop in back in the matrix
 	add rdi,8
 	dec rsi
 	jnz .loop		; loop until finished
 
+	movdqu xmm1,[rsp]
+	add rsp,16
 	pop rsi
 	pop rdi
 
