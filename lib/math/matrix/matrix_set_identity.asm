@@ -19,6 +19,7 @@ matrix_set_identity:
 	mov rcx,rdx		; {rcx}=number of columns
 	movsd [rdi],xmm1	; set first diagonal
 	add rdi,8
+	dec rsi
 
 .next_diagonal:
 	movsd [rdi],xmm0	; place off-diagonal element
