@@ -22,8 +22,8 @@ matrix_insert_column:
 	shl rcx,3	; adjust {rcx} to indicate byte-width of matrix
 
 .loop:
-	movq rax,[rsi]	; grab source element
-	movq [rdi],rax	; drop into destination element
+	mov rax,[rsi]	; grab source element
+	mov [rdi],rax	; drop into destination element
 
 	add rsi,8	; go to next element of source vector
 	add rdi,rcx	; go to next element of destination matrix

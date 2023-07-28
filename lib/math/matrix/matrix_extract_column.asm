@@ -22,8 +22,8 @@ matrix_extract_column:
 	shl rcx,3	; adjust {rcx} to indicate byte-width of matrix
 
 .loop:
-	movq rax,[rsi]	; grab source element
-	movq [rdi],rax	; drop into destination element
+	mov rax,[rsi]	; grab source element
+	mov [rdi],rax	; drop into destination element
 
 	add rsi,rcx	; go to next element of source matrix
 	add rdi,8	; go to next element of destination vector

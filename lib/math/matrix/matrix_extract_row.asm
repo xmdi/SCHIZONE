@@ -19,8 +19,8 @@ matrix_extract_row:
 	add rsi,rcx	; of the source matrix
 
 .loop:
-	movq rax,[rsi]	; grab source element
-	movq [rdi],rax	; drop into destination element
+	mov rax,[rsi]	; grab source element
+	mov [rdi],rax	; drop into destination element
 
 	add rsi,8	; go to next element of source matrix
 	add rdi,8	; go to next element of destination vector

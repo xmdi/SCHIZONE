@@ -15,21 +15,23 @@ matrix_transpose:
 	push rcx
 	push r8
 	push r9
+	push r10
 
 	mov r9,rcx
 	imul r9,rdx
 	shl r9,3	; {r9} points past the last element of
 	add r9,rsi	; the source matrix
 
-	mov r8,rdx	; set row counter in {r8}
-	shl rcx,3	; convert {rcx} into byte-width
+	mov r8,rcx	; set row counter in {r8}
+	mov r10,rdx
+	shl r10,3	; convert {r10} into byte-width
 	mov rbx,rdi	; set {rbx} to start of destination matrix
-	
+
 .loop:
-	movq rax,[rsi]	; grab element from source matrix
-	movq [rbx],rax	; drop element into destination matrix
+	mov rax,[rsi]	; grab element from source matrix
+	mov [rbx],rax	; drop element into destination matrix
 	add rsi,8	; increment element in source matrix
-	add rbx,rcx	; move to next row in destination matrix
+	add rbx,r10	; move to next row in destination matrix
 
 	dec r8		; loop until out of rows
 	jnz .loop
@@ -37,13 +39,14 @@ matrix_transpose:
 	cmp rsi,r9	; quit when out of elements
 	jge .done
 
-	mov r8,rdx	; reset row counter
+	mov r8,rcx	; reset row counter
 	add rdi,8	; move to next column of destination matrix	
 	mov rbx,rdi	; set {rsi} to next column of destination matrix
 		
 	jmp .loop
 
 .done:
+	pop r10
 	pop r9
 	pop r8
 	pop rcx
