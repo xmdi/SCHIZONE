@@ -135,6 +135,167 @@ START:
 	mov r10,5		; 5 significant figures
 	call print_array_float
 
+	; print "\nMatrix C*=2.0:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar3
+	mov rdx,.grammar4-.grammar3
+	call print_chars
+
+	; scale matrix C by 2.0 in-place
+	mov rdi,MATRIX_C
+	mov rsi,9
+	mov rax,2
+	cvtsi2sd xmm0,rax
+	call matrix_scale_in_place
+
+	; print scaled matrix C
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_C	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
+	; print "\nMatrix C=A*3.0:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar4
+	mov rdx,.grammar5-.grammar4
+	call print_chars
+	
+	; scale matrix C by 3.0*A
+	mov rdi,MATRIX_C
+	mov rsi,MATRIX_A
+	mov rdx,9
+	mov rax,3
+	cvtsi2sd xmm0,rax
+	call matrix_scale
+
+	; print scaled matrix C
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_C	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
+	; print "\nMatrix A+=C:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar5
+	mov rdx,.grammar6-.grammar5
+	call print_chars
+	
+	; increase matrix A by C
+	mov rdi,MATRIX_A
+	mov rsi,MATRIX_C
+	mov rdx,9
+	call matrix_add_in_place
+
+	; print new matrix A
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_A	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
+	; print "\nMatrix B-=C:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar6
+	mov rdx,.grammar7-.grammar6
+	call print_chars
+	
+	; decrease matrix B by C
+	mov rdi,MATRIX_B
+	mov rsi,MATRIX_C
+	mov rdx,9
+	call matrix_subtract_in_place
+
+	; print new matrix B
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_B	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
+	; print "\nMatrix C=A+B:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar7
+	mov rdx,.grammar8-.grammar7
+	call print_chars
+	
+	; set matrix C to A+B
+	mov rdi,MATRIX_C
+	mov rsi,MATRIX_A
+	mov rdx,MATRIX_B
+	mov rcx,9
+	call matrix_add
+
+	; print new matrix C
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_C	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
+	; print "\nMatrix C=A-B:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar8
+	mov rdx,.grammar9-.grammar8
+	call print_chars
+	
+	; set matrix C to A-B
+	mov rdi,MATRIX_C
+	mov rsi,MATRIX_A
+	mov rdx,MATRIX_B
+	mov rcx,9
+	call matrix_subtract
+
+	; print new matrix C
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_C	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
+	; print "\nMatrix C=A*B:\n"
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,.grammar9
+	mov rdx,MATRIX_A-.grammar9
+	call print_chars
+	
+	; set matrix C to A*B
+	mov rdi,MATRIX_C
+	mov rsi,MATRIX_A
+	mov rdx,MATRIX_B
+	mov rcx,3
+	mov r8,3
+	mov r9,3
+	call matrix_multiply
+
+	; print new matrix C
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,MATRIX_C	; matrix start address
+	mov rdx,3		; 3 rows
+	mov rcx,3		; 3 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
 
 	; flush print buffer
 	call print_buffer_flush
@@ -144,11 +305,11 @@ START:
 	call exit	
 
 .grammar0:
-	db `\nInitial Matrix A=\n`
+	db `\nInitial Matrix A:\n`
 .grammar1:
-	db `\nInitial Matrix B=\n`
+	db `\nInitial Matrix B:\n`
 .grammar2:
-	db `\nInitial Matrix C=\n`
+	db `\nInitial Matrix C:\n`
 .grammar3:
 	db `\nMatrix C*=2.0:\n`
 .grammar4:
@@ -171,7 +332,7 @@ MATRIX_B:
 	times 9 dq -2.0
 
 MATRIX_C:
-	times 9 dq 0.0
+	times 9 dq 5.0
 
 END:
 

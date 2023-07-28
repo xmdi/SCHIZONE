@@ -20,6 +20,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | JUL 07, 2023 | [Fractions](ex/ex007_fractions) | [EP. 007](https://youtu.be/MgbPiniv1g0) |
 | JUL 14, 2023 | [Randomness](ex/ex008_randomness) | [EP. 008](https://youtu.be/oKt_r7PIBX0) |
 | JUL 21, 2023 | [Timing](ex/ex009_timing) | [EP. 009](https://youtu.be/_Bo09H7EoHY) |
+| JUL 28, 2023 | [Matrix Basics](ex/ex010_matrix_basics) | [EP. 010](https://youtu.be/) |
 
 
 ### NOTE 0: 
