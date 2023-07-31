@@ -25,7 +25,15 @@ heap_alloc:
 	sub rsi,rdi	; {rsi}-={rdi} to indicate excess space in the chunk
 	jl .cant_use_this_chunk	; if the chunk was too small, it can't be used	
 
-.chunk_suitable:	; we found a suitable chunk
+	cmp rsi,16	
+	jg .chunk_big_enough	; if the chunk has more than 16 bytes extra
+				; space, it will need to be broken up
+
+	add rdi,rsi		; otherwise just increase the size of
+				; the allocation to eat up the extra bytes
+	xor rsi,rsi		; set {rsi} to indicate a perfectly-filled chunk	
+	
+.chunk_big_enough:	; we found a suitable chunk
 	mov r8,rdi	; create new chunk header/footer in {r8}
 	inc r8		; set LSB to indicate "allocated" in header/footer
 	mov [rax],r8	; set header at [{rax}]

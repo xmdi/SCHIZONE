@@ -5,6 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
+%define PRINT_BUFFER_SIZE 1024
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,7 +41,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,6 +49,12 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
+
+%include "lib/mem/heap_init.asm"
+; void heap_init(void);
+
+%include "lib/mem/heap_alloc.asm"
+; void* {rax} heap_alloc(long {rdi});
 
 %include "lib/io/print_int_d.asm"
 ; void print_int_d(int {rdi}, int {rsi});
@@ -64,38 +71,19 @@ PROGRAM_HEADER:
 
 START:
 
-	mov rax,1	; get feature information for the CPU
-	cpuid
+	; initialize heap
+	call heap_init
 
-	test rdx,1<<4	; check if the RDTSC support bit is set high
-	jz .rdtsc_unsupported
+	mov rdi,10
+	call heap_alloc
 
-	lfence		; force all instructions to finish
-	rdtsc		; get timestamp counter value in {edx:eax}
 
-	shl rdx,32	; combine the 2x 32-bit values into 1x 64-bit value
-	or rax,rdx	; {rax} now contains the cycle count
 	
-	; print timestamp counter value
 	mov rdi,SYS_STDOUT
 	mov rsi,rax
 	call print_int_d
 
-	; print newline
-	mov rsi,.grammar+18
-	mov rdx,1
-	call print_chars
-	
-	jmp .done
 
-.rdtsc_unsupported:	; jump target without rdtsc support
-	; print that RDTSC is unsupported
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar
-	mov rdx,19
-	call print_chars
-	
-.done:
 	; flush print buffer
 	call print_buffer_flush
 
@@ -103,10 +91,9 @@ START:
 	xor dil,dil
 	call exit	
 
-.grammar:
-	db `RDTSC unsupported.\n`
-
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
+
+HEAP_START_ADDRESS equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)
