@@ -20,4 +20,3 @@ heap_init:
 	ret
 
 %endif
-%endif

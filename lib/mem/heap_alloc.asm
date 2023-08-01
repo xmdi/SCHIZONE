@@ -18,7 +18,7 @@ heap_alloc:
 
 .next_block:	; check this chunk of memory
 	mov rsi,[rax]	; move header into {rsi}
-	test rst,1	; if the LSB is 1, the chunk has already been allocated
+	test rsi,1	; if the LSB is 1, the chunk has already been allocated
 	jnz .cant_use_this_chunk
 			
 .chunk_not_allocated:
@@ -62,6 +62,7 @@ heap_alloc:
 
 .cant_use_this_chunk:
 
+	mov rsi,[rax]	; move header into {rsi}
 	and rsi,-8	; round {rsi} down to 8-byte multiple to get the chunk
 			; length
 	add rax,rsi	; set {rax} to the footer address
@@ -83,5 +84,4 @@ heap_alloc:
 	mov [rdi],r8
 	jmp .done
 
-%endif
 %endif
