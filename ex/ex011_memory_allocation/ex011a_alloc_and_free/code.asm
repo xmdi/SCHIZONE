@@ -53,6 +53,9 @@ PROGRAM_HEADER:
 %include "lib/mem/heap_init.asm"
 ; void heap_init(void);
 
+%include "lib/mem/heap_free.asm"
+; bool {rax} heap_free(void* {rdi});
+
 %include "lib/mem/heap_alloc.asm"
 ; void* {rax} heap_alloc(long {rdi});
 
@@ -74,11 +77,12 @@ START:
 	; initialize heap
 	call heap_init
 
-	mov rdi,1050
+	mov rdi,1008
 	call heap_alloc
 
+	mov rdi,rax
+	call heap_free
 
-	
 	mov rdi,SYS_STDOUT
 	mov rsi,rax
 	call print_int_d
