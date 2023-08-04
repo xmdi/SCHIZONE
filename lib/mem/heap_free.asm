@@ -10,19 +10,28 @@ heap_free:
 
 	mov r8,[rdi-8]			; set {r8} to selected chunk header
 	test r8,1			; checks if this chunk was even allocated
+	
 	jnz .valid_pointer
-	mov rax,1
+	
+	cmp rdi,(HEAP_START_ADDRESS+8)	; checks if header in range
+	jge .valid_pointer
 
+	cmp rdi,(HEAP_START_ADDRESS+HEAP_SIZE-16)	; checks if footer in range
+	jle .valid_pointer
+
+	mov rax,1
 	pop r8
-	ret				; if chunk not allocated, just leave
+	ret				; otherwise, just leave
 	
 .valid_pointer:
+	mov r8,rdi
+	sub r8,8			; {r8} points to current chunk header
 	
 	push rdi
 	push rsi
 	push r9
 
-	cmp r8,(HEAP_START_ADDRESS)	; If we are the first chunk,
+	cmp rdi,(HEAP_START_ADDRESS+8)	; If we are the first chunk,
 	je .header_address_found	; the current chunk header is the beginning
 					; of the new freed chunk.
 	mov rsi,[rdi-16]		; previous chunk footer in {rsi}		
@@ -37,8 +46,8 @@ heap_free:
 	add rsi,rdi			; 
 	add rsi,7			; {rsi} points to next chunk header
 	mov r9,rsi
-	sub r9,r8			; {r9} points to initial chunk footer
-	cmp r9,(HEAP_START_ADDRESS+HEAP_SIZE-8)	; If we are the last chunk,
+	sub r9,8			; {r9} points to initial chunk footer
+	cmp rsi,(HEAP_START_ADDRESS+HEAP_SIZE)	; If we are the last chunk,
 	jge .footer_address_found	; the current chunk footer is the end of the
 					; new freed chunk.
 	mov rdi,[rsi]			; next chunk header in {rdi}
@@ -50,7 +59,7 @@ heap_free:
 
 .footer_address_found:
 	mov rsi,r9
-	sub rsi,r9
+	sub rsi,r8
 	sub rsi,8			; {rsi} contains length of the new free chunk
 
 	mov [r8],rsi			; set header to unallocated chunk header
