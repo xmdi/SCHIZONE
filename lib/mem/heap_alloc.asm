@@ -7,7 +7,7 @@ heap_alloc:
 ;	and an 8-byte footer), and returns the address to the start of this
 ;	memory in {rax}. Returns {rax}=0 if suitable space not available on the 
 ;	heap.
-	
+
 	push rdi
 	push rsi
 	push r8
@@ -15,6 +15,7 @@ heap_alloc:
 	mov rax,HEAP_START_ADDRESS	; init {rax} to header of first chunk
 	add rdi,7
 	and rdi,-8			; round up to multiple of 8-bytes
+
 
 .next_block:	; check this chunk of memory
 	mov rsi,[rax]	; move header into {rsi}
@@ -39,10 +40,25 @@ heap_alloc:
 	mov [rax],r8	; set header at [{rax}]
 	add rdi,rax	; set {rdi} to footer location
 	add rdi,8
+
+	cmp r12,777
+	jne .nah
+	mov rsi,rdi
+	mov rdi,SYS_STDOUT
+	call print_int_h
+	call print_buffer_flush
+	call exit	
+.nah:
+
+	cmp rdi,(HEAP_START_ADDRESS+HEAP_SIZE)
+	jl .not_last_chunk_footer
+	inc r8	; increment footer to indicate end of heap
+	mov r8,77
+.not_last_chunk_footer:
 	mov [rdi],r8	; set footer at [{rdi}]
 	add rax,8	; adjust {rax} to point to memory, not to header
 	test rsi,rsi	; if we perfectly filled the chunk
-	jz .perfectly_filled_chunk	; then return {rax}
+	jz .done	; then return {rax}
 
 .breakup_chunk:		; break the remainder of the original chunk into a new 
 			; empty chunk
@@ -78,10 +94,5 @@ heap_alloc:
 	pop rsi
 	pop rdi
 	ret
-	
-.perfectly_filled_chunk:
-	add r8,1
-	mov [rdi],r8
-	jmp .done
 
 %endif

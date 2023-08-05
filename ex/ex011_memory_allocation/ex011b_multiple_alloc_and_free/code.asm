@@ -87,6 +87,39 @@ START:
 	call heap_init
 
 
+	; allocate 24-byte chunk of "0x1" bytes, save address in {r13}
+	mov rdi,24
+	call heap_alloc
+	mov r13,rax
+	; set chunk to all 1s
+	mov rdi,r13
+	mov rsi,1
+	mov rdx,24
+	call memset
+
+
+	; allocate 24-byte chunk of "0x2" bytes, save address in {r14}
+	mov rdi,24
+	call heap_alloc
+	mov r14,rax
+	; set chunk to all 2s
+	mov rdi,r14
+	mov rsi,2
+	mov rdx,24
+	call memset
+
+
+	; allocate 24-byte chunk of "0x3" bytes, save address in {r14}
+	mov rdi,24
+	call heap_alloc
+	mov r15,rax
+	; set chunk to all 3s
+	mov rdi,r15
+	mov rsi,3
+	mov rdx,24
+	call memset
+
+
 	; print heap contents
 	mov rdi,SYS_STDOUT
 	mov rsi,HEAP_START_ADDRESS
@@ -94,51 +127,43 @@ START:
 	mov rcx,HEAP_SIZE
 	call print_memory
 
+jmp .exit
 
-	mov r15,64	; number of bytes to allocate
-
-	; attempt to allocate chunk
+	; free first and third chunk
+	mov rdi,r13
+	call heap_free
 	mov rdi,r15
-	call heap_alloc	; allocate {r15} bytes
+	call heap_free
 
-	test rax,rax	
-	jnz .allocate_success	
-
-.allocate_fail:	
-
-	; print that allocation failed
+	
+	; print heap contents
 	mov rdi,SYS_STDOUT
-	mov rsi,.grammar1
-	mov rdx,26
-	call print_chars
-	
-	jmp .exit
+	mov rsi,HEAP_START_ADDRESS
+	mov rdx,print_int_h
+	mov rcx,HEAP_SIZE
+	call print_memory
+	call print_buffer_flush
 
-.allocate_success:
 
-	; save address of allocated chunk
-	mov r14,rax
-	
-	; print that allocation succeeded
-	mov rdi,SYS_STDOUT
-	mov rsi,r15
-	call print_int_d
-	
-	mov rsi,.grammar0
-	mov rdx,42
-	call print_chars
+	; allocate 16-byte chunk of "0x4" bytes, save address in {r13}
+	mov rdi,16
+	call heap_alloc
+	mov r13,rax
+	; set chunk to all 4s
+	mov rdi,r13
+	mov rsi,4
+	mov rdx,16
+	call memset
 
-	mov rsi,r14
-	call print_int_h 
-
-	mov rsi,.grammar0+42
-	mov rdx,2
-	call print_chars
-
-	; set chunk to all 7s
-	mov rdi,r14
-	mov rsi,7
-	mov rdx,r15
+	; allocate 16-byte chunk of "0x5" bytes, save address in {r15}
+	mov rdi,16
+	mov r12,777	
+	call heap_alloc
+	mov r15,rax
+	; set chunk to all 5s
+	mov rdi,r15
+	mov rsi,5
+	mov rdx,16
 	call memset
 
 	; print heap contents
@@ -148,59 +173,9 @@ START:
 	mov rcx,HEAP_SIZE
 	call print_memory
 
-
-	; attempt to free chunk 
-	mov rdi,r14
-	call heap_free
-
-	test rax,rax
-	jz .free_success
-
-.free_fail:
-	
-	; print that freeing failed
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar3
-	mov rdx,33
-	call print_chars
-	
-	mov rsi,r14
-	call print_int_h
-
-	mov rsi,.grammar3+33
-	mov rdx,2
-	call print_chars
-
-	jmp .exit
-
-.free_success:
-
-	; print that freeing succeeded
-	mov rdi,SYS_STDOUT
-	mov rsi,r15
-	call print_int_d
-
-	mov rsi,.grammar2
-	mov rdx,40
-	call print_chars
-	
-	mov rsi,r14
-	call print_int_h
-
-	mov rsi,.grammar2+40
-	mov rdx,2
-	call print_chars
-
-	; print heap contents
-	mov rdi,SYS_STDOUT
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
-
 .exit:
 	; flush print buffer
+	mov rdi,SYS_STDOUT
 	call print_buffer_flush
 
 	; exit
