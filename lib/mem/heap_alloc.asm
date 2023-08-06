@@ -41,20 +41,26 @@ heap_alloc:
 	add rdi,rax	; set {rdi} to footer location
 	add rdi,8
 
+
 	cmp r12,777
 	jne .nah
 	mov rsi,rdi
 	mov rdi,SYS_STDOUT
 	call print_int_h
-	call print_buffer_flush
-	call exit	
-.nah:
 
+	mov rsi,HEAP_START_ADDRESS+HEAP_SIZE
+	call print_int_h
+
+	call print_buffer_flush
+
+	call exit
+.nah:
 	cmp rdi,(HEAP_START_ADDRESS+HEAP_SIZE)
-	jl .not_last_chunk_footer
+	jle .not_last_chunk_footer
 	inc r8	; increment footer to indicate end of heap
 	mov r8,77
 .not_last_chunk_footer:
+	mov r8,77
 	mov [rdi],r8	; set footer at [{rdi}]
 	add rax,8	; adjust {rax} to point to memory, not to header
 	test rsi,rsi	; if we perfectly filled the chunk

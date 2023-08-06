@@ -109,6 +109,9 @@ START:
 	call memset
 
 
+
+
+	mov r12,777
 	; allocate 24-byte chunk of "0x3" bytes, save address in {r14}
 	mov rdi,24
 	call heap_alloc
