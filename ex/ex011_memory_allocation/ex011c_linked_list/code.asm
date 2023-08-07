@@ -81,126 +81,69 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; 	structure of linked list elements:
+; ELEMENT:
+; 	dq NEXT ; pointer to the next element
+; 	dq VALUE ; VALUE of the element
+
+; void ADD_ELEMENT(void* {rdi}, ulong {rsi});
+;	Adds element of value {rsi} onto linked list starting at {rdi}.
+ADD_ELEMENT:
+	push rdi
+.loop:
+	mov rax,[rdi]		; get address of next element
+	test rax,rax		; check if null pointer
+	jz .last_element	; if not null,
+	mov rdi,[rdi]		; go onto next element
+	jmp .loop
+.last_element:
+	push rdi
+	mov rdi,16
+	call heap_alloc		; alloc 16 bytes
+	pop rdi	
+	test rax,rax		; on failed alloc, skip to exit
+	jz .exit
+	mov [rdi],rax		; add new address to previous element
+	mov rdi,rax		; go onto new element
+	mov qword [rdi],0	; set new element pointer to null next address
+	mov [rdi+8],rsi		; set new element value
+
+.exit:
+	pop rdi
+	ret
+
 START:
 
 	; initialize heap
 	call heap_init
 
-
-	; allocate 24-byte chunk of "0x1" bytes, save address in {r13}
-	mov rdi,24
+	; create the first element in our linked-list
+	mov rdi,16
 	call heap_alloc
-	mov r13,rax
-	; set chunk to all 1s
-	mov rdi,r13
-	mov rsi,1
-	mov rdx,24
-	call memset
+	mov r15,rax		; save address of first element in {r15}
+	mov rax,0x1111111111111111
+	mov [r15+8],rax		; set value to all 0x11s 
 
-
-	; allocate 24-byte chunk of "0x2" bytes, save address in {r14}
-	mov rdi,24
-	call heap_alloc
-	mov r14,rax
-	; set chunk to all 2s
-	mov rdi,r14
-	mov rsi,2
-	mov rdx,24
-	call memset
-
-
-	mov r12,777
-	; allocate 24-byte chunk of "0x3" bytes, save address in {r14}
-	mov rdi,24
-	call heap_alloc
-	mov r15,rax
-	; set chunk to all 3s
+	; add a linked-list element of values 0x22
 	mov rdi,r15
-	mov rsi,3
-	mov rdx,24
-	call memset
-
-
-	; print heap contents
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar0
-	mov rdx,.grammar1-.grammar0
-	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
-	; free first and third chunk
-	mov rdi,r13
-	call heap_free
-	mov rdi,r15
-	call heap_free
+	mov rsi,0x2222222222222222
+	call ADD_ELEMENT
 	
+	; add a linked-list element of values 0x33
+	mov rsi,0x3333333333333333
+	call ADD_ELEMENT
+
+	; add a linked-list element of values 0x44
+	mov rsi,0x4444444444444444
+	call ADD_ELEMENT
+
 	; print heap contents
 	mov rdi,SYS_STDOUT
-	mov rsi,.grammar1
-	mov rdx,.grammar2-.grammar1
-	call print_chars
 	mov rsi,HEAP_START_ADDRESS
 	mov rdx,print_int_h
 	mov rcx,HEAP_SIZE
 	call print_memory
 
-	
-	; allocate 32-byte chunk of "0x4" bytes, save address in {r13}
-	mov rdi,32
-	call heap_alloc
-	mov r13,rax
-	; set chunk to all 4s
-	mov rdi,r13
-	mov rsi,4
-	mov rdx,32
-	call memset
-
-
-	; allocate 8-byte chunk of "0x5" bytes, save address in {r15}
-	mov rdi,8
-	call heap_alloc
-	mov r15,rax
-	; set chunk to all 5s
-	mov rdi,r15
-	mov rsi,5
-	mov rdx,8
-	call memset
-
-
-	; print heap contents
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar2
-	mov rdx,.grammar3-.grammar2
-	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
-
-	; free all chunks
-	mov rdi,r15
-	call heap_free
-	mov rdi,r13
-	call heap_free
-	mov rdi,r14
-	call heap_free
-
-
-	; print heap contents
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar3
-	mov rdx,END-.grammar3
-	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
-	
 	; flush print buffer
 	mov rdi,SYS_STDOUT
 	call print_buffer_flush
@@ -208,18 +151,6 @@ START:
 	; exit
 	xor dil,dil
 	call exit	
-
-.grammar0:
-	db `\n\nReserved 3 chunks of 24 bytes (0x1, 0x2, 0x3):\n`
-
-.grammar1:
-	db `\n\nFreed 2 chunks (0x1, 0x3):\n`
-
-.grammar2:
-	db `\n\nReserved chunks of 32 bytes (0x4) and 8 bytes (0x5):\n`
-
-.grammar3:
-	db `\n\nFreed all chunks:\n`
 
 END:
 
