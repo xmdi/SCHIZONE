@@ -53,26 +53,17 @@ PROGRAM_HEADER:
 %include "lib/mem/heap_init.asm"
 ; void heap_init(void);
 
-%include "lib/mem/heap_free.asm"
-; bool {rax} heap_free(void* {rdi});
-
 %include "lib/mem/heap_alloc.asm"
 ; void* {rax} heap_alloc(long {rdi});
 
-%include "lib/mem/memset.asm"
-; void memset(void* {rdi}, char {sil}, ulong {rdx});
+%include "lib/mem/heap_eval.asm"
+; ulong {rax}, ulong {rdx} heap_eval(void);
 
 %include "lib/io/print_int_d.asm"
 ; void print_int_d(int {rdi}, int {rsi});
 
-%include "lib/io/print_int_h.asm"
-; void print_int_h(int {rdi}, int {rsi});
-
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
-
-%include "lib/io/print_memory.asm"
-; void print_memory(int {rdi}, byte* {rsi}, void* {rdx}, int {rcx});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -86,119 +77,56 @@ START:
 	; initialize heap
 	call heap_init
 
-
-	; allocate 24-byte chunk of "0x1" bytes, save address in {r13}
+	; allocate 24-byte chunk
 	mov rdi,24
 	call heap_alloc
-	mov r13,rax
-	; set chunk to all 1s
-	mov rdi,r13
-	mov rsi,1
-	mov rdx,24
-	call memset
 
-
-	; allocate 24-byte chunk of "0x2" bytes, save address in {r14}
+	; allocate 24-byte chunk
 	mov rdi,24
 	call heap_alloc
-	mov r14,rax
-	; set chunk to all 2s
-	mov rdi,r14
-	mov rsi,2
-	mov rdx,24
-	call memset
 
-
-	; allocate 24-byte chunk of "0x3" bytes, save address in {r14}
+	; allocate 24-byte chunk
 	mov rdi,24
 	call heap_alloc
-	mov r15,rax
-	; set chunk to all 3s
-	mov rdi,r15
-	mov rsi,3
-	mov rdx,24
-	call memset
 
+	; interrogate the heap for number of allocated bytes and chunks
+	call heap_eval
+	mov r14,rax	; allocated bytes
+	mov r15,rdx	; allocated chunks
 
-	; print heap contents
+	; print number of allocated chunks and bytes
 	mov rdi,SYS_STDOUT
 	mov rsi,.grammar0
-	mov rdx,.grammar1-.grammar0
+	mov rdx,14
 	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
+	mov rsi,r15
+	call print_int_d
+	mov rsi,.grammar0+13
+	mov rdx,22
+	call print_chars
+	mov rsi,r14
+	call print_int_d
+	mov rsi,.grammar0+34
+	mov rdx,18
+	call print_chars
 
-	; free first and third chunk
-	mov rdi,r13
-	call heap_free
-	mov rdi,r15
-	call heap_free
-	
-	; print heap contents
-	mov rdi,SYS_STDOUT
+	; compute space remaining in heap
+	mov rax,r15
+	mov rcx,16
+	mul rcx
+	add rax,r14
+	mov r13,HEAP_SIZE
+	sub r13,rax
+
+	; print number of free bytes on the heap
 	mov rsi,.grammar1
-	mov rdx,.grammar2-.grammar1
+	mov rdx,20
 	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
-	
-	; allocate 32-byte chunk of "0x4" bytes, save address in {r13}
-	mov rdi,32
-	call heap_alloc
-	mov r13,rax
-	; set chunk to all 4s
-	mov rdi,r13
-	mov rsi,4
-	mov rdx,32
-	call memset
-
-
-	; allocate 8-byte chunk of "0x5" bytes, save address in {r15}
-	mov rdi,8
-	call heap_alloc
-	mov r15,rax
-	; set chunk to all 5s
-	mov rdi,r15
-	mov rsi,5
+	mov rsi,r13
+	call print_int_d
+	mov rsi,.grammar1+19
 	mov rdx,8
-	call memset
-
-
-	; print heap contents
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar2
-	mov rdx,.grammar3-.grammar2
 	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
-
-	; free all chunks
-	mov rdi,r15
-	call heap_free
-	mov rdi,r13
-	call heap_free
-	mov rdi,r14
-	call heap_free
-
-
-	; print heap contents
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar3
-	mov rdx,END-.grammar3
-	call print_chars
-	mov rsi,HEAP_START_ADDRESS
-	mov rdx,print_int_h
-	mov rcx,HEAP_SIZE
-	call print_memory
-
 	
 	; flush print buffer
 	mov rdi,SYS_STDOUT
@@ -209,16 +137,9 @@ START:
 	call exit	
 
 .grammar0:
-	db `\n\nReserved 3 chunks of 24 bytes (0x1, 0x2, 0x3):\n`
-
+	db `Heap contains allocated chunks and allocated bytes.\n`
 .grammar1:
-	db `\n\nFreed 2 chunks (0x1, 0x3):\n`
-
-.grammar2:
-	db `\n\nReserved chunks of 32 bytes (0x4) and 8 bytes (0x5):\n`
-
-.grammar3:
-	db `\n\nFreed all chunks:\n`
+	db `Free space on heap: bytes.\n`
 
 END:
 
