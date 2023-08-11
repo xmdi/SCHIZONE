@@ -59,9 +59,9 @@ heap_alloc:
 	add rdi,rsi	; set {rdi} to footer location
 	add rdi,8
 
-	cmp rdi,(HEAP_START_ADDRESS+HEAP_SIZE)	; check if we're @ the heap end
+	cmp rdi,(HEAP_START_ADDRESS+HEAP_SIZE-8); check if we're @ the heap end
 	jl .not_last_block
-	add rdi,2
+	add rsi,2
 .not_last_block:
 	mov [rdi],rsi	; move footer into [{rdi}]
 	jmp .done		
