@@ -9,6 +9,7 @@ Entirely x86-64 assembly (see language breakdown on side panel).
 
 Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/garden, finance, and maybe some embedded stuff.
 
+## Episodes
 | DATE | TOPIC | VIDEO |
 | :---: | :---: | :---: |
 | JUN 02, 2023 | [A Minimal Executable](ex/ex001_minimal_executable) | [EP. 001](https://youtu.be/7NFOS9F1Afo) |
@@ -22,6 +23,11 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | JUL 21, 2023 | [Timing](ex/ex009_timing) | [EP. 009](https://youtu.be/_Bo09H7EoHY) |
 | JUL 28, 2023 | [Matrix Basics](ex/ex010_matrix_basics) | [EP. 010](https://youtu.be/gJ8e2tF2aPc) |
 | AUG 09, 2023 | [Memory Allocation](ex/ex011_memory_allocation) | [EP. 011](https://youtu.be/oE80pvbapgI) |
+
+## Labs
+| DATE | TOPIC | VIDEO |
+| :---: | :---: | :---: |
+| AUG 11, 2023 | [Cramer's Rule](lab/lab001_cramers_rule) | [LAB 001](https://youtu.be/JyIpF5iBGxU) |
 
 
 ### NOTE 0: 
