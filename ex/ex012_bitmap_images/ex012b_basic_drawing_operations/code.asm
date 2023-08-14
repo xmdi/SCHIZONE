@@ -57,6 +57,9 @@ PROGRAM_HEADER:
 %include "lib/io/bitmap/write_bitmap.asm"
 ; void write_bitmap(int {rdi}, void* {rsi}, int {edx}, int {ecx});
 
+%include "lib/io/bitmap/set_pixel.asm"
+; void set_pixel(void* {rdi}, int {esi}, int {edx});
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -73,11 +76,29 @@ START:
 	call file_open			; call function to open file
 	; {rax} contains new file descriptor
 
+	; set a pixel
+	mov rdi,.IMAGE
+	mov rsi,0xFF0000FF
+	mov rdx,100
+	call set_pixel
+;	mov rsi,0x0
+;	mov rdx,101
+;	call set_pixel
+;	mov rsi,0x0
+;	mov rdx,102
+;	call set_pixel
+;	mov rsi,0x0
+;	mov rdx,103
+;	call set_pixel
+
+
+
+
 	; write the bitmap	
 	mov rdi,rax
 	mov rsi,.IMAGE
-	mov edx,2
-	mov ecx,4
+	mov edx,48
+	mov ecx,64
 	call write_bitmap
 
 	; close the bitmap file
@@ -91,14 +112,7 @@ START:
 .FILENAME:
 	db `kek.bmp\0`
 
-.IMAGE:
-	db 0xFF,0x00,0x00,0x7F
-	db 0x00,0xFF,0x00,0x7F
-	db 0x00,0x00,0xFF,0x7F
-	db 0xFF,0xFF,0xFF,0x7F
-	db 0xFF,0x00,0x00,0xFF
-	db 0x00,0xFF,0x00,0xFF
-	db 0x00,0x00,0xFF,0xFF
-	db 0xFF,0xFF,0xFF,0xFF
+.IMAGE:	; space for a 640x480 image
+	times 64*48*4 dw 0x00
 
 END:
