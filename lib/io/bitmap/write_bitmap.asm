@@ -3,7 +3,7 @@
 
 write_bitmap:
 ; void write_bitmap(int {rdi}, void* {rsi}, int {edx}, int {ecx});
-;	Writes the {edx}x{ecx} (HxW) bitmap with ARGB data at {rsi} to 
+;	Writes the {edx}x{ecx} (WxH) bitmap with ARGB data at {rsi} to 
 ;	the file descriptor in {rdi}.
 
 	push rax
@@ -14,14 +14,14 @@ write_bitmap:
 	push rdx
 	SYS_PUSH_SYSCALL_CLOBBERED_REGISTERS
 
-	mov [.header+18],ecx	; insert bitmap width into header data
-	mov [.header+22],edx	; insert bitmap height into header data
-	imul ecx,edx
-	shl ecx,2
-	mov ebx,ecx		; save pixel array size in {ebx}
-	mov [.header+34],ecx	; insert pixel array size into header data
-	add ecx,122	
-	mov [.header+2],ecx	; insert bitmap filesize into header data
+	mov [.header+18],edx	; insert bitmap width into header data
+	mov [.header+22],ecx	; insert bitmap height into header data
+	imul edx,ecx
+	shl edx,2
+	mov ebx,edx		; save pixel array size in {ebx}
+	mov [.header+34],edx	; insert pixel array size into header data
+	add edx,122	
+	mov [.header+2],edx	; insert bitmap filesize into header data
 
 	; write the BMP header to the file descriptor
 	mov rax,SYS_WRITE
