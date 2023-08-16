@@ -58,7 +58,10 @@ PROGRAM_HEADER:
 ; void write_bitmap(int {rdi}, void* {rsi}, int {edx}, int {ecx});
 
 %include "lib/io/bitmap/set_pixel.asm"
-; void set_pixel(void* {rdi}, int {esi}, int {edx});
+; void set_pixel(void* {rdi}, int {esi}, int {edx}, int {r8d}, int {r9d});
+
+%include "lib/io/bitmap/get_pixel.asm"
+; int {rax} get_pixel(void* {rdi}, int {esi}, int {edx}, int {r8d});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -76,22 +79,33 @@ START:
 	call file_open			; call function to open file
 	; {rax} contains new file descriptor
 
-	; set a pixel
+	; set a pixel at (20,20) to blue
 	mov rdi,.IMAGE
 	mov rsi,0xFF0000FF
-	mov rdx,100
+	mov edx,48
+	mov ecx,64
+	mov r8d,20
+	mov r9d,20
 	call set_pixel
-;	mov rsi,0x0
-;	mov rdx,101
-;	call set_pixel
-;	mov rsi,0x0
-;	mov rdx,102
-;	call set_pixel
-;	mov rsi,0x0
-;	mov rdx,103
-;	call set_pixel
 
+	; get pixel value from (20,20)
+	mov rdi,.IMAGE
+	mov esi,48
+	mov edx,64
+	mov ecx,20
+	mov r8d,20
+	call get_pixel	; pixel value in {rax}
 
+	add rax,0xFF00	; change color to
+
+	; set a pixel at (21,21) to 
+	mov rdi,.IMAGE
+	mov rsi,rax
+	mov edx,48
+	mov ecx,64
+	mov r8d,21
+	mov r9d,21
+	call set_pixel
 
 
 	; write the bitmap	
