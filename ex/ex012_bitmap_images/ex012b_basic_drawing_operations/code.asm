@@ -77,11 +77,11 @@ START:
 	mov rsi,SYS_READ_WRITE+SYS_CREATE_FILE	; put R/W/CREATE flags in {rsi}
 	mov rdx,SYS_DEFAULT_PERMISSIONS	; default permissions in {rdx}
 	call file_open			; call function to open file
-	; {rax} contains new file descriptor
+	mov rbx,rax			; {rbx} contains new file descriptor
 
 	; set a pixel at (20,20) to blue
 	mov rdi,.IMAGE
-	mov rsi,0xFF0000FF
+	mov esi,0xFF0000FF
 	mov edx,48
 	mov ecx,64
 	mov r8d,20
@@ -96,20 +96,19 @@ START:
 	mov r8d,20
 	call get_pixel	; pixel value in {rax}
 
-	add rax,0xFF00	; change color to
+	add eax,0xFF00	; change color from blue to cyan
 
-	; set a pixel at (21,21) to 
+	; set a pixel at (21,21) to cyan
 	mov rdi,.IMAGE
-	mov rsi,rax
+	mov esi,eax
 	mov edx,48
 	mov ecx,64
 	mov r8d,21
 	mov r9d,21
 	call set_pixel
 
-
 	; write the bitmap	
-	mov rdi,rax
+	mov rdi,rbx
 	mov rsi,.IMAGE
 	mov edx,48
 	mov ecx,64
