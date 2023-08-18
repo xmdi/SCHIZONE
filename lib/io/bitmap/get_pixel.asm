@@ -16,7 +16,7 @@ get_pixel:
 	add rdx,rcx
 	shl rdx,2	; offset to pixel address
 
-	mov rax,[rdi+rdx]
+	mov eax, dword [rdi+rdx]
 
 	pop rdx
 

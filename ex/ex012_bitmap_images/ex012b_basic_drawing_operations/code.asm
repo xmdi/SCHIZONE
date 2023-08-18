@@ -4,6 +4,7 @@
 
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
+%define PRINT_BUFFER_SIZE 4096
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,7 +40,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -64,11 +65,24 @@ PROGRAM_HEADER:
 ; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
+%include "lib/io/bitmap/set_circle.asm"
+; void set_circle(void* {rdi}, int {esi}, int {edx}, int {ecx},
+;		 int {r8d}, int {r9d}, int {r10d});
+
+%include "lib/io/bitmap/set_fill.asm"
+; void set_fill(void* {rdi}, int {esi}, int {edx}, int {ecx},
+;		 int {r8d}, int {r9d});
+
 %include "lib/io/bitmap/get_pixel.asm"
 ; int {rax} get_pixel(void* {rdi}, int {esi}, int {edx}, int {r8d});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
+
+
+%include "lib/io/print_chars.asm"
+%include "lib/io/print_int_d.asm"
+%include "lib/io/print_int_h.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -85,19 +99,19 @@ START:
 
 	; set a pixel at (40,20) to blue
 	mov rdi,.IMAGE
-	mov esi,0xFF0000FF
+	mov esi,0xFF0000FF	; blue
 	mov edx,64
 	mov ecx,48
-	mov r8d,40
-	mov r9d,20
+	mov r8d,40	; x
+	mov r9d,20	; y
 	call set_pixel
 
 	; get pixel value from (40,20)
 	mov rdi,.IMAGE
 	mov esi,64
 	mov edx,48
-	mov ecx,40
-	mov r8d,20
+	mov ecx,40	; x
+	mov r8d,20	; y
 	call get_pixel	; pixel value in {rax}
 
 	add eax,0xFF00	; change color from blue to cyan
@@ -107,20 +121,39 @@ START:
 	mov esi,eax
 	mov edx,64
 	mov ecx,48
-	mov r8d,41
-	mov r9d,21
+	mov r8d,41	; x
+	mov r9d,21	; y
 	call set_pixel
 
 	; set a white line
 	mov rdi,.IMAGE
-	mov esi,0xFFFFFFFF
+	mov esi,0xFFFFFFFF	; white
 	mov edx,64
 	mov ecx,48
-	mov r8d,0;5
-	mov r9d,1;2
-	mov r10d,6;40
-	mov r11d,4;15
+	mov r8d,5	; x0
+	mov r9d,2	; y0
+	mov r10d,40	; x1
+	mov r11d,15	; y1
 	call set_line
+
+	; set a green circle
+	mov rdi,.IMAGE
+	mov esi,0xFF00FF00	; green
+	mov edx,64
+	mov ecx,48
+	mov r8d,20	; xc
+	mov r9d,30	; yc
+	mov r10d,14	; r
+	call set_circle
+
+	; fill green circle with orange
+	mov rdi,.IMAGE
+	mov esi,0xFFFFA500	; orange
+	mov edx,64
+	mov ecx,48
+	mov r8d,20	; xc
+	mov r9d,30	; yc
+	call set_fill
 
 	; write the bitmap	
 	mov rdi,rbx
@@ -144,3 +177,6 @@ START:
 	times 64*48*4 dw 0x00
 
 END:
+
+PRINT_BUFFER:
+

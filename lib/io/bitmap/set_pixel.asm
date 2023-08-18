@@ -16,7 +16,7 @@ set_pixel:
 	add rcx,r8
 	shl rcx,2	; offset to pixel address
 
-	mov [rdi+rcx],rsi
+	mov [rdi+rcx], dword esi
 
 	pop rcx
 
