@@ -26,6 +26,17 @@ set_fill:
 	call .loop
 	jmp .ret
 .loop:
+	; if we are beyond the boundaries, return
+	test r8,r8
+	js .outside_image_boundaries
+	test r9,r9
+	js .outside_image_boundaries
+	cmp r8,rdx
+	jge .outside_image_boundaries
+	cmp r9,rcx
+	jge .outside_image_boundaries
+
+	; check pixel color of target
 	mov rbx,rcx
 	sub rbx,r9
 	dec rbx
@@ -66,6 +77,7 @@ set_fill:
 .ret:
 	pop rbx
 	pop rax
+.outside_image_boundaries:
 	ret	
 
 %endif

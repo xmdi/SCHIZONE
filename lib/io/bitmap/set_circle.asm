@@ -11,88 +11,95 @@ set_circle:
 ;	@ top-left) in ARGB data array starting at {rdi} for an 
 ;	{edx}x{ecx} (WxH) image in the color value in {esi}.
 
-	push rax
 	push r8
 	push r9
-	push r10
 	push r11
 	push r12
 	push r13
 	push r14
 	push r15
 
-	mov r14,r8	; xc
-	mov r15,r9	; yc
-	mov r11,r10
-	neg r11		; dx = -r
-	xor r12,r12	; dy = 0
-	mov r13,r11
+	mov r11,r8	; save xc in {r11}
+	mov r12,r9	; save yc in {r12}
+	mov r13,r10
 	shl r13,1
-	add r13,2	; error = 2-2r
+	neg r13
+	add r13,3	; D = 3-2r
+
+	xor r14,r14	; dx = 0
+	mov r15,r10	; dy = r
 
 .loop:
-	; break if done
-	cmp r11,0
-	jge .ret
+	cmp r14,r15	; break if dx>=dy
+	jg .ret
 
-	; top right quadrant
-	mov r8,r14
-	sub r8,r11	
-	mov r9,r15
-	add r9,r12
-	call set_pixel
+	mov r8,r11
+	add r8,r14
+	mov r9,r12
+	add r9,r15
+	call set_pixel	; pixel @ (xc+dx,yc+dy)
+	mov r8,r11
+	sub r8,r14
+	mov r9,r12
+	add r9,r15
+	call set_pixel	; pixel @ (xc-dx,yc+dy)
+	mov r8,r11
+	add r8,r14
+	mov r9,r12
+	sub r9,r15
+	call set_pixel	; pixel @ (xc+dx,yc-dy)
+	mov r8,r11
+	sub r8,r14
+	mov r9,r12
+	sub r9,r15
+	call set_pixel	; pixel @ (xc-dx,yc-dy)
+	mov r8,r11
+	add r8,r15
+	mov r9,r12
+	add r9,r14
+	call set_pixel	; pixel @ (xc+dy,yc+dx)
+	mov r8,r11
+	sub r8,r15
+	mov r9,r12
+	add r9,r14
+	call set_pixel	; pixel @ (xc-dy,yc+dx)
+	mov r8,r11
+	add r8,r15
+	mov r9,r12
+	sub r9,r14
+	call set_pixel	; pixel @ (xc+dy,yc-dx)
+	mov r8,r11
+	sub r8,r15
+	mov r9,r12
+	sub r9,r14
+	call set_pixel	; pixel @ (xc-dy,yc-dx)
 
-	; top left quadrant
+	test r13,r13
+	js .dy_unchanged
 	mov r8,r14
-	sub r8,r12	
-	mov r9,r15
-	sub r9,r11
-	call set_pixel
-	; bottom left quadrant
+	sub r8,r15
+	shl r8,2
+	add r8,10
+	add r13,r8	; D+=(4(dx-dy)+10)
+	inc r14		; dx++
+	dec r15		; dy--
+	jmp .loop
+.dy_unchanged:
 	mov r8,r14
-	add r8,r11	
-	mov r9,r15
-	sub r9,r12
-	call set_pixel
-	; bottom right quadrant
-	mov r8,r14
-	add r8,r12
-	mov r9,r15
-	add r9,r11
-	call set_pixel
-
-;	jmp .ret
-	
-	mov r10,r13	; r = error
-	cmp r10,r12	; if r>dy
-	jg .err_above_dy
-	inc r12
-	mov rax,r12
-	shl rax,1
-	inc rax
-	add r13,rax	; error += ++dy*2+1
-.err_above_dy:
-	cmp r10,r11	; if r<=dx, continue
-	jle .loop
-	cmp r13,r12	; if error<=dy, continue
-	jle .loop
-	inc r11
-	mov rax,r11
-	shl rax,1
-	inc rax
-	add r13,rax	; error += ++dx*2+1
+	shl r8,2
+	add r8,6
+	add r13,r8	; D+=(4dx+6)
+	inc r14		; dx++
 	jmp .loop
 
 .ret:
 	pop r15
-	pop r14		
+	pop r14
 	pop r13
 	pop r12
 	pop r11
-	pop r10
 	pop r9
 	pop r8
-	pop rax
 
 	ret
 

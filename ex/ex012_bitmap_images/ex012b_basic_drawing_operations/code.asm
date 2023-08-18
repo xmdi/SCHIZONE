@@ -155,6 +155,107 @@ START:
 	mov r9d,30	; yc
 	call set_fill
 
+	; draw a black triangle
+	; line 1
+	mov rdi,.IMAGE
+	mov esi,0xFF000000	; black
+	mov edx,64
+	mov ecx,48
+	mov r8d,40	; x0
+	mov r9d,25	; y0
+	mov r10d,38	; x1
+	mov r11d,42	; y1
+	call set_line
+	; line 2
+	mov rdi,.IMAGE
+	mov esi,0xFF000000	; black
+	mov edx,64
+	mov ecx,48
+	mov r8d,40	; x0
+	mov r9d,25	; y0
+	mov r10d,55	; x1
+	mov r11d,40	; y1
+	call set_line
+	; line 3
+	mov rdi,.IMAGE
+	mov esi,0xFF000000	; black
+	mov edx,64
+	mov ecx,48
+	mov r8d,38	; x0
+	mov r9d,42	; y0
+	mov r10d,55	; x1
+	mov r11d,40	; y1
+	call set_line
+
+	; fill black triangle with yellow
+	mov rdi,.IMAGE
+	mov esi,0xFFFFFF00	; yellow
+	mov edx,64
+	mov ecx,48
+	mov r8d,42	; xc
+	mov r9d,38	; yc
+	call set_fill
+
+	; draw a blue quadrilateral
+	; line 1
+	mov rdi,.IMAGE
+	mov esi,0xFF0000FF	; blue
+	mov edx,64
+	mov ecx,48
+	mov r8d,43	; x0
+	mov r9d,7	; y0
+	mov r10d,47	; x1
+	mov r11d,21	; y1
+	call set_line
+	; line 2
+	mov rdi,.IMAGE
+	mov esi,0xFF0000FF	; blue
+	mov edx,64
+	mov ecx,48
+	mov r8d,47	; x0
+	mov r9d,21	; y0
+	mov r10d,59	; x1
+	mov r11d,30	; y1
+	call set_line
+	; line 3
+	mov rdi,.IMAGE
+	mov esi,0xFF0000FF	; blue
+	mov edx,64
+	mov ecx,48
+	mov r8d,59	; x0
+	mov r9d,30	; y0
+	mov r10d,61	; x1
+	mov r11d,5	; y1
+	call set_line
+	; line 4
+	mov rdi,.IMAGE
+	mov esi,0xFF0000FF	; blue
+	mov edx,64
+	mov ecx,48
+	mov r8d,43	; x0
+	mov r9d,7	; y0
+	mov r10d,61	; x1
+	mov r11d,5	; y1
+	call set_line
+
+	; fill blue quadrilateral with red
+	mov rdi,.IMAGE
+	mov esi,0x7FFF0000	; red
+	mov edx,64
+	mov ecx,48
+	mov r8d,56	; xc
+	mov r9d,13	; yc
+	call set_fill
+
+	; fill background to magenta
+	mov rdi,.IMAGE
+	mov esi,0xFFFF00FF	; magenta
+	mov edx,64
+	mov ecx,48
+	mov r8d,2	; xc
+	mov r9d,2	; yc
+	call set_fill
+
 	; write the bitmap	
 	mov rdi,rbx
 	mov rsi,.IMAGE
