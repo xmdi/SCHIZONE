@@ -76,8 +76,8 @@ START:
 	; write the bitmap	
 	mov rdi,rax
 	mov rsi,.IMAGE
-	mov edx,2
-	mov ecx,4
+	mov edx,4
+	mov ecx,2
 	call write_bitmap
 
 	; close the bitmap file

@@ -2,11 +2,10 @@
 %define GET_PIXEL
 
 get_pixel:
-; int {rax} get_pixel(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d});
+; int {eax} get_pixel(void* {rdi}, int {esi}, int {edx}, int {ecx}, int {r8d});
 ;	Gets pixel value at ({ecx},{r8d}) (from (0,0) @ top-left) in ARGB data
 ;	array starting at {rdi} for an {esi}x{edx} (WxH) image and returns the
-;	value in {rax}.
+;	value in {eax}.
 
 	push rdx
 
