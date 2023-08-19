@@ -11,6 +11,11 @@ set_line:
 ;	@ top-left) in ARGB data array starting at {rdi} for an 
 ;	{edx}x{ecx} (WxH) image in the color value in {esi}.
 
+	cmp r8,r10
+	je .vertical_line
+	cmp r9,r11
+	je .horizontal_line
+
 	push rax
 	push rbx
 	push r8
@@ -139,6 +144,48 @@ set_line:
 	pop rbx
 	pop rax
 
+	ret
+
+.vertical_line:
+	push rax
+	push r9
+	push r11
+
+	cmp r9,r11
+	jl .loop_vertical
+	mov rax,r9
+	mov r9,r11
+	mov r11,rax
+.loop_vertical:
+	call set_pixel
+	inc r9
+	cmp r9,r11
+	jle .loop_vertical
+
+	pop r11
+	pop r9
+	pop rax
+	ret
+
+.horizontal_line:
+	push rax
+	push r8
+	push r10
+
+	cmp r8,r10
+	jl .loop_horizontal
+	mov rax,r8
+	mov r8,r10
+	mov r10,rax
+.loop_horizontal:
+	call set_pixel
+	inc r8
+	cmp r8,r10
+	jle .loop_horizontal
+
+	pop r10
+	pop r8
+	pop rax
 	ret
 
 %endif
