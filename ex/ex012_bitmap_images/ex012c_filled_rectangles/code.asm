@@ -57,23 +57,9 @@ PROGRAM_HEADER:
 %include "lib/io/bitmap/write_bitmap.asm"
 ; void write_bitmap(int {rdi}, void* {rsi}, int {edx}, int {ecx});
 
-%include "lib/io/bitmap/set_pixel.asm"
-; void set_pixel(void* {rdi}, int {esi}, int {edx}, int {r8d}, int {r9d});
-
-%include "lib/io/bitmap/set_line.asm"
+%include "lib/io/bitmap/set_rect.asm"
 ; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
-
-%include "lib/io/bitmap/set_circle.asm"
-; void set_circle(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d});
-
-%include "lib/io/bitmap/set_fill.asm"
-; void set_fill(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d});
-
-%include "lib/io/bitmap/get_pixel.asm"
-; int {rax} get_pixel(void* {rdi}, int {esi}, int {edx}, int {r8d});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -91,165 +77,18 @@ START:
 	call file_open			; call function to open file
 	mov rbx,rax			; {rbx} contains new file descriptor
 
-	; set a pixel at (40,20) to blue
+	; filled rectangle
 	mov rdi,.IMAGE
-	mov esi,0xFF0000FF	; blue
+	;mov rsi,0x7F00FFFFFF0000FF; translucent light blue fill, solid blue border
+	mov rsi,0x00000000FF0000FF; translucent light blue fill, solid blue border
 	mov edx,64
 	mov ecx,48
-	mov r8d,40	; x
-	mov r9d,20	; y
-	call set_pixel
-
-	; get pixel value from (40,20)
-	mov rdi,.IMAGE
-	mov esi,64
-	mov edx,48
-	mov ecx,40	; x
-	mov r8d,20	; y
-	call get_pixel	; pixel value in {rax}
-
-	add eax,0xFF00	; change color from blue to cyan
-
-	; set a pixel at (41,21) to cyan
-	mov rdi,.IMAGE
-	mov esi,eax
-	mov edx,64
-	mov ecx,48
-	mov r8d,41	; x
-	mov r9d,21	; y
-	call set_pixel
-
-	; set a white line
-	mov rdi,.IMAGE
-	mov esi,0xFFFFFFFF	; white
-	mov edx,64
-	mov ecx,48
-	mov r8d,30	; x0
-	mov r9d,2	; y0
-	mov r10d,30	; x1
-	mov r11d,14	; y1
-	call set_line
-
-	; set a green circle
-	mov rdi,.IMAGE
-	mov esi,0xFF00FF00	; green
-	mov edx,64
-	mov ecx,48
-	mov r8d,20	; xc
-	mov r9d,30	; yc
-	mov r10d,14	; r
-	call set_circle
-
-	; fill green circle with orange
-	mov rdi,.IMAGE
-	mov esi,0xFFFFA500	; orange
-	mov edx,64
-	mov ecx,48
-	mov r8d,20	; xc
-	mov r9d,30	; yc
-	call set_fill
-
-	; draw a black triangle
-	; line 1
-	mov rdi,.IMAGE
-	mov esi,0xFF000000	; black
-	mov edx,64
-	mov ecx,48
-	mov r8d,40	; x0
-	mov r9d,25	; y0
-	mov r10d,38	; x1
+	mov r8d,5	; x0
+	mov r9d,5	; y0
+	mov r10d,58	; x1
 	mov r11d,42	; y1
-	call set_line
-	; line 2
-	mov rdi,.IMAGE
-	mov esi,0xFF000000	; black
-	mov edx,64
-	mov ecx,48
-	mov r8d,40	; x0
-	mov r9d,25	; y0
-	mov r10d,55	; x1
-	mov r11d,40	; y1
-	call set_line
-	; line 3
-	mov rdi,.IMAGE
-	mov esi,0xFF000000	; black
-	mov edx,64
-	mov ecx,48
-	mov r8d,38	; x0
-	mov r9d,42	; y0
-	mov r10d,55	; x1
-	mov r11d,40	; y1
-	call set_line
-
-	; fill black triangle with yellow
-	mov rdi,.IMAGE
-	mov esi,0xFFFFFF00	; yellow
-	mov edx,64
-	mov ecx,48
-	mov r8d,42	; xc
-	mov r9d,38	; yc
-	call set_fill
-
-	; draw a blue quadrilateral
-	; line 1
-	mov rdi,.IMAGE
-	mov esi,0xFF0000FF	; blue
-	mov edx,64
-	mov ecx,48
-	mov r8d,43	; x0
-	mov r9d,7	; y0
-	mov r10d,47	; x1
-	mov r11d,21	; y1
-	call set_line
-	; line 2
-	mov rdi,.IMAGE
-	mov esi,0xFF0000FF	; blue
-	mov edx,64
-	mov ecx,48
-	mov r8d,47	; x0
-	mov r9d,21	; y0
-	mov r10d,59	; x1
-	mov r11d,30	; y1
-	call set_line
-	; line 3
-	mov rdi,.IMAGE
-	mov esi,0xFF0000FF	; blue
-	mov edx,64
-	mov ecx,48
-	mov r8d,59	; x0
-	mov r9d,30	; y0
-	mov r10d,61	; x1
-	mov r11d,5	; y1
-	call set_line
-	; line 4
-	mov rdi,.IMAGE
-	mov esi,0xFF0000FF	; blue
-	mov edx,64
-	mov ecx,48
-	mov r8d,43	; x0
-	mov r9d,7	; y0
-	mov r10d,61	; x1
-	mov r11d,5	; y1
-	call set_line
-
-	; fill blue quadrilateral with red
-	mov rdi,.IMAGE
-	mov esi,0x7FFF0000	; red
-	mov edx,64
-	mov ecx,48
-	mov r8d,56	; xc
-	mov r9d,13	; yc
-	call set_fill
-
-	; fill background to magenta
-	mov rdi,.IMAGE
-	mov esi,0xFFFF00FF	; magenta
-	mov edx,64
-	mov ecx,48
-	mov r8d,2	; xc
-	mov r9d,2	; yc
-	call set_fill
-
+	call set_rect
+	
 	; write the bitmap	
 	mov rdi,rbx
 	mov rsi,.IMAGE
