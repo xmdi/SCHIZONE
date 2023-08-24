@@ -49,8 +49,14 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/io/parse_float.asm"
+; double {xmm0} parse_float(char* {rdi});
+
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, int {rdx});
+
+%include "lib/io/print_float.asm"
+; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -59,10 +65,93 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+PRINT_NEWLINE:	; print a newline, violates ABI
+	mov rsi,START.grammar
+	mov rdx,1
+	call print_chars
+	ret
+
 START:
 
-	
+	; parse and print float from string
+	mov rdi,.float1
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
 
+	; parse and print float from string
+	mov rdi,.float2
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float3
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float4
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float5
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float6
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float7
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float8
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float9
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float10
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
 
 	; flush print buffer
 	call print_buffer_flush
@@ -71,7 +160,28 @@ START:
 	xor dil,dil
 	call exit	
 
-.grammar0:
+.float1:
+	db `123,`	; integer string
+.float2:
+	db `-123,`	; negative integer string
+.float3:
+	db `123.456,`	; decimal string
+.float4:
+	db `-123.456,`	; negative decimal string
+.float5:
+	db `123.456e6,`	; postive scientific notation decimal string
+.float6:
+	db `123.456e-6,`; negative scientific notation decimal string
+.float7:
+	db `-0.00000123e6,`; another example
+.float8:
+	db `-1230000.0e-6,`; another example
+.float9:
+	db `-123e3,`	; integer string with scientific notation
+.float10:
+	db `123e-3,`	; negative integer string with scientific notation
+
+.grammar:
 	db `\n`
 
 END:
