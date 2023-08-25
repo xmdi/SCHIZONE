@@ -7,19 +7,17 @@ find_byte_offset:
 ;	byte in {sil}. If found, returns the offset to this byte in memory
 ;	in {rax}. Otherwise, returns -1 in {rax}.
 
-	push rdi
 	push rdx
 	xor rax,rax
 .loop:
-	cmp byte [rdi],sil
+	cmp byte [rdi+rax],sil
 	je .done
-	inc rdi
+	inc rax
 	dec rdx
 	jnz .loop
 	mov rax,-1
 .done:
 	pop rdx
-	pop rdi
 	ret
 
 %endif
