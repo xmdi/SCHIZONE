@@ -18,6 +18,7 @@ parse_float:
 	movdqu xmm1,[rsp+16]
 	movdqu xmm2,[rsp+0]
 
+	xor rax,rax
 	xor r8,r8		; flag for negative number
 	mov rcx,10		; radix for decimal system
 	cmp byte [rdi],45
