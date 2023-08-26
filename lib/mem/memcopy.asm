@@ -30,6 +30,8 @@ memcopy:
 .loop_by_1:	; copy 1 byte at a time
 	mov al, byte [rsi]
 	mov byte [rdi], al
+	inc rdi
+	inc rsi
 	dec rdx
 	jnz .loop_by_1	; loop until 0 bytes remaining
 

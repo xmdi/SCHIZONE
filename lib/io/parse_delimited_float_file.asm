@@ -76,30 +76,27 @@ parse_delimited_float_file:
 	push rdx
 	mov rdi,rsi
 	mov rsi,r13
-	mov rdx,r12	
+	mov rdx,r12
 	call memcopy	; shift the last part of buffer to the start
 	pop rdx
 	pop rsi
 	pop rdi
 
-	inc r13
-	dec r12
-
 	push rsi
 	push rdx
-	mov rsi,r13
+	add rsi,r12
 	sub rdx,r12
 	call read_chars
 	pop rdx
 	pop rsi
 
-
-;	mov rdi,rax
-;1	call exit
-
 	jmp .after_read
 
 .parse_last_float:
+
+	mov rdi,rax
+	call exit
+
 	push rdi
 	mov rdi,r13
 	call parse_float	; parsed float in {xmm0}
