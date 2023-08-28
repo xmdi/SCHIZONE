@@ -16,6 +16,20 @@ parse_delimited_float_file:
 ;	{r8} for this purpose. The delimiter between floats is passed in
 ;	{r9b}.
 
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	push rdi
+	push rsi
+	push r8
+	push r9
+	push r10
+	push r11
+	push r12
+	push r13
+	push r14
+
 	xor rbx,rbx	; initialize break flag to zero	
 	mov r10,rdi	; save array_start in {r10}
 	mov r11,rdx	; array_length in {r11}
@@ -28,8 +42,6 @@ parse_delimited_float_file:
 .read_loop:
 
 	call read_chars
-
-.after_read:
 
 	cmp rax,rdx	; if we read the number of bytes we intended, start loop
 	je .good_read
@@ -86,15 +98,22 @@ parse_delimited_float_file:
 	push rdx
 	add rsi,r12
 	sub rdx,r12
+	mov r14,rdx
 	call read_chars
 	pop rdx
 	pop rsi
 
-	jmp .after_read
+	cmp rax,r14	; if we read the number of bytes we intended, start loop
+	je .good_read
+	cmp rax,0	; if end of file or error, break
+	jle .done
+	inc rbx		; if other amount of bytes, break after this iteration
+
+	jmp .good_read
 
 .parse_last_float:
 
-	mov rdi,rax
+	mov rdi,[READ_BUFFER+1]
 	call exit
 
 	push rdi
@@ -104,6 +123,19 @@ parse_delimited_float_file:
 	movq [r10],xmm0		; drop float into array
 
 .done:
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rsi
+	pop rdi
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
 
 	ret
 
@@ -126,11 +158,9 @@ parse_delimited_float_file:
 	mov rax,rdx
 	add rax,rsi		; {rax} points passed the buffer
 	cmp r13,rax
-
 	jge .read_loop		; if we exactly exhausted the buffer
 				; parse the next buffer-full
 
 	jmp .parse_loop		; otherwise continue to the next one
-
 
 %endif
