@@ -101,9 +101,14 @@ parse_float:
 
 .done_exponent:
 	mov rsi,rax
+
+	test rsi,rsi ; if no exponent, jump to done
+	jz .done
+
 	mov rax,1
 
 .loop_exponent_power:
+
 	imul rcx
 	dec rsi
 	jnz .loop_exponent_power

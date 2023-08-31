@@ -90,7 +90,7 @@ START:
 	call parse_delimited_float_file
 
 	; open input file 2
-	mov rdi,.filename1
+	mov rdi,.filename2
 	mov rsi,SYS_READ_ONLY
 	mov rdx,SYS_DEFAULT_PERMISSIONS
 	call file_open	; file descriptor in {rax}
@@ -103,9 +103,6 @@ START:
 	mov r8,READ_BUFFER
 	mov r9,","
 	call parse_delimited_float_file
-
-
-
 
 	; compute product of input matrices
 	mov rdi,.product
