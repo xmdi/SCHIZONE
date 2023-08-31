@@ -5,7 +5,6 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define READ_BUFFER_SIZE 64
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,8 +40,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE+READ_BUFFER_SIZE ; size (bytes) of 
-							; segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,20 +48,15 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
-%include "lib/io/file_open.asm"
-; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
 
-%include "lib/io/parse_delimited_float_file.asm"
-; void parse_delimited_float_file(double* {rdi}, uint {rsi}, uint {rdx},
-;		 uint {rcx}, void* {r8}, char {r9b});
+%include "lib/io/parse_float.asm"
+; double {xmm0} parse_float(char* {rdi});
 
-%include "lib/io/print_array_float.asm"
-; void print_array_float(int {rdi}, double* {rsi}, int {rdx}, int {rcx}, 
-;	int {r8}, void* {r9}, int {r10});
+%include "lib/io/print_chars.asm"
+; void print_chars(int {rdi}, char* {rsi}, int {rdx});
 
-%include "lib/math/matrix/matrix_multiply.asm"
-; void matrix_multiply(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}
-;	uint {r8}, uint {r9});
+%include "lib/io/print_float.asm"
+; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -72,56 +65,93 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+PRINT_NEWLINE:	; print a newline, violates ABI
+	mov rsi,START.grammar
+	mov rdx,1
+	call print_chars
+	ret
+
 START:
 
-	; open input file 1
-	mov rdi,.filename1
-	mov rsi,SYS_READ_ONLY
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open	; file descriptor in {rax}
-
-	; read floats from csv into array using READ_BUFFER
-	mov rdi,.array1
-	mov rsi,rax
-	mov rdx,3*3
-	mov rcx,READ_BUFFER_SIZE
-	mov r8,READ_BUFFER
-	mov r9,","
-	call parse_delimited_float_file
-
-	; open input file 2
-	mov rdi,.filename2
-	mov rsi,SYS_READ_ONLY
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open	; file descriptor in {rax}
-
-	; read floats from csv into array using READ_BUFFER
-	mov rdi,.array2
-	mov rsi,rax
-	mov rdx,3*3
-	mov rcx,READ_BUFFER_SIZE
-	mov r8,READ_BUFFER
-	mov r9,","
-	call parse_delimited_float_file
-
-	; compute product of input matrices
-	mov rdi,.product
-	mov rsi,.array1
-	mov rdx,.array2
-	mov rcx,3
-	mov r8,3
-	mov r9,3
-	call matrix_multiply
-
-	; print out array
+	; parse and print float from string
+	mov rdi,.float1
+	call parse_float	; parse string to float into {xmm0}
 	mov rdi,SYS_STDOUT
-	mov rsi,.product
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,6
-	call print_array_float
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float2
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float3
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float4
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float5
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float6
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float7
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float8
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float9
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
+
+	; parse and print float from string
+	mov rdi,.float10
+	call parse_float	; parse string to float into {xmm0}
+	mov rdi,SYS_STDOUT
+	mov rsi,8
+	call print_float
+	call PRINT_NEWLINE
 
 	; flush print buffer
 	call print_buffer_flush
@@ -130,21 +160,32 @@ START:
 	xor dil,dil
 	call exit	
 
-.filename1:
-	db `multiply.this`,0
-.filename2:
-	db `by.this`,0
+.float1:
+	db `123,`	; integer string
+.float2:
+	db `-123,`	; negative integer string
+.float3:
+	db `123.456,`	; decimal string
+.float4:
+	db `-123.456,`	; negative decimal string
+.float5:
+	db `123.456e6,`	; postive scientific notation decimal string
+.float6:
+	db `123.456e-6,`; negative scientific notation decimal string
+.float7:
+	db `-0.00000123e6,`; another example
+.float8:
+	db `+1230000.0e+6,`; another example
+.float9:
+	db `-123e3,`	; integer string with scientific notation
+.float10:
+	db `123e-3,`	; negative integer string with scientific notation
 
-.array1:; space for 3x3 element float matrix
-	times 3*3 dq 0
-.array2:; space for 3x3 element float matrix
-	times 3*3 dq 0
-.product: ; space for 3x3 element float product matrix
-	times 3*3 dq 0
+.grammar:
+	db `\n`
 
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
 
-READ_BUFFER equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)

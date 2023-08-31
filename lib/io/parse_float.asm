@@ -21,11 +21,13 @@ parse_float:
 	xor rax,rax
 	xor r8,r8		; flag for negative number
 	mov rcx,10		; radix for decimal system
-	cmp byte [rdi],45
+	cmp byte [rdi],43	; check for '+'
+	je .explicitly_positive_integer
+	cmp byte [rdi],45	; check for '-'
 	jne .loop_integer
-	inc rdi
 	inc r8
-	
+.explicitly_positive_integer:
+	inc rdi	
 .loop_integer:
 
 	movzx rbx, byte [rdi]	; grab current byte
@@ -81,11 +83,13 @@ parse_float:
 	inc rdi
 	xor rax,rax
 	xor r8,r8
-	cmp byte [rdi],45 	; check for negative exponent
+	cmp byte [rdi],43	; check for '+' exponent
+	je .explicitly_positive_exponent	
+	cmp byte [rdi],45 	; check for '-' exponent
 	jne .loop_exponent
-	inc rdi
 	inc r8
-
+.explicitly_positive_exponent:
+	inc rdi
 .loop_exponent:
 	movzx rbx, byte [rdi]	; grab current byte
 	sub rbx,48
