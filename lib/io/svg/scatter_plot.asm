@@ -7,40 +7,40 @@
 ; input data structures
 %if 0
 plot_structure:
-	dq ; address of null-terminated title string
-	dq ; address of null-terminated x-label string
-	dq ; address of null-terminated y-label string
-	dq ; address of linked list for datasets
-	dq ; plot width (px)
-	dq ; plot height (px)
-	dq ; plot margins (px)
-	dq ; x-min (double)
-	dq ; x-max (double)
-	dq ; y-min (double)
-	dq ; y-max (double)
-	dq ; legend left x-coordinate (px)
-	dq ; legend top y-coordinate (px)
-	dq ; legend width (px)
-	dd ; #XXXXXX RGB background color
-	dd ; #XXXXXX RGB axis color
-	dd ; #XXXXXX RGB font color
-	db ; number of major x-ticks
-	db ; number of major y-ticks
-	db ; minor subdivisions per x-tick
-	db ; minor subdivisions per y-tick
-	db ; significant digits on x values
-	db ; significant digits on y values
-	db ; title font size (px)
-	db ; vertical margin below title (px)
-	db ; axis label font size (px)
-	db ; tick & legend label font size (px)
-	db ; horizontal margin right of y-tick labels (px)
-	db ; vertical margin above x-tick labels (px)
-	db ; grid major stroke thickness (px)
-	db ; grid minor stroke thickness (px)
-	db ; width for y-axis ticks (px)
-	db ; height for x-axis ticks (px)
-	db ; flags:
+	dq ; address of null-terminated title string {*+0}
+	dq ; address of null-terminated x-label string {*+8}
+	dq ; address of null-terminated y-label string {*+16}
+	dq ; address of linked list for datasets {*+24}
+	dw ; plot width (px) {*+32}
+	dw ; plot height (px) {*+34}
+	dw ; plot margins (px) {*+36}
+	dq ; x-min (double) {*+38}
+	dq ; x-max (double) {*+46}
+	dq ; y-min (double) {*+54}
+	dq ; y-max (double) {*+62}
+	dw ; legend left x-coordinate (px) {*+70}
+	dw ; legend top y-coordinate (px) {*+72}
+	dw ; legend width (px) {*+74}
+	dd ; #XXXXXX RGB background color {*+76}
+	dd ; #XXXXXX RGB axis color {*+80}
+	dd ; #XXXXXX RGB font color {*+84}
+	db ; number of major x-ticks {*+88}
+	db ; number of major y-ticks {*+89}
+	db ; minor subdivisions per x-tick {*+90}
+	db ; minor subdivisions per y-tick {*+91}
+	db ; significant digits on x values {*+92}
+	db ; significant digits on y values {*+93}
+	db ; title font size (px) {*+94}
+	db ; vertical margin below title (px) {*+95}
+	db ; axis label font size (px) {*+96}
+	db ; tick & legend label font size (px) {*+97}
+	db ; horizontal margin right of y-tick labels (px) {*+98}
+	db ; vertical margin above x-tick labels (px) {*+99}
+	db ; grid major stroke thickness (px) {*+100}
+	db ; grid minor stroke thickness (px) {*+101}
+	db ; width for y-axis ticks (px) {*+102}
+	db ; height for x-axis ticks (px) {*+103}
+	db ; flags: {*+104}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?
@@ -49,20 +49,20 @@ plot_structure:
 		; bit 5		= draw legend?
 
 dataset_structure:
-	dq ; address of next dataset in linked list
-	dq ; address of null-terminated label string
-	dq ; address of first x-coordinate
-	dq ; extra stride between x-coord elements
-	dq ; address of first y-coordinate
-	dq ; extra stride between y-coord elements
-	dq ; number of elements
-	dd ; #XXXXXX RGB marker color
-	dd ; #XXXXXX RGB line color
-	dd ; #XXXXXX RGB fill color
-	db ; marker size (px)
-	db ; line thickness (px)
-	db ; fill opacity (%)
-	db ; flags:
+	dq ; address of next dataset in linked list {*+0}
+	dq ; address of null-terminated label string {*+8}
+	dq ; address of first x-coordinate {*+16}
+	dw ; extra stride between x-coord elements {*+24}
+	dq ; address of first y-coordinate {*+26}
+	dw ; extra stride between y-coord elements {*+34}
+	dd ; number of elements {*+36}
+	dd ; #XXXXXX RGB marker color {*+40}
+	dd ; #XXXXXX RGB line color {*+44}
+	dd ; #XXXXXX RGB fill color {*+48}
+	db ; marker size (px) {*+52}
+	db ; line thickness (px) {*+53}
+	db ; fill opacity (%) {*+54}
+	db ; flags: {*+55}
 		; bit 0 (LSB)	= point marker?
 		; bit 1		= connecting lines?
 		; bit 2		= dashed line? (bit 1 must be set)
@@ -80,7 +80,14 @@ scatter_plot:
 ;	address {rsi} to file descriptor {rdi}.
 ;	Note: Clears the PRINT_BUFFER (does not flush) at routine start.
 	
+	
 
+	mov rbx,rsi
+	
+	; start at beginning of PRINT_BUFFER
+	mov [PRINT_BUFFER_LENGTH],0	
+
+	
 
 
 	ret
