@@ -2,7 +2,12 @@
 %define SCATTER_PLOT
 
 ; dependencies
+%include "lib/io/print_buffer_flush.asm"
 %include "lib/io/print_chars.asm"
+%include "lib/io/print_int_d.asm"
+%include "lib/io/print_int_h_n_digits.asm"
+%include "lib/io/print_string.asm"
+%include "lib/io/print_float.asm"
 
 ; input data structures
 %if 0
@@ -92,7 +97,7 @@ scatter_plot:
 	movzx r12, byte [rbx+104]
 
 	; compute plot width and x-start coordinates
-	movzx rsi, dword [rbx+32] ; width
+	movzx rsi, word [rbx+32] ; width
 	movzx rcx, byte [rbx+36] ; margin
 	mov r8,rcx
 	shl rcx,1
@@ -107,7 +112,7 @@ scatter_plot:
 	mov [.plot_x_start],r8 ; save x-start
 
 	; compute plot height and y-start coordinates
-	movzx rsi, dword [rbx+34] ; height
+	movzx rsi, word [rbx+34] ; height
 	movzx rcx, byte [rbx+36] ; margin
 	mov r8,rcx
 	shl rcx,1
@@ -127,12 +132,61 @@ scatter_plot:
 	mov [.plot_height],rsi ; save plot height
 	mov [.plot_y_start],r8 ; save y-start
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; SVG HEADER ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	; write svg header
 	mov rsi,.svg_header
 	mov rdx,18
 	call print_chars
-
 	
+	; viewbow width
+	movzx rsi, word [rbx+32]
+	call print_int_d
+
+	; write space
+	mov rsi,.svg_header+18
+	mov rdx,1
+	call print_chars
+
+	; viewbox height
+	movzx rsi, word [rbx+34]	
+	call print_int_d
+
+	; write more of svg header
+	mov rsi,.svg_header+19
+	mov rdx,44
+	call print_chars
+
+	; write width
+	movzx rsi, word [rbx+32]
+	call print_int_d
+
+	; write more of svg_header
+	mov rsi,.svg_header+63
+	mov rdx,10
+	call print_chars
+
+	; write height
+	movzx rsi, word [rbx+34]
+	call print_int_d
+
+	; write more of svg_header
+	mov rsi,.svg_header+73
+	mov rdx,27
+	call print_chars
+
+	; write background color
+	movzx rsi, dword [rbx+76]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	; write end of svg header
+	mov rsi,.svg_header+100
+	mov rdx,3
+	call print_chars
+
+
+
 
 	; one final flush of the print buffer
 	call print_buffer_flush
