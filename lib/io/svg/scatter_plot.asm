@@ -80,16 +80,152 @@ scatter_plot:
 ;	address {rsi} to file descriptor {rdi}.
 ;	Note: Clears the PRINT_BUFFER (does not flush) at routine start.
 	
-	
+	; pushes	
 
+	; save address of input structure in {rbx}
 	mov rbx,rsi
 	
 	; start at beginning of PRINT_BUFFER
 	mov [PRINT_BUFFER_LENGTH],0	
 
+	; save flags in {r12}
+	movzx r12, byte [rbx+104]
+
+	; compute plot width and x-start coordinates
+	movzx rsi, dword [rbx+32] ; width
+	movzx rcx, byte [rbx+36] ; margin
+	mov r8,rcx
+	shl rcx,1
+	sub rsi,rcx
+	movzx rcx, byte [rbx+102] ; y-tick width
+	sub rsi,rcx
+	add r8,rcx
+	movzx rcx, byte [rbx+96] ; axis font size
+	sub rsi,rcx
+	add r8,rcx
+	mov [.plot_width],rsi ; save plot width
+	mov [.plot_x_start],r8 ; save x-start
+
+	; compute plot height and y-start coordinates
+	movzx rsi, dword [rbx+34] ; height
+	movzx rcx, byte [rbx+36] ; margin
+	mov r8,rcx
+	shl rcx,1
+	sub rsi,rcx
+	movzx rcx, byte [rbx+103] ; x-tick height
+	sub rsi,rcx
+	add r8,rcx
+	movzx rcx, byte [rbx+96] ; axis font size
+	sub rsi,rcx
+	add r8,rcx
+	movzx rcx, byte [rbx+94] ; title font size
+	sub rsi,rcx
+	add r8,rcx
+	movzx rcx, byte [rbx+95] ; extra title margin
+	sub rsi,rcx
+	add r8,rcx
+	mov [.plot_height],rsi ; save plot height
+	mov [.plot_y_start],r8 ; save y-start
+
+	; write svg header
+	mov rsi,.svg_header
+	mov rdx,18
+	call print_chars
+
 	
 
+	; one final flush of the print buffer
+	call print_buffer_flush
+	
+	; pops
 
+
+	; return
 	ret
+
+; memory space to save intermediate math
+
+.working1:
+	dq 0
+
+.working2:
+	dq 0
+
+.working3:
+	dq 0
+
+.working4:
+	dq 0
+
+.scaling_x:
+	dq 0
+
+.scaling_y:
+	dq 0
+
+.plot_width:
+	dq 0
+
+.plot_height:
+	dq 0
+
+.plot_x_start:
+	dq 0
+
+.plot_y_start:
+	dq 0
+
+; svg-related grammar
+
+.svg_header:
+	db `<svg viewBox="0 0  " xmlns="http://www.w3.org/2000/svg" width="" height="" style="background-color:#">\n`
+
+.svg_text:
+	db `<text text-anchor="middle" fill="#" font-size="px" x="" y=""></text>\n`
+
+.svg_g_y_ticks:
+	db `<g text-anchor="end" fill="#" font-size="px">\n`
+
+.svg_g_x_ticks:
+	db `<g text-anchor="start" fill="#" font-size="px">\n`
+
+.svg_tick_text:
+	db `<text x="" y=""></text>\n`
+
+.svg_rotate:
+	db ` transform="rotate(,,)"`
+
+.svg_line:
+	db `<line x1="" x2="" y1="" y2=""/>\n`
+
+.svg_path:
+	db `<path stroke="#" stroke-width="px" fill="none" d="M L"/>\n`
+
+.svg_g_start:
+	db `<g stroke-linecap="square" stroke="#" stroke-width="px">\n`
+
+.svg_dasharray:
+	db `stroke-dasharray="," `
+
+.svg_g_end:
+	db `</g>\n`
+
+.svg_g_marker:
+	db `<g fill="#">\n`
+
+.svg_circle:
+	db `<circle cx="" cy="" r=""/>\n`
+
+.svg_rect:
+	db `<rect x="" y="" width="" height="" fill="#" stroke="#" stroke-width="px"/>\n`
+
+.svg_opacity:
+	db `fill-opacity="%"`
+
+.svg_bezier_grammar:
+	db ` QCA`
+
+.svg_footer:
+	db `</svg>\n`
 
 %endif
