@@ -86,12 +86,25 @@ scatter_plot:
 ;	Note: Clears the PRINT_BUFFER (does not flush) at routine start.
 	
 	; pushes
+	push rsi
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	push r8
+	push r9
+	push r10
+	push r11
+	push r12
+	push r13
+	push r14
+	push r15
 
 	; save address of input structure in {rbx}
 	mov rbx,rsi
 	
 	; start at beginning of PRINT_BUFFER
-	mov [PRINT_BUFFER_LENGTH],0	
+	mov qword [PRINT_BUFFER_LENGTH],0
 
 	; save flags in {r12}
 	movzx r12, byte [rbx+104]
@@ -176,7 +189,7 @@ scatter_plot:
 	call print_chars
 
 	; write background color
-	movzx rsi, dword [rbx+76]
+	mov esi, dword [rbx+76]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -197,7 +210,7 @@ scatter_plot:
 	call print_chars
 
 	; write title font color
-	movzx rsi, dword [rbx+84]
+	mov esi, dword [rbx+84]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -223,7 +236,7 @@ scatter_plot:
 	; write more of title text
 	mov rsi,.svg_text+54
 	mov rdx,5
-	call print_n_chars
+	call print_chars
 
 	; write title y location
 	movzx rsi, byte [rbx+94]
@@ -258,7 +271,7 @@ scatter_plot:
 	call print_chars
 
 	; write xlabel font color
-	movzx rsi, dword [rbx+84]
+	mov esi, dword [rbx+84]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -320,7 +333,7 @@ scatter_plot:
 	call print_chars
 
 	; write ylabel font color
-	movzx rsi, dword [rbx+84]
+	mov esi, dword [rbx+84]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -426,7 +439,7 @@ scatter_plot:
 	call print_chars
 
 	; print axis stroke color
-	movzx rsi,dword [rbx+80]
+	mov esi,dword [rbx+80]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -612,7 +625,7 @@ scatter_plot:
 	call print_chars
 
 	; print axis stroke color
-	movzx rsi, dword [rbx+80]
+	mov esi, dword [rbx+80]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -837,7 +850,7 @@ scatter_plot:
 	call print_chars
 
 	; print tick label stroke color
-	movzx rsi,dword [rbx+84]
+	mov esi,dword [rbx+84]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -954,7 +967,7 @@ scatter_plot:
 	call print_chars
 
 	; print tick label stroke color
-	movzx rsi,dword [rbx+84]
+	mov esi,dword [rbx+84]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -1111,13 +1124,796 @@ scatter_plot:
 
 .plot_data:
 
+	mov r13,[rbx+24]		; store first dataset address in r13
+	test r13,0
+	jne .no_data				; is there any data at all?
+
+	; compute scaling for x datapoints onto plot
+	movsd xmm0,[rbx+46]; xmax
+	subsd xmm0,[rbx+38]; xmin
+	cvtsi2sd xmm1,[.plot_width]
+	divsd xmm1,xmm0
+	movsd [.scaling_x],xmm1
+
+	; compute scaling for y datapoints onto plot
+	movsd xmm0,[rbx+62]; ymax
+	subsd xmm0,[rbx+54]; ymin
+	cvtsi2sd xmm1,[.plot_height]
+	divsd xmm1,xmm0
+	movsd [.scaling_y],xmm1
+
+.next_data:
+	movzx r14, byte [r13+55]; store dataset flags in r14
+	test r14,2
+	jz .data_markers
+
+	; <path stroke="#
+	mov rsi,.svg_path
+	mov rdx,15
+	call print_chars
+
+	; print stroke RBG color
+	mov esi,dword [r13+44]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	;  " stroke-width="
+	mov rsi,.svg_path+15
+	mov rdx,16
+	call print_chars
+
+	; print stroke width
+	movzx rsi, byte [r13+53]
+	call print_int_d
+
+	test r14,4
+	jz .no_dasharray
+
+	; px" 
+	mov rsi,.svg_path+31
+	mov rdx,4
+	call print_chars
+
+	; stroke-dasharray="
+	mov rsi,.svg_dasharray
+	mov rdx,18
+	call print_chars
+
+	; print stroke width as dasharray dimension 1
+	movzx rsi, byte [r13+53]
+	call print_int_d
+
+	; ,
+	mov rsi,.svg_dasharray+18
+	mov rdx,1
+	call print_chars
+
+	; print stroke width as dasharray dimension 1
+	movzx rsi, byte [r13+53]
+	call print_int_d
+
+	; " 
+	mov rsi,.svg_dasharray+19
+	mov rdx,2
+	call print_chars
+
+	; fill="
+	mov rsi,.svg_path+35
+	mov rdx,6
+	call print_chars
+
+	jmp .post_dasharray
+
+.no_dasharray:	
+	; px" fill="
+	mov rsi,.svg_path+31
+	mov rdx,10
+	call print_chars
+
+.post_dasharray:
+	; check if we want to fill the path or not
+	test r14,8
+	jnz .filled
+
+	; none
+	mov rsi,.svg_path+41
+	mov rdx,4
+	call print_chars
+	jmp .was_transparent
+
+.filled:
+	; #
+	mov rsi,.svg_path+14
+	mov rdx,1
+	call print_chars
+
+	; print fill RBG color
+	mov esi,dword [r13+48]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	; " 
+	mov rsi,.svg_path+45
+	mov rdx,2
+	call print_chars
+
+	; opacity="
+	mov rsi,.svg_opacity
+	mov rdx,14
+	call print_chars
+
+	; opacity value
+	movzx rsi, byte [r13+54]
+	call print_int_d
+
+	; %
+	mov rsi,.svg_opacity+14
+	mov rdx,1
+	call print_chars
+
+.was_transparent:
+	; " d="M 
+	mov rsi,.svg_path+45
+	mov rdx,6
+	call print_chars
 	
+	mov r15d,dword [r13+36]	; track number of elements left in r15
+	mov rsi,[r13+16]; use working1 to track address of current data x
+	mov [.working1],rsi
+	mov rsi,[r13+26]; use working2 to track address of current data y
+	mov [.working2],rsi
+	movzx rsi,word [r13+24]; use working3 to track extra stride of data x
+	mov [.working3],rsi
+	movzx rsi,word [r13+34]; use working4 to track extra stride of data y
+	mov [.working4],rsi
+
+	mov r10,r14	;
+	shr r10,5	;
+	and r10,3	; {r10} contains curve definition bits
+
+	test r10,r10
+	jz .plot_next_data_line
+
+	mov r11,r10 ;
+	inc r11		; {r11} contains number of points betwixt curve characters Q or C
+
+	add r10,.svg_bezier_grammar ; {r10} points to address of curve character Q or C
+								; but only if we have a curve (otherwise it's 0)
+
+	xor rcx,rcx	; {rcx} is a counter to track the point number for the
+				;	curve definition
+
+.plot_next_data_line:
+
+	test r10,r10
+	jz .no_pushes
+	push r10
+	push r11
+	push rcx
+
+.no_pushes:
+	; [SPACE] 
+	mov rsi,.svg_path+51
+	mov rdx,1
+	call print_chars
+
+	; x value
+	mov rsi,[.working1] ; grab x value from array
+	movsd xmm0,[rsi]	; store in xmm0
+	movsd xmm1,[rbx+38]	; grab xmin in xmm1
+	subsd xmm0,xmm1		; compute difference x-xmin
+	mulsd xmm0,[.scaling_x]	; multiply difference by scale factor
+	cvtsi2sd xmm1,[.plot_x_start] ; grab offset for x_start
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	; [SPACE] 
+	mov rsi,.svg_path+51
+	mov rdx,1
+	call print_chars
+
+	; y value
+	mov rsi,[.working2]
+	movsd xmm1,[rsi]
+	movsd xmm0,[rbx+54]
+	subsd xmm0,xmm1
+	mulsd xmm0,[.scaling_y]
+	cvtsi2sd xmm1,[.plot_y_start]
+	addsd xmm0,xmm1
+	cvtsi2sd xmm1,[.plot_height]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	mov rcx,[rsp+0]
+	mov r10,[rsp+16]
+
+	test r10,r10
+	jz .no_curve
+
+	test rcx,rcx
+	jnz .no_curve_letter_yet
+	
+	; put the curve letter
+	mov rsi,.svg_bezier_grammar
+	mov rdx,1
+	call print_chars
+
+	mov rsi,[rsp+16]
+	mov rdx,1
+	call print_chars
+
+	mov rcx,[rsp+8]
+	add rsp,24
+	jmp .no_L
+
+.no_curve_letter_yet:
+
+	pop rcx
+	add rsp,16
+
+	dec rcx
+	jmp .no_L
+
+.no_curve:
+
+	; TODO: only if there are some left, do this L
+	;  L 
+	mov rsi,.svg_path+51
+	mov rdx,2
+	call print_chars
+	
+.no_L:
+
+	mov rsi,[.working3]
+	add rsi,[.working1]
+	add rsi,8
+	mov [.working1],rsi
+	mov rsi,[.working4]
+	add rsi,[.working2]
+	add rsi,8
+	mov [.working2],rsi
+
+	inc rcx
+	dec r15
+	jnz .plot_next_data_line
+
+	;  "/>\n 
+	mov rsi,.svg_path+53
+	mov rdx,4
+	call print_chars
+
+	; is there another line to plot?
+	mov rsi,[r13+0]
+	cmp rsi,0
+	je .data_markers
+
+	mov r13,rsi
+	jmp .next_data
+
+	; now we do the data markers (points)
+.data_markers:
+
+	mov r13,[rbx+24]		; store first dataset address in r13
+
+
+.next_data_markers:
+
+	; check if we want markers for this dataset
+	movzx r14, byte [r13+55]; store dataset flags in r14
+	test r14,1
+	jz .skip_these_markers
+
+	mov r15d,dword [r13+36]	; track number of elements left in r15
+	mov rsi,[r13+16]; use working1 to track address of current data x
+	mov [.working1],rsi
+	movzx rsi,word [r13+26]; use working2 to track address of current data y
+	mov [.working2],rsi
+	mov rsi,[r13+24]; use working3 to track extra stride of data x
+	mov [.working3],rsi
+	movzx rsi,word [r13+34]; use working4 to track extra stride of data y
+	mov [.working4],rsi
+
+	; <g fill="# 
+	mov rsi,.svg_g_marker
+	mov rdx,10
+	call print_chars
+
+	; print fill color 
+	mov esi,dword [r13+54]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	; ">\n
+	mov rsi,.svg_g_marker+10
+	mov rdx,3
+	call print_chars
+
+.loop_over_data_markers:
+
+	; <circle cx="
+	mov rsi,.svg_circle
+	mov rdx,12
+	call print_chars
+
+	; x value
+	mov rsi,[.working1]
+	movsd xmm0,[rsi]
+	movsd xmm1,[rbx+38]
+	subsd xmm0,xmm1
+	mulsd xmm0,[.scaling_x]
+	cvtsi2sd xmm1,[.plot_x_start]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	; " cy="
+	mov rsi,.svg_circle+12
+	mov rdx,6
+	call print_chars
+
+	; y value
+	mov rsi,[.working2]
+	movsd xmm1,[rsi]
+	movsd xmm0,[rbx+54]
+	subsd xmm0,xmm1
+	mulsd xmm0,[.scaling_y]
+	cvtsi2sd xmm1,[.plot_y_start]
+	addsd xmm0,xmm1
+	cvtsi2sd xmm1,[.plot_height]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	; " r="
+	mov rsi,.svg_circle+18
+	mov rdx,5
+	call print_chars
+
+	; marker radius
+	movzx rsi, byte [r13+52]
+	call print_int_d
+
+	; "/>\n
+	mov rsi,.svg_circle+23
+	mov rdx,4
+	call print_chars
+
+	mov rsi,[.working3]
+	add rsi,[.working1]
+	add rsi,8
+	mov [.working1],rsi
+	mov rsi,[.working4]
+	add rsi,[.working2]
+	add rsi,8
+	mov [.working2],rsi
+
+	dec r15
+	jnz .loop_over_data_markers
+
+	; </g>\n
+	mov rsi,.svg_g_end
+	mov rdx,5
+	call print_chars
+
+.skip_these_markers:
+
+	; is there another line to plot?
+	mov rsi,[r13+0]
+	cmp rsi,0
+	je .write_legend
+
+	mov r13,rsi
+	jmp .next_data_markers
+
+.write_legend:	; write legend
+	
+	; check if we wanted a legend
+	test r12,32
+	jz .no_data
+
+	movzx r15,word [rbx+70]		; track current legend entry y-coord in r15 
+
+	movzx rsi, byte [rbx+97]		; track font size in working1 as double
+	cvtsi2sd xmm0,rsi
+	movsd [.working1],xmm0	
+	mov rsi,2				; store 2.0f in working2
+	cvtsi2sd xmm0,rsi
+	movsd [.working2],xmm0
+
+	mov r13,[rbx+24]		; store first dataset address in r13
+
+	; start off with a rectangle for the legend background & border
+
+	; <rect x="
+	mov rsi,.svg_rect
+	mov rdx,9
+	call print_chars
+
+	; x-value
+	movzx rsi,word [rbx+70]
+	movzx r8, byte [rbx+97]
+	sub rsi,r8
+	call print_int_d
+
+	; " y="
+	mov rsi,.svg_rect+9
+	mov rdx,5
+	call print_chars
+
+	; y-value
+	movzx rsi, byte [rbx+97]
+	sub rsi,r15
+	neg rsi
+	call print_int_d
+
+	; " width="
+	mov rsi,.svg_rect+14
+	mov rdx,9
+	call print_chars
+
+	; width value
+	movzx rsi, word [rbx+74]
+	call print_int_d
+
+	; " height="
+	mov rsi,.svg_rect+23
+	mov rdx,10
+	call print_chars
+
+	; height value
+	xor rsi,rsi
+	
+.legend_count_datasets:
+	; loop thru datasets to increment height value
+
+	movzx r14, byte [r13+55]; store dataset flags in r14
+	
+	; check if we want to include this dataset in legend
+	test r14,16
+	jz .ignore_this_dataset_in_count
+
+	; if so, increment rsi by 2*font_size
+	movzx r8, byte [rbx+97]
+	add rsi,r8
+	add rsi,r8
+	mov r9,r8
+
+.ignore_this_dataset_in_count:
+	; is there another dataset
+	mov r8,[r13+0]
+	cmp r8,0
+	je .done_counting_legend_datasets
+	
+	mov r13,r8
+	jmp .legend_count_datasets
+
+.done_counting_legend_datasets:
+	add rsi,r9
+	call print_int_d
+
+	; " fill="#
+	mov rsi,.svg_rect+33
+	mov rdx,9
+	call print_chars
+
+	; fill value
+	mov esi,dword [rbx+76]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	; " stroke="#
+	mov rsi,.svg_rect+42
+	mov rdx,11
+	call print_chars
+
+	; stroke value
+	mov esi,dword [rbx+80]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	; " stroke-width="
+	mov rsi,.svg_rect+53
+	mov rdx,16
+	call print_chars
+
+	; stroke-width value
+	movzx rsi, byte [rbx+100]
+	call print_int_d
+
+	; px"/>\n`
+	mov rsi,.svg_rect+69
+	mov rdx,6
+	call print_chars
+
+	mov r13,[rbx+24]		; restore first dataset address in r13
+
+.next_legend_entry: ; loop thru datasets
+	movzx r14, byte [r13+55]; store dataset flags in r14
+	test r14,16
+	jz .skip_this_legend_entry
+
+	; draw short line
+	test r14,2
+	jz .skip_line_for_legend_entry
+
+	; <path stroke="#
+	mov rsi,.svg_path
+	mov rdx,15
+	call print_chars
+
+	; print stroke RGB color
+	mov esi,dword [r13+44]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	;  " stroke-width="
+	mov rsi,.svg_path+15
+	mov rdx,16
+	call print_chars
+
+	; print stroke width
+	movzx rsi, byte [r13+53]
+	call print_int_d
+
+	test r14,4
+	jz .legend_no_dasharray
+
+	; px" 
+	mov rsi,.svg_path+31
+	mov rdx,4
+	call print_chars
+
+	; stroke-dasharray="
+	mov rsi,.svg_dasharray
+	mov rdx,18
+	call print_chars
+
+	; print stroke width as dasharray dimension 1
+	movzx rsi, byte [r13+53]
+	call print_int_d
+
+	; ,
+	mov rsi,.svg_dasharray+18
+	mov rdx,1
+	call print_chars
+
+	; print stroke width as dasharray dimension 1
+	movzx rsi, byte [r13+53]
+	call print_int_d
+
+	; " 
+	mov rsi,.svg_dasharray+19
+	mov rdx,2
+	call print_chars
+
+	jmp .legend_post_dasharray
+
+.legend_no_dasharray:
+	; px" 
+	mov rsi,.svg_path+31
+	mov rdx,4
+	call print_chars
+
+.legend_post_dasharray:
+
+	; d="M 
+	mov rsi,.svg_path+47
+	mov rdx,5
+	call print_chars
+	
+	; x value 1
+	movzx rsi,word [rbx+70]
+	cvtsi2sd xmm0,rsi
+	mov rsi,8
+	call print_float
+
+	; [SPACE] 
+	mov rsi,.svg_path+51
+	mov rdx,1
+	call print_chars
+
+	; y value 1
+	cvtsi2sd xmm0,r15
+	movsd xmm1,[.working1]
+	divsd xmm1,[.working2]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	; L
+	mov rsi,.svg_path+51
+	mov rdx,2
+	call print_chars
+
+	; x value 2
+	movzx rsi,word [rbx+70]
+	cvtsi2sd xmm0,rsi
+	addsd xmm0,[.working1]	
+	addsd xmm0,[.working1]	
+	mov rsi,8
+	call print_float
+
+	; [SPACE] 
+	mov rsi,.svg_path+51
+	mov rdx,1
+	call print_chars
+
+	; y value 2
+	cvtsi2sd xmm0,r15
+	movsd xmm1,[.working1]
+	divsd xmm1,[.working2]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	;  "/>\n 
+	mov rsi,.svg_path+53
+	mov rdx,4
+	call print_chars
+
+.skip_line_for_legend_entry:
+
+	; draw marker
+	test r14,1
+	jz .skip_marker_for_legend_entry
+
+	; <circle 
+	mov rsi,.svg_circle
+	mov rdx,8
+	call print_chars
+
+	; fill="# 
+	mov rsi,.svg_g_marker+3
+	mov rdx,7
+	call print_chars
+
+	; print fill color 
+	mov esi,dword [r13+40]
+	mov rdx,6
+	call print_int_h_n_digits
+
+	; "
+	mov rsi,.svg_g_marker+10
+	mov rdx,1
+	call print_chars
+	
+	;  cx="
+	mov rsi,.svg_circle+7
+	mov rdx,5
+	call print_chars
+
+	; x value
+	movzx rsi, word [rbx+70]
+	cvtsi2sd xmm0,rsi
+	addsd xmm0,[.working1]	
+	mov rsi,8
+	call print_float
+
+	; " cy="
+	mov rsi,.svg_circle+12
+	mov rdx,6
+	call print_chars
+
+	; y value
+	cvtsi2sd xmm0,r15
+	movsd xmm1,[.working1]
+	divsd xmm1,[.working2]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	; " r="
+	mov rsi,.svg_circle+18
+	mov rdx,5
+	call print_chars
+
+	; marker radius
+	movzx rsi, byte [r13+52]
+	call print_int_d
+
+	; "/>\n
+	mov rsi,.svg_circle+23
+	mov rdx,4
+	call print_chars
+
+.skip_marker_for_legend_entry:
+	
+	; write label
+
+	; <text 
+	mov rsi,.svg_text
+	mov rdx,6
+	call print_chars
+
+	; font-size=" 
+	mov rsi,.svg_text+36
+	mov rdx,11
+	call print_chars
+
+	; print font size
+	movzx rsi, byte [rbx+97]
+	call print_int_d
+
+	; px" x=" 
+	mov rsi,.svg_text+47
+	mov rdx,7
+	call print_chars
+
+	; x_coord
+	movzx rsi, word [rbx+70]
+	cvtsi2sd xmm0,rsi
+	addsd xmm0,[.working1]	
+	addsd xmm0,[.working1]	
+	addsd xmm0,[.working1]	
+	mov rsi,8
+	call print_float
+
+	; " y=" 
+	mov rsi,.svg_text+54
+	mov rdx,5
+	call print_chars
+
+	; y_coord
+	cvtsi2sd xmm0,r15
+	movsd xmm1,[.working1]
+	addsd xmm0,xmm1
+	mov rsi,8
+	call print_float
+
+	; ">
+	mov rsi,.svg_text+59
+	mov rdx,2
+	call print_chars
+
+	; actual legend text
+	mov rsi,[r13+8]
+	call print_string
+
+	; </text>\n
+	mov rsi,.svg_text+61
+	mov rdx,8
+	call print_chars
+
+.skip_this_legend_entry:
+
+	movzx rsi, byte [rbx+97]	; increment r15 by 2*(font size) for next entry
+	shl rsi,1
+	add r15,rsi
+	
+	; is there another dataset
+	mov rsi,[r13+0]
+	cmp rsi,0
+	je .no_data
+	
+	mov r13,rsi
+	jmp .next_legend_entry
+
+.no_data:
+
+	; print svg footer
+	mov rsi,.svg_footer
+	mov rdx,7
+	call print_chars
 
 	; one final flush of the print buffer
 	call print_buffer_flush
 	
 	; pops
-
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
+	pop rsi
 
 	; return
 	ret

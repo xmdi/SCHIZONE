@@ -4,7 +4,7 @@
 ; dependency
 %include "lib/io/print_chars.asm"
 
-print_int_h:
+print_int_h_n_digits:
 ; void print_int_h_n_digits(int {rdi}, int {rsi}, uint {rdx});
 ; 	Prints low {rdx} digits of hexadecimal value in {rsi} to 
 ;	file descriptor {rdi}.
