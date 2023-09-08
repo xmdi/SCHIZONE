@@ -7,7 +7,7 @@
 print_int_h_n_digits:
 ; void print_int_h_n_digits(int {rdi}, int {rsi}, uint {rdx});
 ; 	Prints low {rdx} digits of hexadecimal value in {rsi} to 
-;	file descriptor {rdi}.
+;	file descriptor {rdi} without leading '0x'.
 
 	push rax
 	push rbp
@@ -38,14 +38,6 @@ print_int_h_n_digits:
 	dec rdx		; loop until out of digits
 	jnz .loop
 	
-	; move leading '0x' onto stack
-
-	dec rsp
-	mov [rsp],byte 120
-	
-	dec rsp
-	mov [rsp],byte 48	
-
 	; get ready to print
 
 	mov rdx,rbp	

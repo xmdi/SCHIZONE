@@ -84,6 +84,8 @@ scatter_plot:
 ;	Writes an SVG scatter plot described by the plot_structure struct at
 ;	address {rsi} to file descriptor {rdi}.
 ;	Note: Clears the PRINT_BUFFER (does not flush) at routine start.
+
+	mov rbp,rsp
 	
 	; pushes
 	push rsi
@@ -132,10 +134,8 @@ scatter_plot:
 	sub rsi,rcx
 	movzx rcx, byte [rbx+103] ; x-tick height
 	sub rsi,rcx
-	add r8,rcx
 	movzx rcx, byte [rbx+96] ; axis font size
 	sub rsi,rcx
-	add r8,rcx
 	movzx rcx, byte [rbx+94] ; title font size
 	sub rsi,rcx
 	add r8,rcx
@@ -302,7 +302,7 @@ scatter_plot:
 
 	; write xlabel y location
 	movzx rsi, word [rbx+34]
-	sub si, word [rbx+48]
+	sub si, word [rbx+36]
 	call print_int_d
 
 	; write more of xlabel text
@@ -353,7 +353,7 @@ scatter_plot:
 
 	; write ylabel x location
 	movzx rsi, byte [rbx+96]
-	add si, word [rbx+34]
+	add si, word [rbx+36]
 	push rsi		; save x to stack
 	call print_int_d
 
@@ -644,8 +644,8 @@ scatter_plot:
 	call print_chars
 
 	; horizontal gridlines first
-	movzx r13, byte [rbx+91]	; number of y ticks in r13
-	movzx r14, byte [rbx+93]	; number of subdivisions per y tick in r14
+	movzx r13, byte [rbx+89]	; number of y ticks in r13
+	movzx r14, byte [rbx+91]	; number of subdivisions per y tick in r14
 	
 	cmp r14,2
 	jl .x_minor_gridlines
@@ -737,8 +737,8 @@ scatter_plot:
 
 .x_minor_gridlines:
 
-	movzx r13, byte [rbx+90]	; number of x ticks in r13
-	movzx r14, byte [rbx+92]	; number of subdivisions per x tick in r14
+	movzx r13, byte [rbx+88]	; number of x ticks in r13
+	movzx r14, byte [rbx+90]	; number of subdivisions per x tick in r14
 	
 	cmp r14,2
 	jl .end_minor_gridlines
@@ -838,6 +838,7 @@ scatter_plot:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; WRITE TICK LABELS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .tick_labels:
+
 	; check if we wanted to write the tick labels
 	test r12,16
 	jz .plot_data
@@ -1256,7 +1257,7 @@ scatter_plot:
 	mov rsi,.svg_path+45
 	mov rdx,6
 	call print_chars
-	
+
 	mov r15d,dword [r13+36]	; track number of elements left in r15
 	mov rsi,[r13+16]; use working1 to track address of current data x
 	mov [.working1],rsi
@@ -1285,13 +1286,13 @@ scatter_plot:
 
 .plot_next_data_line:
 
-	test r10,r10
-	jz .no_pushes
+;	test r10,r10
+;	jz .no_pushes
 	push r10
 	push r11
 	push rcx
 
-.no_pushes:
+;.no_pushes:
 	; [SPACE] 
 	mov rsi,.svg_path+51
 	mov rdx,1
@@ -1345,15 +1346,16 @@ scatter_plot:
 	call print_chars
 
 	mov rcx,[rsp+8]
-	add rsp,24
+;	add rsp,24
+
 	jmp .no_L
 
 .no_curve_letter_yet:
 
-	pop rcx
-	add rsp,16
+;	pop rcx
+;	add rsp,16
 
-	dec rcx
+;	dec rcx
 	jmp .no_L
 
 .no_curve:
@@ -1392,11 +1394,11 @@ scatter_plot:
 	mov r13,rsi
 	jmp .next_data
 
+
 	; now we do the data markers (points)
 .data_markers:
 
 	mov r13,[rbx+24]		; store first dataset address in r13
-
 
 .next_data_markers:
 
@@ -1408,9 +1410,9 @@ scatter_plot:
 	mov r15d,dword [r13+36]	; track number of elements left in r15
 	mov rsi,[r13+16]; use working1 to track address of current data x
 	mov [.working1],rsi
-	movzx rsi,word [r13+26]; use working2 to track address of current data y
+	mov rsi,[r13+26]; use working2 to track address of current data y
 	mov [.working2],rsi
-	mov rsi,[r13+24]; use working3 to track extra stride of data x
+	movzx rsi,word [r13+24]; use working3 to track extra stride of data x
 	mov [.working3],rsi
 	movzx rsi,word [r13+34]; use working4 to track extra stride of data y
 	mov [.working4],rsi
@@ -1421,7 +1423,7 @@ scatter_plot:
 	call print_chars
 
 	; print fill color 
-	mov esi,dword [r13+54]
+	mov esi,dword [r13+40]
 	mov rdx,6
 	call print_int_h_n_digits
 
@@ -1452,6 +1454,7 @@ scatter_plot:
 	mov rsi,.svg_circle+12
 	mov rdx,6
 	call print_chars
+
 
 	; y value
 	mov rsi,[.working2]
@@ -1508,7 +1511,7 @@ scatter_plot:
 	jmp .next_data_markers
 
 .write_legend:	; write legend
-	
+
 	; check if we wanted a legend
 	test r12,32
 	jz .no_data
@@ -1899,7 +1902,7 @@ scatter_plot:
 
 	; one final flush of the print buffer
 	call print_buffer_flush
-	
+
 	; pops
 	pop r15
 	pop r14
@@ -1914,6 +1917,12 @@ scatter_plot:
 	pop rbx
 	pop rax
 	pop rsi
+
+	sub rbp,rsp
+	mov rdi,rbp
+	neg rdi
+;	shr rdi,1
+	call exit
 
 	; return
 	ret

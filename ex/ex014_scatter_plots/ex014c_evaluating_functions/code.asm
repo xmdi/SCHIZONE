@@ -5,6 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
+%define HEAP_SIZE 2048
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,7 +41,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -58,6 +59,19 @@ PROGRAM_HEADER:
 %include "lib/io/svg/scatter_plot.asm"
 ; void scatter_plot(uint {rdi}, struct* {rsi});
 
+%include "lib/math/parametric/evaluate_parameters.asm"
+; bool {rax} evaluate_parameters(void* {rdi}, void* {rsi}, void* {rdx});
+
+%include "lib/math/parametric/linear_space.asm"
+; bool {rax} linear_space(double* {rdi}, long {rsi}, ulong {rdx}
+;			double {xmm0}, double {xmm1});
+
+%include "lib/mem/heap_init.asm"
+; void heap_init(void);
+
+%include "lib/mem/heap_alloc.asm"
+; void* {rax} heap_alloc(long {rdi});
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -65,7 +79,72 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+function: ; takes 1 double from [rsp+8] and computes polynomial thereof
+
+	sub rsp,64
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
+	movdqu [rsp+32],xmm2
+	movdqu [rsp+48],xmm3
+
+	movq xmm3,[rsp+72]	; sets value from stack
+	
+	movsd xmm0,[START.two]	; f(x)=2
+
+	subsd xmm0,xmm3		; f(x)=-x+2
+
+	movsd xmm1,xmm3
+	mulsd xmm1,xmm3
+	movsd xmm2,xmm1
+	mulsd xmm2,[START.three]	
+	subsd xmm0,xmm2		; f(x)=-3x^2-x+2
+
+	mulsd xmm1,xmm3
+	addsd xmm0,xmm1		; f(x)=x^3-3x^2-x+2
+
+	movq [rsp+72],xmm0	; moves value to stack
+
+	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
+	movdqu xmm2,[rsp+32]
+	movdqu xmm3,[rsp+48]
+
+	add rsp,64
+
+	ret			; returns
+
 START:
+
+	; initialize heap for arrays
+	call heap_init
+
+	; allocate arrays on heap
+	mov rdi,808	; 101x 8-byte doubles
+	call heap_alloc
+	mov r12,rax	; save pointer to x_array in {r12}
+	mov rdi,808	; 101x 8-byte doubles
+	call heap_alloc
+	mov r13,rax	; save pointer to y_array in {r13}
+
+	; store heap locations of arrays into structures
+	mov [.x_param+8],r12
+	mov [.data+16],r12
+	mov [.y_param+8],r13
+	mov [.data+26],r13
+
+	; create linear spacing in x_param
+	movsd xmm0,[.neg_two]
+	movsd xmm1,[.four]
+	mov rdi,r12	; location of x_array on heap
+	xor rsi,rsi
+	mov rdx,101
+	call linear_space
+
+	; evaluate function of x_param into y_param
+	mov rdi,.y_param
+	mov rsi,.x_param
+	mov rdx,function
+	call evaluate_parameters
 
 	; open file
 	mov rdi,.filename
@@ -78,6 +157,8 @@ START:
 	mov rsi,.plot_structure		; structure start address
 	call scatter_plot
 
+	call exit
+
 	; close file
 	call file_close
 
@@ -85,41 +166,67 @@ START:
 	xor dil,dil
 	call exit	
 
+.x_param:
+	dq 0 ; address of next parameter in list (0 on last element)
+	dq 0 ; address of first parameter value
+	dq 0 ; extra stride between parameter values
+	dq 101 ; number of values (only matters for first input parameter in linked list)
+	dq 0 ; work zone (track address of current element), initial value unused
+
+.y_param:
+	dq 0 ; address of next parameter in list (0 on last element)
+	dq 0 ; address of first parameter value
+	dq 0 ; extra stride between parameter values
+	dq 101 ; number of values (only matters for first input parameter in linked list)
+	dq 0 ; work zone (track address of current element), initial value unused
+
+.two:
+	dq 2.0
+
+.three:
+	dq 3.0
+
+.neg_two:
+	dq -2.0
+
+.four:
+	dq 4.0
+
 .filename:
-	db `first_catholic_president.svg`,0
+	db `func.svg\0`
 
 .title:
-	db `John F. Kennedy Mean Annual Heart Rate`,0
+	db `f(x)=x^3-3x^2-x+2\0`
 
 .xlabel:
-	db `Anno Domini`,0
+	db `x\0`
 
 .ylabel:
-	db `Beats per Minute`,0
+	db `f(x)\0`
 
 .plot_structure:
 	dq .title; address of null-terminated title string {*+0}
 	dq .xlabel; address of null-terminated x-label string {*+8}
 	dq .ylabel; address of null-terminated y-label string {*+16}
-	dq .dataset_structure; address of linked list for datasets {*+24}
-	dw 400; plot width (px) {*+32}
+	dq .data; address of linked list for datasets {*+24}
+	dw 480; plot width (px) {*+32}
 	dw 200; plot height (px) {*+34}
 	dw 5; plot margins (px) {*+36}
-	dq 1900.0; x-min (double) {*+38}
-	dq 2000.0; x-max (double) {*+46}
-	dq 0.0; y-min (double) {*+54}
-	dq 100.0; y-max (double) {*+62}
+	dq -2.0; x-min (double) {*+38}
+	dq 4.0; x-max (double) {*+46}
+	dq -18.0; y-min (double) {*+54}
+	dq 18.0; y-max (double) {*+62}
 	dw 0; legend left x-coordinate (px) {*+70}
 	dw 0; legend top y-coordinate (px) {*+72}
 	dw 0; legend width (px) {*+74}
 	dd 0xFFFFFF; #XXXXXX RGB background color {*+76}
 	dd 0x000000; #XXXXXX RGB axis color {*+80}
 	dd 0x000000; #XXXXXX RGB font color {*+84}
-	db 11; number of major x-ticks {*+88}
-	db 5; number of major y-ticks {*+89}
-	db 2; minor subdivisions per x-tick {*+90}
-	db 2; minor subdivisions per y-tick {*+91}
-	db 4; significant digits on x values {*+92}
+	db 7; number of major x-ticks {*+88}
+	db 7; number of major y-ticks {*+89}
+	db 0; minor subdivisions per x-tick {*+90}
+	db 0; minor subdivisions per y-tick {*+91}
+	db 2; significant digits on x values {*+92}
 	db 2; significant digits on y values {*+93}
 	db 14; title font size (px) {*+94}
 	db 5; vertical margin below title (px) {*+95}
@@ -127,8 +234,8 @@ START:
 	db 8; tick & legend label font size (px) {*+97}
 	db 5; horizontal margin right of y-tick labels (px) {*+98}
 	db 5; vertical margin above x-tick labels (px) {*+99}
-	db 2; grid major stroke thickness (px) {*+100}
-	db 1; grid minor stroke thickness (px) {*+101}
+	db 1; grid major stroke thickness (px) {*+100}
+	db 0; grid minor stroke thickness (px) {*+101}
 	db 30; width for y-axis ticks (px) {*+102}
 	db 30; height for x-axis ticks (px) {*+103}
 	db 0x1F; flags: {*+104}
@@ -139,18 +246,18 @@ START:
 		; bit 4		= show tick labels?
 		; bit 5		= draw legend?
 
-.dataset_structure:
+.data:
 	dq 0; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string {*+8}
-	dq .year; address of first x-coordinate {*+16}
+	dq 0; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
-	dq .bpm; address of first y-coordinate {*+26}
+	dq 0; address of first y-coordinate {*+26}
 	dw 0; extra stride between y-coord elements {*+34}
 	dd 101; number of elements {*+36}
-	dd 0xFF0000; #XXXXXX RGB marker color {*+40}
+	dd 0x000000; #XXXXXX RGB marker color {*+40}
 	dd 0xFF0000; #XXXXXX RGB line color {*+44}
 	dd 0x000000; #XXXXXX RGB fill color {*+48}
-	db 2; marker size (px) {*+52}
+	db 1; marker size (px) {*+52}
 	db 2; line thickness (px) {*+53}
 	db 0; fill opacity (%) {*+54}
 	db 0x03; flags: {*+55}
@@ -164,27 +271,9 @@ START:
 		;		= 10 = cubic bezier
 		;		= 11 = arc
 
-.bpm:	; y values
-	times 17 dq 0.0
-	dq 33.0
-	times 45 dq 80.0
-	dq 72.0
-	times 37 dq 0.0
-
-.year:	; x values
-	dq 1900.0,1901.0,1902.0,1903.0,1904.0,1905.0,1906.0,1907.0,1908.0,1909.0
-	dq 1910.0,1911.0,1912.0,1913.0,1914.0,1915.0,1916.0,1917.0,1918.0,1919.0
-	dq 1920.0,1921.0,1922.0,1923.0,1924.0,1925.0,1926.0,1927.0,1928.0,1929.0
-	dq 1930.0,1931.0,1932.0,1933.0,1934.0,1935.0,1936.0,1937.0,1938.0,1939.0
-	dq 1940.0,1941.0,1942.0,1943.0,1944.0,1945.0,1946.0,1947.0,1948.0,1949.0
-	dq 1950.0,1951.0,1952.0,1953.0,1954.0,1955.0,1956.0,1957.0,1958.0,1959.0
-	dq 1960.0,1961.0,1962.0,1963.0,1964.0,1965.0,1966.0,1967.0,1968.0,1969.0
-	dq 1970.0,1971.0,1972.0,1973.0,1974.0,1975.0,1976.0,1977.0,1978.0,1979.0
-	dq 1980.0,1981.0,1982.0,1983.0,1984.0,1985.0,1986.0,1987.0,1988.0,1989.0
-	dq 1990.0,1991.0,1992.0,1993.0,1994.0,1995.0,1996.0,1997.0,1998.0,1999.0
-	dq 2000.0
-
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
+
+HEAP_START_ADDRESS equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)

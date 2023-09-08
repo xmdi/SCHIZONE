@@ -86,41 +86,41 @@ START:
 	call exit	
 
 .filename:
-	db `first_catholic_president.svg`,0
+	db `inside_job.svg`,0
 
 .title:
-	db `John F. Kennedy Mean Annual Heart Rate`,0
+	db `Height of 1 &amp; 2 WTC`,0
 
 .xlabel:
-	db `Anno Domini`,0
+	db `Days after August 1, 2001`,0
 
 .ylabel:
-	db `Beats per Minute`,0
+	db `Feet`,0
 
 .plot_structure:
 	dq .title; address of null-terminated title string {*+0}
 	dq .xlabel; address of null-terminated x-label string {*+8}
 	dq .ylabel; address of null-terminated y-label string {*+16}
-	dq .dataset_structure; address of linked list for datasets {*+24}
+	dq .data1; address of linked list for datasets {*+24}
 	dw 400; plot width (px) {*+32}
 	dw 200; plot height (px) {*+34}
 	dw 5; plot margins (px) {*+36}
-	dq 1900.0; x-min (double) {*+38}
-	dq 2000.0; x-max (double) {*+46}
+	dq 0.0; x-min (double) {*+38}
+	dq 60.0; x-max (double) {*+46}
 	dq 0.0; y-min (double) {*+54}
-	dq 100.0; y-max (double) {*+62}
-	dw 0; legend left x-coordinate (px) {*+70}
-	dw 0; legend top y-coordinate (px) {*+72}
-	dw 0; legend width (px) {*+74}
+	dq 1500.0; y-max (double) {*+62}
+	dw 100; legend left x-coordinate (px) {*+70}
+	dw 120; legend top y-coordinate (px) {*+72}
+	dw 70; legend width (px) {*+74}
 	dd 0xFFFFFF; #XXXXXX RGB background color {*+76}
 	dd 0x000000; #XXXXXX RGB axis color {*+80}
 	dd 0x000000; #XXXXXX RGB font color {*+84}
-	db 11; number of major x-ticks {*+88}
-	db 5; number of major y-ticks {*+89}
-	db 2; minor subdivisions per x-tick {*+90}
-	db 2; minor subdivisions per y-tick {*+91}
-	db 4; significant digits on x values {*+92}
-	db 2; significant digits on y values {*+93}
+	db 7; number of major x-ticks {*+88}
+	db 4; number of major y-ticks {*+89}
+	db 4; minor subdivisions per x-tick {*+90}
+	db 4; minor subdivisions per y-tick {*+91}
+	db 2; significant digits on x values {*+92}
+	db 6; significant digits on y values {*+93}
 	db 14; title font size (px) {*+94}
 	db 5; vertical margin below title (px) {*+95}
 	db 12; axis label font size (px) {*+96}
@@ -129,9 +129,9 @@ START:
 	db 5; vertical margin above x-tick labels (px) {*+99}
 	db 2; grid major stroke thickness (px) {*+100}
 	db 1; grid minor stroke thickness (px) {*+101}
-	db 30; width for y-axis ticks (px) {*+102}
-	db 30; height for x-axis ticks (px) {*+103}
-	db 0x1F; flags: {*+104}
+	db 40; width for y-axis ticks (px) {*+102}
+	db 20; height for x-axis ticks (px) {*+103}
+	db 0x3F; flags: {*+104}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?
@@ -139,21 +139,21 @@ START:
 		; bit 4		= show tick labels?
 		; bit 5		= draw legend?
 
-.dataset_structure:
-	dq 0; address of next dataset in linked list {*+0}
-	dq 0; address of null-terminated label string {*+8}
-	dq .year; address of first x-coordinate {*+16}
+.data1:
+	dq .data2; address of next dataset in linked list {*+0}
+	dq .wtc1; address of null-terminated label string {*+8}
+	dq .days; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
-	dq .bpm; address of first y-coordinate {*+26}
+	dq .wtc1_y; address of first y-coordinate {*+26}
 	dw 0; extra stride between y-coord elements {*+34}
-	dd 101; number of elements {*+36}
+	dd 61; number of elements {*+36}
 	dd 0xFF0000; #XXXXXX RGB marker color {*+40}
 	dd 0xFF0000; #XXXXXX RGB line color {*+44}
 	dd 0x000000; #XXXXXX RGB fill color {*+48}
-	db 2; marker size (px) {*+52}
+	db 3; marker size (px) {*+52}
 	db 2; line thickness (px) {*+53}
 	db 0; fill opacity (%) {*+54}
-	db 0x03; flags: {*+55}
+	db 0x13; flags: {*+55}
 		; bit 0 (LSB)	= point marker?
 		; bit 1		= connecting lines?
 		; bit 2		= dashed line? (bit 1 must be set)
@@ -164,25 +164,52 @@ START:
 		;		= 10 = cubic bezier
 		;		= 11 = arc
 
-.bpm:	; y values
-	times 17 dq 0.0
-	dq 33.0
-	times 45 dq 80.0
-	dq 72.0
-	times 37 dq 0.0
+.data2:
+	dq 0; address of next dataset in linked list {*+0}
+	dq .wtc2; address of null-terminated label string {*+8}
+	dq .days; address of first x-coordinate {*+16}
+	dw 0; extra stride between x-coord elements {*+24}
+	dq .wtc2_y; address of first y-coordinate {*+26}
+	dw 0; extra stride between y-coord elements {*+34}
+	dd 61; number of elements {*+36}
+	dd 0x0000FF; #XXXXXX RGB marker color {*+40}
+	dd 0x0000FF; #XXXXXX RGB line color {*+44}
+	dd 0x000000; #XXXXXX RGB fill color {*+48}
+	db 2; marker size (px) {*+52}
+	db 1; line thickness (px) {*+53}
+	db 0; fill opacity (%) {*+54}
+	db 0x13; flags: {*+55}
+		; bit 0 (LSB)	= point marker?
+		; bit 1		= connecting lines?
+		; bit 2		= dashed line? (bit 1 must be set)
+		; bit 3		= fill?
+		; bit 4		= include in legend?
+		; bits 6-5	= 00 = no curves
+		;		= 01 = quadratic bezier
+		;		= 10 = cubic bezier
+		;		= 11 = arc
 
-.year:	; x values
-	dq 1900.0,1901.0,1902.0,1903.0,1904.0,1905.0,1906.0,1907.0,1908.0,1909.0
-	dq 1910.0,1911.0,1912.0,1913.0,1914.0,1915.0,1916.0,1917.0,1918.0,1919.0
-	dq 1920.0,1921.0,1922.0,1923.0,1924.0,1925.0,1926.0,1927.0,1928.0,1929.0
-	dq 1930.0,1931.0,1932.0,1933.0,1934.0,1935.0,1936.0,1937.0,1938.0,1939.0
-	dq 1940.0,1941.0,1942.0,1943.0,1944.0,1945.0,1946.0,1947.0,1948.0,1949.0
-	dq 1950.0,1951.0,1952.0,1953.0,1954.0,1955.0,1956.0,1957.0,1958.0,1959.0
-	dq 1960.0,1961.0,1962.0,1963.0,1964.0,1965.0,1966.0,1967.0,1968.0,1969.0
-	dq 1970.0,1971.0,1972.0,1973.0,1974.0,1975.0,1976.0,1977.0,1978.0,1979.0
-	dq 1980.0,1981.0,1982.0,1983.0,1984.0,1985.0,1986.0,1987.0,1988.0,1989.0
-	dq 1990.0,1991.0,1992.0,1993.0,1994.0,1995.0,1996.0,1997.0,1998.0,1999.0
-	dq 2000.0
+
+.wtc1: ; legend entry for first line
+	db `1 WTC\0`
+
+.wtc2: ; legend entry for second line
+	db `2 WTC\0`
+
+.wtc1_y: ; y values for first line
+	times 41 dq 1368.0
+	times 20 dq 0.0
+
+.wtc2_y: ; y values for second line
+	times 41 dq 1362.0
+	times 20 dq 0.0
+
+.days:	; x values for both lines
+	dq 0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0
+	dq 20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0
+	dq 40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0
+
+END:
 
 END:
 
