@@ -1921,7 +1921,7 @@ scatter_plot:
 	sub rbp,rsp
 	mov rdi,rbp
 	neg rdi
-;	shr rdi,1
+	shr rdi,1
 	call exit
 
 	; return
