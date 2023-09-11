@@ -6,3 +6,4 @@ In [ex014b](ex014b_multiple_datasets), we plot 2 sets of data on the same plot.
 
 In [ex014c](ex014c_evaluating_functions), we plot some evaluated polynomial.
 
+In [ex014d](ex014d_drawing_pictures), we draw a picture.
