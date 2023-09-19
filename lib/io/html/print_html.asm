@@ -269,6 +269,66 @@ print_html:
 
 	jmp .go_next
 
+.write_image:
+	mov rsi,.image
+	mov rdx,10
+	call print_chars
+
+	mov rsi,[rbx+9]
+	call print_string
+
+	mov rsi,.image+10
+	mov rdx,9
+	call print_chars
+
+	movzx rsi, word [rbx+17]
+	call print_int_d
+
+	mov rsi,.image+19
+	mov rdx,10
+	call print_chars
+
+	movzx rsi, word [rbx+19]
+	call print_int_d
+
+	mov rsi,.image+29
+	mov rdx,4
+	call print_chars
+
+	jmp .go_next
+
+	db `<video src="" width="" height="" controls/>\n`
+.write_video:
+	mov rsi,.video
+	mov rdx,12
+	call print_chars
+
+	mov rsi,[rbx+9]
+	call print_string
+
+	mov rsi,.video+12
+	mov rdx,9
+	call print_chars
+
+	movzx rsi, word [rbx+17]
+	call print_int_d
+
+	mov rsi,.video+21
+	mov rdx,10
+	call print_chars
+
+	movzx rsi, word [rbx+19]
+	call print_int_d
+
+	mov rsi,.video+31
+	mov rdx,13
+	call print_chars
+
+	jmp .go_next
+
+
+
+
 
 
 
@@ -333,7 +393,7 @@ print_html:
 	db `<img src="" width="" height=""/>\n`
 
 .video:
-	db `<video src="" width="" height=""/>\n`
+	db `<video src="" width="" height="" controls/>\n`
 
 .foot:
 	db `</body>\n</html>`
