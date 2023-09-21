@@ -28,10 +28,11 @@ print_html:
 	;	9 = page break
 	;	10 = unordered list
 	;	11 = ordered list
-	; 	12 = table
-	;	13 = image
-	;	14 = video
-	;	15 = scatter_plot
+	; 	12 = table without headers
+	; 	13 = table with headers
+	;	14 = image
+	;	15 = video
+	;	16 = scatter_plot
 
 ; the rest of the structure will vary depending on the byte above
 
@@ -53,7 +54,7 @@ print_html:
 
 .table_structure:	; sample table structure
 	dq ; address of next item in linked list
-	db 12 ; type of item (12)
+	db ; type of item (12-13)
 	dw ; number of rows
 	dw ; number of columns
 	dq ; address of null-terminated string of text to print in each cell
@@ -61,22 +62,27 @@ print_html:
 
 .embed_structure:	; sample embed structure
 	dq ; address of next item in linked list
-	db ; type of item (13-14)
+	db ; type of item (14-15)
 	dq ; address of null-terminated string of file path
 	dw ; pixel width
 	dw ; pixel height
 
 .scatter_structure:	; sample structure for scatter plot
 	dq ; address of next item in linked list
-	db 15 ; type of item (15)
+	db 16 ; type of item (16)
 	dq ; address of scatter-plot plot_structure 
 		; (see /lib/io/svg/scatter_plot.asm)
 
 %endif
 
 	; pushes
-
-
+	push rsi
+	push rdx
+	push rcx
+	push rbx
+	push r8
+	push r9
+	push r10
 
 	mov rbx,rsi	; keep linked list entry in {rbx}
 
@@ -103,12 +109,14 @@ print_html:
 	cmp byte [rbx+8],11
 	je .write_ordered_list
 	cmp byte [rbx+8],12
-	je .write_table
+	je .write_table_no_headers	
 	cmp byte [rbx+8],13
-	je .write_image
+	je .write_table_yes_headers
 	cmp byte [rbx+8],14
-	je .write_video
+	je .write_image
 	cmp byte [rbx+8],15
+	je .write_video
+	cmp byte [rbx+8],16
 	je .write_scatter
 
 .go_next:
@@ -126,9 +134,14 @@ print_html:
 	mov rdx,16
 	call print_chars
 
-
-
 	; pops
+	pop r10
+	pop r9
+	pop r8
+	pop rbx
+	pop rcx
+	pop rdx
+	pop rsi
 
 	ret			;return
 
@@ -269,6 +282,137 @@ print_html:
 
 	jmp .go_next
 
+.write_table_no_headers:
+	mov rsi,.table_start
+	mov rdx,7
+	call print_chars
+
+	movzx r8, word [rbx+9]	; # rows
+	movzx r9, word [rbx+9]	; # columns
+
+	cmp r8,0
+	jle .loop_table_no_headers_end
+	cmp r9,0
+	jle .loop_table_no_headers_end
+
+	mov rcx,rbx
+	add rcx,13
+
+.loop_table_no_headers_rows:
+		
+	movzx r9, word [rbx+9]	; # columns
+	
+	mov rsi,.table_row_start
+	mov rdx,4
+	call print_chars
+
+.loop_table_no_headers_columns:
+
+	mov rsi,.table_data_start
+	mov rdx,4
+	call print_chars
+
+	mov rsi,[rcx]
+	call print_string	
+
+	mov rsi,.table_data_end
+	mov rdx,6
+	call print_chars
+
+	add rcx,8
+	dec r9
+	jnz .loop_table_no_headers_columns
+
+	mov rsi,.table_row_end
+	mov rdx,4
+	call print_chars
+
+	dec r8
+	jnz .loop_table_no_headers_rows
+
+.loop_table_no_headers_end:
+
+	mov rsi,.table_end
+	mov rdx,9
+	call print_chars
+
+	jmp .go_next
+
+.write_table_yes_headers:
+	mov rsi,.table_start
+	mov rdx,7
+	call print_chars
+
+	movzx r8, word [rbx+9]	; # rows
+	mov r10,r8
+	movzx r9, word [rbx+9]	; # columns
+
+	cmp r8,0
+	jle .loop_table_yes_headers_end
+	cmp r9,0
+	jle .loop_table_yes_headers_end
+
+	mov rcx,rbx
+	add rcx,13
+	
+.loop_table_yes_headers_rows:
+		
+	movzx r9, word [rbx+9]	; # columns
+	
+	mov rsi,.table_row_start
+	mov rdx,4
+	call print_chars
+
+.loop_table_yes_headers_columns:
+
+	test r8,r10
+	je .loop_table_yes_headers_first_row
+
+	mov rsi,.table_data_start
+	mov rdx,4
+	call print_chars
+
+	mov rsi,[rcx]
+	call print_string	
+
+	mov rsi,.table_data_end
+	mov rdx,6
+	call print_chars
+
+	jmp .loop_table_yes_headers_condition_end
+	
+.loop_table_yes_headers_first_row:
+	mov rsi,.table_header_start
+	mov rdx,4
+	call print_chars
+
+	mov rsi,[rcx]
+	call print_string	
+
+	mov rsi,.table_header_end
+	mov rdx,6
+	call print_chars
+
+.loop_table_yes_headers_condition_end:
+	add rcx,8
+	dec r9
+	jnz .loop_table_yes_headers_columns
+
+	mov rsi,.table_row_end
+	mov rdx,4
+	call print_chars
+
+	dec r8
+	jnz .loop_table_yes_headers_rows
+
+.loop_table_yes_headers_end:
+
+	mov rsi,.table_end
+	mov rdx,9
+	call print_chars
+
+	jmp .go_next
+
 .write_image:
 	mov rsi,.image
 	mov rdx,10
@@ -297,7 +441,6 @@ print_html:
 
 	jmp .go_next
 
-	db `<video src="" width="" height="" controls/>\n`
 .write_video:
 	mov rsi,.video
 	mov rdx,12
@@ -326,11 +469,14 @@ print_html:
 
 	jmp .go_next
 
+.write_scatter:
 
+	call print_buffer_flush
 
+	mov rsi, qword [rbx+9]
+	call scatter_plot
 
-
-
+	jmp .go_next
 
 .head:
 	db `<!doctype html>\n<html>\n<body>\n`
@@ -376,6 +522,12 @@ print_html:
 
 .table_end:
 	db `</table>\n`
+
+.table_header_start:
+	db `<th>`
+
+.table_header_end:
+	db </th>\n`
 
 .table_row_start:
 	db `<tr>`
