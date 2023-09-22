@@ -76,7 +76,7 @@ START:
 	; write report to HTML file
 	mov rdi,rax			; output file descriptor
 	mov rsi,.title_structure	; structure linked list start address
-	call scatter_plot
+	call print_html
 
 	; close file
 	call file_close
@@ -92,7 +92,10 @@ START:
 	db `Q3 2023 Financial Report`,0
 
 .author:
-	dq `presented by xmdi (CFO)`,0
+	db `presented by Matthew (CFO)`,0
+
+.date_accessed_code:
+	db `<p>Accessed on <script type="text/javascript">document.write(new Date().toLocaleString() );</script></p>`,0
 
 .title_structure:
 	dq .author_structure; address of next item in linked list
@@ -100,9 +103,19 @@ START:
 	dq .title ; address of null-terminated string of text to print
 
 .author_structure:
-	dq 0; address of next item in linked list
+	dq .date_accessed_structure; address of next item in linked list
 	db 2 ; type of item (0-7)
 	dq .author ; address of null-terminated string of text to print
+
+.date_accessed_structure:
+	dq .horizontal_divider_1; address of next item in linked list
+	db 7 ; type of item (0-7)
+	dq .date_accessed_code ; address of null-terminated string of text to print
+
+.horizontal_divider_1:
+	dq 0 ; address of next item in linked list
+	db 8 ; type of item (0-7)
+	
 
 END:
 

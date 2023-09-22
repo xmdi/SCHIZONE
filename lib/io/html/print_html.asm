@@ -120,6 +120,7 @@ print_html:
 	je .write_scatter
 
 .go_next:
+
 	mov rdx,[rbx]
 	test rdx,rdx
 	jz .done
@@ -133,6 +134,8 @@ print_html:
 	mov rsi,.foot
 	mov rdx,16
 	call print_chars
+
+	call print_buffer_flush
 
 	; pops
 	pop r10
@@ -168,7 +171,7 @@ print_html:
 	movzx rsi, byte [rbx+8]
 	call print_int_d
 
-	nov rsi,.h_start+2
+	mov rsi,.h_start+2
 	mov rdx,1
 	call print_chars
 
@@ -182,7 +185,7 @@ print_html:
 	movzx rsi, byte [rbx+8]
 	call print_int_d
 
-	nov rsi,.h_end+3
+	mov rsi,.h_end+3
 	mov rdx,2
 	call print_chars
 
@@ -527,19 +530,19 @@ print_html:
 	db `<th>`
 
 .table_header_end:
-	db </th>\n`
+	db `</th>\n`
 
 .table_row_start:
 	db `<tr>`
 
 .table_row_end:
-	db </tr>\n`
+	db `</tr>\n`
 
 .table_data_start:
 	db `<td>`
 
 .table_data_end:
-	db </td>\n`
+	db `</td>\n`
 
 .image:
 	db `<img src="" width="" height=""/>\n`
@@ -548,6 +551,6 @@ print_html:
 	db `<video src="" width="" height="" controls/>\n`
 
 .foot:
-	db `</body>\n</html>`
+	db `</body>\n</html>\n`
 
 %endif
