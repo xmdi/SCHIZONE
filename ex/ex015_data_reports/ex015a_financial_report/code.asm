@@ -97,25 +97,138 @@ START:
 .date_accessed_code:
 	db `<p>Accessed on <script type="text/javascript">document.write(new Date().toLocaleString() );</script></p>`,0
 
+.assets_header:
+	db `Physical Assets:`,0
+
+.asset_1:
+	db `2018 Ford Focus SE (hatchback, red)`,0
+
+.asset_2:
+	db `28 Quinault Strawberry plants (everbearing, in containers)`,0
+
+.asset_3:
+	db `wife (white, brown hair)`,0
+
+.asset_value:
+	db `Estimated monetary value of physical assets: <b>$15055.63</b> (car: $15k, strawberry plants: 28*$2, wife: -$0.37).`,0 
+
+.finances_header:
+	db `Account Balances:`,0
+
+.accounts_1_1:
+	db `Matthew Checking`,0
+
+.accounts_1_2:
+	db `$2900`,0
+
+.accounts_2_1:
+	db `Wife Checking`,0
+
+.accounts_2_2:
+	db `$1700`,0
+
+.accounts_3_1:
+	db `Equity in Crackhouse (zestimate)`,0
+
+.accounts_3_2:
+	db `$18400`,0
+
+.accounts_4_1:
+	db `Retirement`,0
+
+.accounts_4_2:
+	db `LOOOOOOL`,0
+
+.conclusion_header:
+	db `Conclusion:`,0
+
+.conclusion_contents:
+	db `millenials are poor`,0
+
 .title_structure:
 	dq .author_structure; address of next item in linked list
-	db 1 ; type of item (0-7)
+	db 1 ; type of item
 	dq .title ; address of null-terminated string of text to print
 
 .author_structure:
 	dq .date_accessed_structure; address of next item in linked list
-	db 2 ; type of item (0-7)
+	db 3 ; type of item
 	dq .author ; address of null-terminated string of text to print
 
 .date_accessed_structure:
 	dq .horizontal_divider_1; address of next item in linked list
-	db 7 ; type of item (0-7)
+	db 7 ; type of item
 	dq .date_accessed_code ; address of null-terminated string of text to print
 
 .horizontal_divider_1:
 	dq 0 ; address of next item in linked list
-	db 8 ; type of item (0-7)
-	
+	db 8 ; type of item
+
+.assets_header_structure:
+	dq .assets_list_structure ; address of next item in linked list
+	db 2 ; type of item
+	dq .assets_header
+
+.assets_list_structure:
+	dq .asset_valuation_structure ; address of next item in linked list
+	db 10 ; type of item
+	dw 3 ; number of elements in list
+	dq .asset_1
+	dq .asset_2
+	dq .asset_3
+
+.asset_valuation_structure:
+	dq .horizontal_divider_2 ; address of next item in linked list
+	db 3 ; type of item
+	dq .asset_value
+
+.horizontal_divider_2:
+	dq .finances_header_structure ; address of next item in linked list
+	db 8 ; type of item
+
+.finances_header_structure:
+	dq .finances_table_structure ; address of next item in linked list
+	db 2 ; type of item
+	dq .finances_head
+
+.finances_table_structure:
+	dq .finances_chart_structure ; address of next item in linked list
+	db 12 ; type of item
+	dw 4 ; number of rows
+	dw 2 ; number of columns
+	dq .accounts_1_1
+	dq .accounts_1_2
+	dq .accounts_2_1
+	dq .accounts_2_2
+	dq .accounts_3_1
+	dq .accounts_3_2
+	dq .accounts_4_1
+	dq .accounts_4_2
+
+.finances_chart_structure:
+	dq .horizontal_divider_3 ; address of next item in linked list
+	db 16 ; type of item
+	dq .scatter_plot_structure
+
+.horizontal_divider_3:
+	dq .conclusion_header_structure ; address of next item in linked list
+	db 8 ; type of item
+
+
+
+.horizontal_divider_4:
+	dq .conclusion_header_structure ; address of next item in linked list
+	db 8 ; type of item
+
+.conclusion_header_structure:
+	dq .conclusion_contents_structure ; address of next item in linked list
+	db 2 ; type of item
+	dq .conclusion_header
+
+.conclusion_contents_structure:
+	dq .conclusion_contents_structure ; address of next item in linked list
+	db 3 ; type of item
+	dq .conclusion_contents
 
 END:
 
