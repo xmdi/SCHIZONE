@@ -291,7 +291,7 @@ print_html:
 	call print_chars
 
 	movzx r8, word [rbx+9]	; # rows
-	movzx r9, word [rbx+9]	; # columns
+	movzx r9, word [rbx+11]	; # columns
 
 	cmp r8,0
 	jle .loop_table_no_headers_end
@@ -303,7 +303,7 @@ print_html:
 
 .loop_table_no_headers_rows:
 		
-	movzx r9, word [rbx+9]	; # columns
+	movzx r9, word [rbx+11]	; # columns
 	
 	mov rsi,.table_row_start
 	mov rdx,4
@@ -327,7 +327,7 @@ print_html:
 	jnz .loop_table_no_headers_columns
 
 	mov rsi,.table_row_end
-	mov rdx,4
+	mov rdx,6
 	call print_chars
 
 	dec r8
@@ -348,7 +348,7 @@ print_html:
 
 	movzx r8, word [rbx+9]	; # rows
 	mov r10,r8
-	movzx r9, word [rbx+9]	; # columns
+	movzx r9, word [rbx+11]	; # columns
 
 	cmp r8,0
 	jle .loop_table_yes_headers_end
@@ -360,7 +360,7 @@ print_html:
 	
 .loop_table_yes_headers_rows:
 		
-	movzx r9, word [rbx+9]	; # columns
+	movzx r9, word [rbx+11]	; # columns
 	
 	mov rsi,.table_row_start
 	mov rdx,4
@@ -402,7 +402,7 @@ print_html:
 	jnz .loop_table_yes_headers_columns
 
 	mov rsi,.table_row_end
-	mov rdx,4
+	mov rdx,6
 	call print_chars
 
 	dec r8
