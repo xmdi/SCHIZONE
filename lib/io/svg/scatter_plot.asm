@@ -1918,11 +1918,13 @@ scatter_plot:
 	pop rax
 	pop rsi
 
-	sub rbp,rsp
-	mov rdi,rbp
-	neg rdi
-	shr rdi,1
-	call exit
+	mov rsp,rbp
+
+;	sub rbp,rsp
+;	mov rdi,rbp
+;	neg rdi
+;	shr rdi,1
+;	call exit
 
 	; return
 	ret

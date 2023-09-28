@@ -155,8 +155,8 @@ START:
 	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_dataset_structure; address of linked list for datasets {*+24}
-	dw 400; plot width (px) {*+32}
-	dw 200; plot height (px) {*+34}
+	dw 800; plot width (px) {*+32}
+	dw 400; plot height (px) {*+34}
 	dw 5; plot margins (px) {*+36}
 	dq 1900.0; x-min (double) {*+38}
 	dq 2000.0; x-max (double) {*+46}
@@ -174,16 +174,16 @@ START:
 	db 2; minor subdivisions per y-tick {*+91}
 	db 4; significant digits on x values {*+92}
 	db 2; significant digits on y values {*+93}
-	db 14; title font size (px) {*+94}
+	db 32; title font size (px) {*+94}
 	db 5; vertical margin below title (px) {*+95}
-	db 12; axis label font size (px) {*+96}
-	db 8; tick & legend label font size (px) {*+97}
+	db 24; axis label font size (px) {*+96}
+	db 16; tick & legend label font size (px) {*+97}
 	db 5; horizontal margin right of y-tick labels (px) {*+98}
 	db 5; vertical margin above x-tick labels (px) {*+99}
 	db 2; grid major stroke thickness (px) {*+100}
 	db 1; grid minor stroke thickness (px) {*+101}
 	db 30; width for y-axis ticks (px) {*+102}
-	db 30; height for x-axis ticks (px) {*+103}
+	db 40; height for x-axis ticks (px) {*+103}
 	db 0x1F; flags: {*+104}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
@@ -203,8 +203,8 @@ START:
 	dd 0xFF0000; #XXXXXX RGB marker color {*+40}
 	dd 0xFF0000; #XXXXXX RGB line color {*+44}
 	dd 0x000000; #XXXXXX RGB fill color {*+48}
-	db 2; marker size (px) {*+52}
-	db 2; line thickness (px) {*+53}
+	db 5; marker size (px) {*+52}
+	db 5; line thickness (px) {*+53}
 	db 0; fill opacity (%) {*+54}
 	db 0x03; flags: {*+55}
 		; bit 0 (LSB)	= point marker?

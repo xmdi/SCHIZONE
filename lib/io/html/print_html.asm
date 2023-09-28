@@ -130,6 +130,9 @@ print_html:
 
 .done:
 
+	mov rdi,11
+	call exit
+
 	; print html back matter
 	mov rsi,.foot
 	mov rdx,16
@@ -478,6 +481,8 @@ print_html:
 
 	mov rsi, qword [rbx+9]
 	call scatter_plot
+
+	call print_buffer_flush
 
 	jmp .go_next
 
