@@ -130,9 +130,6 @@ print_html:
 
 .done:
 
-	mov rdi,11
-	call exit
-
 	; print html back matter
 	mov rsi,.foot
 	mov rdx,16
@@ -290,7 +287,7 @@ print_html:
 
 .write_table_no_headers:
 	mov rsi,.table_start
-	mov rdx,7
+	mov rdx,20
 	call print_chars
 
 	movzx r8, word [rbx+9]	; # rows
@@ -346,7 +343,7 @@ print_html:
 
 .write_table_yes_headers:
 	mov rsi,.table_start
-	mov rdx,7
+	mov rdx,20
 	call print_chars
 
 	movzx r8, word [rbx+9]	; # rows
@@ -526,7 +523,7 @@ print_html:
 	db `</li>\n`
 
 .table_start:
-	db `<table>`
+	db `<table border="1px">`
 
 .table_end:
 	db `</table>\n`

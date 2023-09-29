@@ -86,6 +86,8 @@ scatter_plot:
 ;	Note: Clears the PRINT_BUFFER (does not flush) at routine start.
 
 	mov rbp,rsp
+
+	mov [.temp_saved],rsp
 	
 	; pushes
 	push rsi
@@ -1288,9 +1290,9 @@ scatter_plot:
 
 ;	test r10,r10
 ;	jz .no_pushes
-	push r10
-	push r11
-	push rcx
+;;;	push r10
+;;;	push r11
+;;;	push rcx
 
 ;.no_pushes:
 	; [SPACE] 
@@ -1327,8 +1329,8 @@ scatter_plot:
 	mov rsi,8
 	call print_float
 
-	mov rcx,[rsp+0]
-	mov r10,[rsp+16]
+;;;	mov rcx,[rsp+0]
+;;;	mov r10,[rsp+16]
 
 	test r10,r10
 	jz .no_curve
@@ -1345,7 +1347,7 @@ scatter_plot:
 	mov rdx,1
 	call print_chars
 
-	mov rcx,[rsp+8]
+;;;	mov rcx,[rsp+8]
 ;	add rsp,24
 
 	jmp .no_L
@@ -1903,7 +1905,12 @@ scatter_plot:
 	; one final flush of the print buffer
 	call print_buffer_flush
 
-	; pops
+
+
+;	mov rsp,rbp
+;	ret
+	
+; pops
 	pop r15
 	pop r14
 	pop r13
@@ -1918,16 +1925,16 @@ scatter_plot:
 	pop rax
 	pop rsi
 
-	mov rsp,rbp
-
-;	sub rbp,rsp
-;	mov rdi,rbp
-;	neg rdi
-;	shr rdi,1
+;	mov rdi,[.temp_saved]
+;	sub rdi,rsp
 ;	call exit
+
 
 	; return
 	ret
+
+.temp_saved:
+	dq 0
 
 ; memory space to save intermediate math
 

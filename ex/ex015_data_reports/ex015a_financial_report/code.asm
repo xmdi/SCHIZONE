@@ -130,7 +130,7 @@ START:
 	db `$1700`,0
 
 .accounts_3_1:
-	db `Equity in Crackhouse (zestimate)`,0
+	db `Equity in Crackhouse (Zestimate&trade;)`,0
 
 .accounts_3_2:
 	db `$18400`,0
@@ -139,13 +139,13 @@ START:
 	db `Retirement`,0
 
 .accounts_4_2:
-	db `LOOOOOOL`,0
+	db `lol`,0
 
 .scatter_title:
-	db `Annual Checking Account Closing Balance`,0
+	db `Matt Checking Account Balance History`,0
 
 .scatter_xlabel:
-	db `Year`,0
+	db `Months after May 2021`,0
 
 .scatter_ylabel:
 	db `Dollars ($)`,0
@@ -158,10 +158,10 @@ START:
 	dw 800; plot width (px) {*+32}
 	dw 400; plot height (px) {*+34}
 	dw 5; plot margins (px) {*+36}
-	dq 1900.0; x-min (double) {*+38}
-	dq 2000.0; x-max (double) {*+46}
+	dq 0.0; x-min (double) {*+38}
+	dq 30.0; x-max (double) {*+46}
 	dq 0.0; y-min (double) {*+54}
-	dq 100.0; y-max (double) {*+62}
+	dq 4000.0; y-max (double) {*+62}
 	dw 0; legend left x-coordinate (px) {*+70}
 	dw 0; legend top y-coordinate (px) {*+72}
 	dw 0; legend width (px) {*+74}
@@ -172,7 +172,7 @@ START:
 	db 5; number of major y-ticks {*+89}
 	db 2; minor subdivisions per x-tick {*+90}
 	db 2; minor subdivisions per y-tick {*+91}
-	db 4; significant digits on x values {*+92}
+	db 2; significant digits on x values {*+92}
 	db 2; significant digits on y values {*+93}
 	db 32; title font size (px) {*+94}
 	db 5; vertical margin below title (px) {*+95}
@@ -182,7 +182,7 @@ START:
 	db 5; vertical margin above x-tick labels (px) {*+99}
 	db 2; grid major stroke thickness (px) {*+100}
 	db 1; grid minor stroke thickness (px) {*+101}
-	db 30; width for y-axis ticks (px) {*+102}
+	db 60; width for y-axis ticks (px) {*+102}
 	db 40; height for x-axis ticks (px) {*+103}
 	db 0x1F; flags: {*+104}
 		; bit 0 (LSB)	= show title?
@@ -195,11 +195,11 @@ START:
 .scatter_dataset_structure:
 	dq 0; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string {*+8}
-	dq .scatter_year; address of first x-coordinate {*+16}
+	dq .scatter_month; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
-	dq .scatter_balance; address of first y-coordinate {*+26}
+	dq .scatter_money; address of first y-coordinate {*+26}
 	dw 0; extra stride between y-coord elements {*+34}
-	dd 101; number of elements {*+36}
+	dd 28; number of elements {*+36}
 	dd 0xFF0000; #XXXXXX RGB marker color {*+40}
 	dd 0xFF0000; #XXXXXX RGB line color {*+44}
 	dd 0x000000; #XXXXXX RGB fill color {*+48}
@@ -217,26 +217,40 @@ START:
 		;		= 10 = cubic bezier
 		;		= 11 = arc
 
-.scatter_balance:; y values
-	times 17 dq 0.0
-	dq 33.0
-	times 45 dq 80.0
-	dq 72.0
-	times 37 dq 0.0
+.scatter_month:; x values
+	dq 1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0
+	dq 11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0
+	dq 21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0
 
-.scatter_year:	; x values
-	dq 1900.0,1901.0,1902.0,1903.0,1904.0,1905.0,1906.0,1907.0,1908.0,1909.0
-	dq 1910.0,1911.0,1912.0,1913.0,1914.0,1915.0,1916.0,1917.0,1918.0,1919.0
-	dq 1920.0,1921.0,1922.0,1923.0,1924.0,1925.0,1926.0,1927.0,1928.0,1929.0
-	dq 1930.0,1931.0,1932.0,1933.0,1934.0,1935.0,1936.0,1937.0,1938.0,1939.0
-	dq 1940.0,1941.0,1942.0,1943.0,1944.0,1945.0,1946.0,1947.0,1948.0,1949.0
-	dq 1950.0,1951.0,1952.0,1953.0,1954.0,1955.0,1956.0,1957.0,1958.0,1959.0
-	dq 1960.0,1961.0,1962.0,1963.0,1964.0,1965.0,1966.0,1967.0,1968.0,1969.0
-	dq 1970.0,1971.0,1972.0,1973.0,1974.0,1975.0,1976.0,1977.0,1978.0,1979.0
-	dq 1980.0,1981.0,1982.0,1983.0,1984.0,1985.0,1986.0,1987.0,1988.0,1989.0
-	dq 1990.0,1991.0,1992.0,1993.0,1994.0,1995.0,1996.0,1997.0,1998.0,1999.0
-	dq 2000.0
-
+.scatter_money:	; y values
+	dq 1036.38
+	dq 418.29
+	dq 1327.78
+	dq 969.11
+	dq 728.70
+	dq 2204.31
+	dq 377.38
+	dq 278.31
+	dq 1147.16
+	dq 944.10
+	dq 312.83
+	dq 272.87
+	dq 484.16
+	dq 2407.36
+	dq 640.19
+	dq 906.05
+	dq 356.89
+	dq 1988.58
+	dq 3459.35
+	dq 3917.50
+	dq 2000.20
+	dq 2917.26
+	dq 2665.97
+	dq 2414.68
+	dq 2163.39
+	dq 1912.10
+	dq 1660.81
+	dq 2900.00
 
 .conclusion_header:
 	db `Conclusion:`,0
@@ -291,7 +305,7 @@ START:
 	dq .finances_header
 
 .finances_table_structure:
-	dq .finances_chart_structure ; address of next item in linked list
+	dq .horizontal_divider_3 ; address of next item in linked list
 	db 12 ; type of item
 	dw 4 ; number of rows
 	dw 2 ; number of columns
@@ -304,12 +318,16 @@ START:
 	dq .accounts_4_1
 	dq .accounts_4_2
 
+.horizontal_divider_3:
+	dq .finances_chart_structure ; address of next item in linked list
+	db 8 ; type of item
+
 .finances_chart_structure:
-	dq .horizontal_divider_3 ; address of next item in linked list
+	dq .horizontal_divider_4 ; address of next item in linked list
 	db 16 ; type of item
 	dq .scatter_plot_structure
 
-.horizontal_divider_3:
+.horizontal_divider_4:
 	dq .conclusion_header_structure ; address of next item in linked list
 	db 8 ; type of item
 
