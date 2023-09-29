@@ -26,6 +26,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | AUG 18, 2023 | [Bitmap Images](ex/ex012_bitmap_images) | [EP. 012](https://youtu.be/o7g5ttZPa-Q) |
 | SEP 01, 2023 | [Floating Point I/O](ex/ex013_floating_point_io) | [EP. 013](https://youtu.be/JoYMVeNH4Ss) |
 | SEP 15, 2023 | [Scatter Plots](ex/ex014_scatter_plots) | [EP. 014](https://youtu.be/ykPLQL1pC_4) |
+| SEP 29, 2023 | [Data Reports](ex/ex015_data_reports) | [EP. 015](https://youtu.be/QRBNgs9ZZhY) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
