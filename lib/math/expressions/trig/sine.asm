@@ -8,12 +8,11 @@ sine:
 
 	push rcx
 	push rdx
-	sub rsp,80
-	movdqu [rsp+0],xmm0
-	movdqu [rsp+16],xmm8
-	movdqu [rsp+32],xmm9
-	movdqu [rsp+48],xmm10
-	movdqu [rsp+64],xmm11
+	sub rsp,64
+	movdqu [rsp+0],xmm8
+	movdqu [rsp+16],xmm9
+	movdqu [rsp+32],xmm10
+	movdqu [rsp+48],xmm11
 
 ; adjust input xmm0 to within range -pi to +pi
 
@@ -73,12 +72,11 @@ sine:
 .done:
 	movsd xmm0,xmm8			; return sum in xmm0
 
-	movdqu xmm0,[rsp+0]
-	movdqu xmm8,[rsp+16]
-	movdqu xmm9,[rsp+32]
-	movdqu xmm10,[rsp+48]
-	movdqu xmm11,[rsp+64]
-	add rsp,80
+	movdqu xmm8,[rsp+0]
+	movdqu xmm9,[rsp+16]
+	movdqu xmm10,[rsp+32]
+	movdqu xmm11,[rsp+48]
+	add rsp,64
 	pop rdx
 	pop rcx
 
