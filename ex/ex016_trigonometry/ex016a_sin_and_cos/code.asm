@@ -52,6 +52,9 @@ PROGRAM_HEADER:
 %include "lib/math/expressions/trig/sine.asm"
 ; double {xmm0} sine(double {xmm0}, double {xmm1});
 
+%include "lib/math/expressions/trig/cosine.asm"
+; double {xmm0} cosine(double {xmm0}, double {xmm1});
+
 %include "lib/io/print_chars.asm"
 ; void print_chars(int {rdi}, char* {rsi}, uint {rdx});
 
@@ -68,7 +71,7 @@ PROGRAM_HEADER:
 START:
 
 	mov rdi,SYS_STDOUT
-	mov rsi,.grammar
+	mov rsi,.grammar1
 	mov rdx,5
 	call print_chars
 
@@ -76,7 +79,7 @@ START:
 	mov rsi,6
 	call print_float
 	
-	mov rsi,.grammar+5
+	mov rsi,.grammar1+5
 	mov rdx,2
 	call print_chars
 
@@ -87,7 +90,30 @@ START:
 	mov rsi,6
 	call print_float
 
-	mov rsi,.grammar+7
+	mov rsi,.grammar1+7
+	mov rdx,1
+	call print_chars
+	
+	mov rsi,.grammar2
+	mov rdx,7
+	call print_chars
+
+	movsd xmm0,[.number]
+	mov rsi,6
+	call print_float
+	
+	mov rsi,.grammar2+7
+	mov rdx,2
+	call print_chars
+
+	movsd xmm0,[.number]
+	movsd xmm1,[.tolerance]
+	call cosine
+
+	mov rsi,6
+	call print_float
+
+	mov rsi,.grammar2+9
 	mov rdx,1
 	call print_chars
 	
@@ -102,8 +128,10 @@ START:
 	dq 3.14159
 .tolerance:
 	dq 0.0001
-.grammar:
+.grammar1:
 	db `sine()=\n`
+.grammar2:
+	db `cosine()=\n`
 
 END:
 
