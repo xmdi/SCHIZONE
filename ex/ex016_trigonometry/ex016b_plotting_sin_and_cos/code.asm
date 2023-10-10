@@ -5,7 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 2048
+%define HEAP_SIZE 4096
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -91,61 +91,114 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-START:
+sine_function: ; takes 1 double from [rsp+8] and computes sine thereof
 
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar1
-	mov rdx,5
-	call print_chars
+	sub rsp,32
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
 
-	movsd xmm0,[.number]
-	mov rsi,6
-	call print_float
-	
-	mov rsi,.grammar1+5
-	mov rdx,2
-	call print_chars
+	movq xmm0,[rsp+40]	; sets value from stack
+	movsd xmm1,[START.tol]	; tolerance
 
-	movsd xmm0,[.number]
-	movsd xmm1,[.tolerance]
 	call sine
 
-	mov rsi,6
-	call print_float
+	movq [rsp+40],xmm0	; moves value to stack
 
-	mov rsi,.grammar1+7
-	mov rdx,1
-	call print_chars
-	
-	mov rsi,.grammar2
-	mov rdx,7
-	call print_chars
+	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
+	add rsp,32
 
-	movsd xmm0,[.number]
-	mov rsi,6
-	call print_float
-	
-	mov rsi,.grammar2+7
-	mov rdx,2
-	call print_chars
+	ret			; returns
 
-	movsd xmm0,[.number]
-	movsd xmm1,[.tolerance]
+cosine_function: ; takes 1 double from [rsp+8] and computes cosine thereof
+
+	sub rsp,32
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
+
+	movq xmm0,[rsp+40]	; sets value from stack
+	movsd xmm1,[START.tol]	; tolerance
+
 	call cosine
 
-	mov rsi,6
-	call print_float
+	movq [rsp+40],xmm0	; moves value to stack
 
-	mov rsi,.grammar2+9
-	mov rdx,1
-	call print_chars
-	
-	call print_buffer_flush
+	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
+	add rsp,32
+
+	ret			; returns
+
+START:
+
+	; initialize heap for arrays
+	call heap_init
+
+	; allocate arrays on heap
+	mov rdi,808	; 101x 8-byte doubles
+	call heap_alloc
+	mov r12,rax	; save pointer to x_array in {r12}
+	mov rdi,808	; 101x 8-byte doubles
+	call heap_alloc
+	mov r13,rax	; save pointer to y_array in {r13}
+	mov rdi,808	; 101x 8-byte doubles
+	call heap_alloc
+	mov r14,rax	; save pointer to y_array in {r13}
+
+	; store heap locations of arrays into structures
+	mov [.x_param+8],r12
+	mov [.sine_data+16],r12
+	mov [.sine_param+8],r13
+	mov [.sine_data+26],r13	
+	mov [.cosine_data+16],r12
+	mov [.cosine_param+8],r14
+	mov [.cosine_data+26],r14
+
+	; create linear spacing in x_param
+	movsd xmm0,[.neg4pi]
+	movsd xmm1,[.4pi]
+	mov rdi,r12	; location of x_array on heap
+	xor rsi,rsi
+	mov rdx,101
+	call linear_space
+
+	; evaluate function of x_param into sine_param
+	mov rdi,.sine_param
+	mov rsi,.x_param
+	mov rdx,sine_function
+	call evaluate_parameters
+
+	; evaluate function of x_param into cosine_param
+	mov rdi,.cosine_param
+	mov rsi,.x_param
+	mov rdx,cosine_function
+	call evaluate_parameters
+
+	; open file
+	mov rdi,.filename
+	mov rsi,SYS_READ_WRITE+SYS_CREATE_FILE+SYS_TRUNCATE
+	mov rdx,SYS_DEFAULT_PERMISSIONS
+	call file_open	; file descriptor in {rax}
+
+	; write scatter plot to SVG file
+	mov rdi,rax			; output file descriptor
+	mov rsi,.plot_structure		; structure start address
+	call scatter_plot
+
+	; close file
+	call file_close
 
 	; exit
 	xor dil,dil
 	call exit	
 
+.tol:
+	dq 0.00001
+.4pi:
+	dq 12.56637
+
+.neg4pi:
+	dq -12.56637
 
 .x_param:
 	dq 0 ; address of next parameter in list (0 on last element)
@@ -154,7 +207,14 @@ START:
 	dq 101 ; number of values (only matters for first input parameter in linked list)
 	dq 0 ; work zone (track address of current element), initial value unused
 
-.y_param:
+.sine_param:
+	dq 0 ; address of next parameter in list (0 on last element)
+	dq 0 ; address of first parameter value
+	dq 0 ; extra stride between parameter values
+	dq 101 ; number of values (only matters for first input parameter in linked list)
+	dq 0 ; work zone (track address of current element), initial value unused
+
+.cosine_param:
 	dq 0 ; address of next parameter in list (0 on last element)
 	dq 0 ; address of first parameter value
 	dq 0 ; extra stride between parameter values
@@ -162,32 +222,38 @@ START:
 	dq 0 ; work zone (track address of current element), initial value unused
 
 .filename:
-	db `func.svg\0`
+	db `sincos.svg\0`
 
 .title:
-	db `f(x)=x^3-3x^2-x+2\0`
+	db `sine and cosine\0`
 
 .xlabel:
 	db `x\0`
 
 .ylabel:
-	db `f(x)\0`
+	db `y\0`
+
+.sine_label:
+	db `sin(x)`,0
+
+.cosine_label:
+	db `cos(x)`,0
 
 .plot_structure:
 	dq .title; address of null-terminated title string {*+0}
 	dq .xlabel; address of null-terminated x-label string {*+8}
 	dq .ylabel; address of null-terminated y-label string {*+16}
-	dq .data; address of linked list for datasets {*+24}
+	dq .sine_data; address of linked list for datasets {*+24}
 	dw 480; plot width (px) {*+32}
 	dw 200; plot height (px) {*+34}
 	dw 5; plot margins (px) {*+36}
-	dq -2.0; x-min (double) {*+38}
-	dq 4.0; x-max (double) {*+46}
-	dq -18.0; y-min (double) {*+54}
-	dq 18.0; y-max (double) {*+62}
-	dw 0; legend left x-coordinate (px) {*+70}
-	dw 0; legend top y-coordinate (px) {*+72}
-	dw 0; legend width (px) {*+74}
+	dq -15.0; x-min (double) {*+38}
+	dq 15.0; x-max (double) {*+46}
+	dq -2.0; y-min (double) {*+54}
+	dq 2.0; y-max (double) {*+62}
+	dw 100; legend left x-coordinate (px) {*+70}
+	dw 50; legend top y-coordinate (px) {*+72}
+	dw 70; legend width (px) {*+74}
 	dd 0xFFFFFF; #XXXXXX RGB background color {*+76}
 	dd 0x000000; #XXXXXX RGB axis color {*+80}
 	dd 0x000000; #XXXXXX RGB font color {*+84}
@@ -207,7 +273,7 @@ START:
 	db 0; grid minor stroke thickness (px) {*+101}
 	db 30; width for y-axis ticks (px) {*+102}
 	db 30; height for x-axis ticks (px) {*+103}
-	db 0x1F; flags: {*+104}
+	db 0x3F; flags: {*+104}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?
@@ -215,9 +281,34 @@ START:
 		; bit 4		= show tick labels?
 		; bit 5		= draw legend?
 
-.data:
+.sine_data:
+	dq .cosine_data; address of next dataset in linked list {*+0}
+	dq .sine_label; address of null-terminated label string {*+8}
+	dq 0; address of first x-coordinate {*+16}
+	dw 0; extra stride between x-coord elements {*+24}
+	dq 0; address of first y-coordinate {*+26}
+	dw 0; extra stride between y-coord elements {*+34}
+	dd 101; number of elements {*+36}
+	dd 0x000000; #XXXXXX RGB marker color {*+40}
+	dd 0x00FF00; #XXXXXX RGB line color {*+44}
+	dd 0x000000; #XXXXXX RGB fill color {*+48}
+	db 1; marker size (px) {*+52}
+	db 2; line thickness (px) {*+53}
+	db 0; fill opacity (%) {*+54}
+	db 0x13; flags: {*+55}
+		; bit 0 (LSB)	= point marker?
+		; bit 1		= connecting lines?
+		; bit 2		= dashed line? (bit 1 must be set)
+		; bit 3		= fill?
+		; bit 4		= include in legend?
+		; bits 6-5	= 00 = no curves
+		;		= 01 = quadratic bezier
+		;		= 10 = cubic bezier
+		;		= 11 = arc
+
+.cosine_data:
 	dq 0; address of next dataset in linked list {*+0}
-	dq 0; address of null-terminated label string {*+8}
+	dq .cosine_label; address of null-terminated label string {*+8}
 	dq 0; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
 	dq 0; address of first y-coordinate {*+26}
@@ -229,7 +320,7 @@ START:
 	db 1; marker size (px) {*+52}
 	db 2; line thickness (px) {*+53}
 	db 0; fill opacity (%) {*+54}
-	db 0x03; flags: {*+55}
+	db 0x13; flags: {*+55}
 		; bit 0 (LSB)	= point marker?
 		; bit 1		= connecting lines?
 		; bit 2		= dashed line? (bit 1 must be set)
