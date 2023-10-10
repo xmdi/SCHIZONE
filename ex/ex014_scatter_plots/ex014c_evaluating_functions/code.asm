@@ -157,8 +157,6 @@ START:
 	mov rsi,.plot_structure		; structure start address
 	call scatter_plot
 
-	call exit
-
 	; close file
 	call file_close
 
