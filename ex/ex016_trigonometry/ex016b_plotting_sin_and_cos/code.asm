@@ -258,7 +258,7 @@ START:
 	dd 0x000000; #XXXXXX RGB axis color {*+80}
 	dd 0x000000; #XXXXXX RGB font color {*+84}
 	db 7; number of major x-ticks {*+88}
-	db 7; number of major y-ticks {*+89}
+	db 5; number of major y-ticks {*+89}
 	db 0; minor subdivisions per x-tick {*+90}
 	db 0; minor subdivisions per y-tick {*+91}
 	db 2; significant digits on x values {*+92}
