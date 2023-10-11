@@ -1518,9 +1518,9 @@ scatter_plot:
 	test r12,32
 	jz .no_data
 
-	movzx r15,word [rbx+70]		; track current legend entry y-coord in r15 
-
+	movzx r15,word [rbx+72]		; track current legend entry y-coord in r15 
 	movzx rsi, byte [rbx+97]		; track font size in working1 as double
+	add r15,rsi
 	cvtsi2sd xmm0,rsi
 	movsd [.working1],xmm0	
 	mov rsi,2				; store 2.0f in working2
@@ -1537,9 +1537,9 @@ scatter_plot:
 	call print_chars
 
 	; x-value
-	movzx rsi,word [rbx+70]
-	movzx r8, byte [rbx+97]
-	sub rsi,r8
+	movzx rsi, word [rbx+70]
+;	movzx r8, byte [rbx+97]
+;	sub rsi,r8
 	call print_int_d
 
 	; " y="
@@ -1548,9 +1548,10 @@ scatter_plot:
 	call print_chars
 
 	; y-value
-	movzx rsi, byte [rbx+97]
-	sub rsi,r15
-	neg rsi
+	movzx rsi, word [rbx+72]
+;	movzx rsi, byte [rbx+97]
+;	sub rsi,r15
+;	neg rsi
 	call print_int_d
 
 	; " width="
@@ -1710,6 +1711,8 @@ scatter_plot:
 	
 	; x value 1
 	movzx rsi,word [rbx+70]
+	movzx rdx,byte [rbx+97]
+	add rsi,rdx
 	cvtsi2sd xmm0,rsi
 	mov rsi,8
 	call print_float
@@ -1734,6 +1737,8 @@ scatter_plot:
 
 	; x value 2
 	movzx rsi,word [rbx+70]
+	movzx rdx,byte [rbx+97]
+	add rsi,rdx
 	cvtsi2sd xmm0,rsi
 	addsd xmm0,[.working1]	
 	addsd xmm0,[.working1]	
@@ -1791,6 +1796,8 @@ scatter_plot:
 
 	; x value
 	movzx rsi, word [rbx+70]
+	movzx rdx,byte [rbx+97]
+	add rsi,rdx
 	cvtsi2sd xmm0,rsi
 	addsd xmm0,[.working1]	
 	mov rsi,8
@@ -1848,6 +1855,8 @@ scatter_plot:
 
 	; x_coord
 	movzx rsi, word [rbx+70]
+	movzx rdx,byte [rbx+97]
+	add rsi,rdx
 	cvtsi2sd xmm0,rsi
 	addsd xmm0,[.working1]	
 	addsd xmm0,[.working1]	

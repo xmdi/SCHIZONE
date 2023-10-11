@@ -251,9 +251,9 @@ START:
 	dq 15.0; x-max (double) {*+46}
 	dq -2.0; y-min (double) {*+54}
 	dq 2.0; y-max (double) {*+62}
-	dw 100; legend left x-coordinate (px) {*+70}
-	dw 50; legend top y-coordinate (px) {*+72}
-	dw 70; legend width (px) {*+74}
+	dw 55; legend left x-coordinate (px) {*+70}
+	dw 105; legend top y-coordinate (px) {*+72}
+	dw 65; legend width (px) {*+74}
 	dd 0xFFFFFF; #XXXXXX RGB background color {*+76}
 	dd 0x000000; #XXXXXX RGB axis color {*+80}
 	dd 0x000000; #XXXXXX RGB font color {*+84}
