@@ -143,7 +143,7 @@ START:
 	mov r13,rax	; save pointer to y_array in {r13}
 	mov rdi,808	; 101x 8-byte doubles
 	call heap_alloc
-	mov r14,rax	; save pointer to y_array in {r13}
+	mov r14,rax	; save pointer to y_array in {r14}
 
 	; store heap locations of arrays into structures
 	mov [.x_param+8],r12
