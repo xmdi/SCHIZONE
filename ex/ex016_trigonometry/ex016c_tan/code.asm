@@ -99,9 +99,10 @@ START:
 
 
 .number:
-	dq 3.14159
+	dq 0.5
+
 .tolerance:
-	dq 0.0001
+	dq 0.00001
 .grammar1:
 	db `tangent()=\n`
 
