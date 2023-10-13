@@ -14,7 +14,7 @@ tangent:
 	movdqu [rsp+32],xmm3
 	movdqu [rsp+48],xmm4
 	movdqu [rsp+64],xmm5
-	movdqu [rsp+64],xmm6
+	movdqu [rsp+80],xmm6
 
 	; adjust input xmm0 to within range -pi/2 to +pi/2
 
