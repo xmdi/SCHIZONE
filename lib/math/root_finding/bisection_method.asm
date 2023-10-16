@@ -2,17 +2,27 @@
 %define BISECTION_METHOD
 
 bisection_method:
-; bool {rax}, double {xmm0} bisection_method(void* {rdi}, double {xmm0}, 
-;						double {xmm1}, double {xmm2});
+; ulong {rax}, double {xmm0} bisection_method(void* {rdi}, double {xmm0}, 
+;					double {xmm1}, double {xmm2});
 ;	Uses a bisection method to find a root for the single-variable 
 ;	function at address {rdi} between lower bound {xmm0} and upper bound 
-;	{xmm1} to within tolerance {xmm2}. On success, {rax}=0, and the root 
-;	is returned in {xmm0}, otherwise {rax}=1.
+;	{xmm1} to within tolerance {xmm2}. On fail, {rax}=0. On success, the root 
+;	is returned in {xmm0}, and {rax} contains the number of bisection 
+;	iterations.
 ;
 ;	The function of interest at address {rdi} should be of the form:
 ;		double {xmm0} func(double {xmm0});
 ;	and should not affect any registers besides {xmm0}.
 
+	push rdx
+	sub rsp,80
+	movdqu [rsp+0],xmm1
+	movdqu [rsp+16],xmm3
+	movdqu [rsp+32],xmm4
+	movdqu [rsp+48],xmm5
+	movdqu [rsp+64],xmm6
+
+	xor rax,rax		; count number of iterations in {rax}
 	movsd xmm3,xmm0		; lower bound in {xmm3}
 				; upper bound in {xmm1}
 	
@@ -26,10 +36,8 @@ bisection_method:
 	mulsd xmm0,xmm4		; {xmm0} = func(u)*func(l)	
 	
 	comisd xmm0,[.zero]
-	jb .valid_bounds	; if negative, bounds are valid
+	jae .ret		; if negative, bounds are valid
 				; if positive, bounds are invalid
-	mov rax,1
-	ret			; set error and return
 
 .valid_bounds:
 	mov rdx,0		; orientation flag 
@@ -39,6 +47,8 @@ bisection_method:
 	jb .loop		; set orientation flag
 	inc rdx
 .loop:
+
+	inc rax
 	; check tolerance
 	movsd xmm0,xmm1
 	subsd xmm0,xmm3
@@ -73,8 +83,17 @@ bisection_method:
 	jmp .loop
 
 .converged:			; when converged
-	xor rax,rax		; set no error value
 	movsd xmm0,xmm6		; set return value
+
+.ret:
+	movdqu xmm1,[rsp+0]
+	movdqu xmm3,[rsp+16]
+	movdqu xmm4,[rsp+32]
+	movdqu xmm5,[rsp+48]
+	movdqu xmm6,[rsp+64]
+	add rsp,80
+	pop rdx
+
 	ret			; return
 
 .zero:

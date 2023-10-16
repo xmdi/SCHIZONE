@@ -51,7 +51,7 @@ PROGRAM_HEADER:
 
 %include "lib/math/root_finding/bisection_method.asm"
 ; bool {rax}, double {xmm0} bisection_method(void* {rdi}, double {xmm0}, 
-;						double {xmm1}, double {xmm2});
+;				double {xmm1}, double {xmm2});
 
 %include "lib/io/print_float.asm"
 ; void print_float(int {rdi}, double {xmm0}, int {rsi});
@@ -72,7 +72,6 @@ SQRT_2:	; double {xmm0} SQRT_2({xmm0}).
 	ret
 .two:
 	dq 2.0
-
 	
 START:
 
@@ -114,5 +113,3 @@ END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
-
-HEAP_START_ADDRESS equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)
