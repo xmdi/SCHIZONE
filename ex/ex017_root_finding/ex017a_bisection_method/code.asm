@@ -96,8 +96,8 @@ START:
 	; flush print buffer
 	call print_buffer_flush
 
-	; exit
-	xor dil,dil
+	; exit with number of bisection iterations as return value
+	mov dil,al
 	call exit	
 
 .lower_bound:
