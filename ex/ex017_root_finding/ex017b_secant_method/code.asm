@@ -66,17 +66,17 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SQRT_2:	; double {xmm0} SQRT_2({xmm0}).
+SQRT_3:	; double {xmm0} SQRT_3({xmm0}).
 	mulsd xmm0,xmm0
-	subsd xmm0,[.two]
+	subsd xmm0,[.three]
 	ret
-.two:
-	dq 2.0
+.three:
+	dq 3.0
 	
 START:
 
-	; use secant method to compute sqrt(2)
-	mov rdi,SQRT_2
+	; use secant method to compute sqrt(3)
+	mov rdi,SQRT_3
 	movsd xmm0,[.lower_bound]
 	movsd xmm1,[.upper_bound]
 	movsd xmm2,[.tolerance]
@@ -101,11 +101,11 @@ START:
 	call exit	
 
 .lower_bound:
-	dq -5.0
+	dq 1.0
 .upper_bound:
-	dq 5.0
+	dq 4.0
 .tolerance:
-	dq 0.001
+	dq 0.00001
 .grammar:
 	db `sqrt(2)=\n`
 

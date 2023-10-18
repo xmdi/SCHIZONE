@@ -23,7 +23,6 @@ secant_method:
 
 	xor rax,rax		; count number of iterations in {rax}
 
-
 .loop:
 	movsd xmm3,xmm1		; (x2-x1) in {xmm3}
 	subsd xmm3,xmm0
@@ -39,14 +38,15 @@ secant_method:
 
 	movsd xmm0,xmm1
 	call rdi
+
 	movsd xmm5,xmm0		; {xmm5} = f(x2);
 
 	mulsd xmm3,xmm5		; f(x2)*(x2-x1)
 	subsd xmm5,xmm4		; f(x2)-f(x1)
-	mulsd xmm3,xmm5		; f(x2)*(x2-x1)*(f(x2)-f(x1))
+	divsd xmm3,xmm5		; f(x2)*(x2-x1)*(f(x2)-f(x1))
 
 	movsd xmm0,xmm1		; new x1
-	subsd xmm1,xmm5		; new x2
+	subsd xmm1,xmm3		; new x2
 
 	inc rax
 
