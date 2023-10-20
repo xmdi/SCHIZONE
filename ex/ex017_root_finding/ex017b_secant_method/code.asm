@@ -77,8 +77,8 @@ START:
 
 	; use secant method to compute sqrt(3)
 	mov rdi,SQRT_3
-	movsd xmm0,[.lower_bound]
-	movsd xmm1,[.upper_bound]
+	movsd xmm0,[.guess_1]
+	movsd xmm1,[.guess_2]
 	movsd xmm2,[.tolerance]
 	call secant_method
 
@@ -100,14 +100,14 @@ START:
 	mov dil,al
 	call exit	
 
-.lower_bound:
+.guess_1:
 	dq 1.0
-.upper_bound:
+.guess_2:
 	dq 4.0
 .tolerance:
 	dq 0.00001
 .grammar:
-	db `sqrt(2)=\n`
+	db `sqrt(3)=\n`
 
 END:
 

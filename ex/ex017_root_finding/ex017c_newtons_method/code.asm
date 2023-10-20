@@ -49,9 +49,9 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/math/root_finding/secant_method.asm"
-; ulong {rax}, double {xmm0} bisection_method(void* {rdi}, double {xmm0}, 
-;				double {xmm1}, double {xmm2});
+%include "lib/math/root_finding/newtons_method.asm"
+; ulong {rax}, double {xmm0} newtons_method(void* {rdi}, void* {rsi},
+;		double {xmm0}, double {xmm1});
 
 %include "lib/io/print_float.asm"
 ; void print_float(int {rdi}, double {xmm0}, int {rsi});
@@ -66,21 +66,27 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SQRT_3:	; double {xmm0} SQRT_3({xmm0}).
+SQRT_5:	; double {xmm0} SQRT_5({xmm0})
 	mulsd xmm0,xmm0
-	subsd xmm0,[.three]
+	subsd xmm0,[.five]
 	ret
-.three:
-	dq 3.0
-	
+.five:
+	dq 5.0
+
+SLOPE_SQRT_5:	; double {xmm0} SLOPE_SQRT_5({xmm0})
+	mulsd xmm0,[.two]
+	ret
+.two:	
+	dq 2.0
+
 START:
 
-	; use secant method to compute sqrt(3)
-	mov rdi,SQRT_3
-	movsd xmm0,[.lower_bound]
-	movsd xmm1,[.upper_bound]
-	movsd xmm2,[.tolerance]
-	call secant_method
+	; use newtons method to compute sqrt(5)
+	mov rdi,SQRT_5
+	mov rsi,SLOPE_SQRT_5
+	movsd xmm0,[.guess]
+	movsd xmm1,[.tolerance]
+	call newtons_method
 
 	; print result
 	mov rdi,SYS_STDOUT
@@ -100,14 +106,12 @@ START:
 	mov dil,al
 	call exit	
 
-.lower_bound:
-	dq 1.0
-.upper_bound:
-	dq 4.0
+.guess:
+	dq 3.0
 .tolerance:
 	dq 0.00001
 .grammar:
-	db `sqrt(2)=\n`
+	db `sqrt(5)=\n`
 
 END:
 

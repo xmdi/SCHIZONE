@@ -3,7 +3,7 @@
 
 secant_method:
 ; ulong {rax}, double {xmm0} secant_method(void* {rdi}, double {xmm0}, 
-;					double {xmm1}, double {xmm2}
+;					double {xmm1}, double {xmm2});
 ;	Uses the secant method to find a root for the single-variable 
 ;	function at address {rdi} with initial guesses {xmm0} and {xmm1}
 ;	to within tolerance {xmm2}. On fail, {rax}=0. On success, the 
