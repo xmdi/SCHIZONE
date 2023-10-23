@@ -38,7 +38,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 
 
 ### NOTE 0: 
-As part of this project we created some DIY versions of common utilities (see [Ex. 003](ex/ex003_command_line_args_and_code_golf)). Later examples use "SCHIZONE/bin/make_executable" in place of "chmod +x". You can generate these binaries by running "./make_bins.sh" in the root directory.
+As part of this project we created some DIY versions of common utilities (see [EP. 003](ex/ex003_command_line_args_and_code_golf)). Later examples use "SCHIZONE/bin/make_executable" in place of "chmod +x". You can generate these binaries by running "./make_bins.sh" in the root directory.
 
 ### NOTE 1:
 This repository contains bash scripts to facilitate compilation, so FreeBSD users will have to use a compatible shell.
