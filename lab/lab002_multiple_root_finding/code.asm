@@ -66,6 +66,10 @@ PROGRAM_HEADER:
 %include "lib/math/expressions/trig/sine.asm"
 ; double {xmm0} sine(double {xmm0}, double {xmm1});
 
+%include "lib/math/root_finding/bisection_method.asm"
+; ulong {rax}, double {xmm0} bisection_method(void* {rdi}, double {xmm0}, 
+;					double {xmm1}, double {xmm2});
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -84,6 +88,9 @@ FUNC:
 	add rsp,16
 	ret
 
+.tolerance:
+	dq 0.0001
+
 START:
 
 	; algorithm:
@@ -98,12 +105,41 @@ START:
 	; add root to array
 	; loop until at upper bound
 	; return pointer to array and number of roots
+
+	xor rdx,rdx
+	xor rcx,rcx
+	movsd xmm1,[.lower_bound]
+	
+	jmp .start_roots_loop
+	
+.count_roots_loop:
+	
+
+.start_roots_loop:
+
+	xor rbx,rbx	; 0 for positive, 1 for negative
+
+	movsd xmm0,xmm1
+	call FUNC
+	comisd xmm0,[.zero]
+	jae .sign_compare
+	inc rbx	
+.sign_compare:
+	cmp rbx,rdx
+	je .no_root_detected
+	inc rcx
+.no_root_detected:
+	mov rdx,rbx
+	addsd xmm1,[.step]
+	comisd xmm1,[.upper_bound]
+	jbe .count_roots_loop
+	
 	
 	; flush print buffer
 	call print_buffer_flush
 
 	; exit
-	xor dil,dil
+	mov dil,cl
 	call exit	
 
 .lower_bound:
@@ -112,6 +148,8 @@ START:
 	dq 10.0
 .step:
 	dq 0.1
+.zero:
+	dq 0.0
 
 END:
 
