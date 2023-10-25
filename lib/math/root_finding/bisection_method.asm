@@ -60,8 +60,7 @@ bisection_method:
 	movsd xmm0,xmm3
 	addsd xmm0,xmm1
 	mulsd xmm0,[.half]	; {xmm0} = midpoint of the upper and lower bound
-	movsd xmm6,xmm0		; save midpoint in {xmm6}
-
+	movsd xmm6,xmm0		; save midpoint in {xmm6}sdd
 	call rdi		; call function to evaluate {xmm0}=func({xmm0});
 
 	comisd xmm0,[.zero]	; based on error...

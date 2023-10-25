@@ -106,21 +106,20 @@ START:
 	; loop until at upper bound
 	; return pointer to array and number of roots
 
+	call heap_init
+
+	mov rdi,FUNC
 	xor rdx,rdx
 	xor rcx,rcx
-	movsd xmm1,[.lower_bound]
-	
-	jmp .start_roots_loop
+	movsd xmm3,[.lower_bound]
 	
 .count_roots_loop:
 	
-
-.start_roots_loop:
-
 	xor rbx,rbx	; 0 for positive, 1 for negative
 
-	movsd xmm0,xmm1
-	call FUNC
+	movsd xmm0,xmm3
+	call rdi
+
 	comisd xmm0,[.zero]
 	jae .sign_compare
 	inc rbx	
@@ -130,11 +129,63 @@ START:
 	inc rcx
 .no_root_detected:
 	mov rdx,rbx
-	addsd xmm1,[.step]
-	comisd xmm1,[.upper_bound]
+	addsd xmm3,[.step]
+	comisd xmm3,[.upper_bound]
 	jbe .count_roots_loop
+
+	; {rcx} contains the number of roots in our range	
 	
+	mov rdi,rcx
+	shl rdi,3
+	call heap_alloc
+	mov r8,rax
+
+	; {r8} now contains the address of an array for the roots
+
+	mov rdi,FUNC
+	xor rdx,rdx
+	movsd xmm3,[.lower_bound]
 	
+.find_roots_loop:
+	
+	xor rbx,rbx	; 0 for positive, 1 for negative
+
+	movsd xmm0,xmm3
+	call rdi
+
+	comisd xmm0,[.zero]
+	jae .sign_compare2
+	inc rbx	
+.sign_compare2:
+	cmp rbx,rdx
+	je .no_root_detected2
+	movsd xmm0,xmm1
+	movsd xmm1,xmm3
+	movsd xmm2,[.tolerance]
+	call bisection_method
+
+	movsd [r8],xmm0
+	add r8,8
+
+.no_root_detected2:
+
+	movsd xmm1,xmm3
+	
+	mov rdx,rbx
+	addsd xmm3,[.step]
+	comisd xmm3,[.upper_bound]
+	jbe .find_roots_loop
+
+	; print roots
+	mov rdi,SYS_STDOUT	; STDOUT file descriptor
+	mov rsi,r8		; matrix start address
+	mov rdx,rcx		; 4 rows
+	mov rcx,1		; 4 columns
+	xor r8,r8		; no extra offsets betwixt elements
+	mov r9,print_float	; print without scientific notation
+	mov r10,5		; 5 significant figures
+	call print_array_float
+
 	; flush print buffer
 	call print_buffer_flush
 
@@ -150,6 +201,8 @@ START:
 	dq 0.1
 .zero:
 	dq 0.0
+.tolerance:
+	dq 0.0001
 
 END:
 
