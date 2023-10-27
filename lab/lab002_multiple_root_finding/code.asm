@@ -93,19 +93,34 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+TOLERANCE:
+	dq 0.0001
+
 ; double {xmm0} FUNC(double {xmm0});
 ;	sine(x)
 FUNC:
 	sub rsp,16
 	movdqu [rsp+0],xmm1
-	movsd xmm1,[.tolerance]
+	movsd xmm1,[TOLERANCE]
 	call sine
 	movdqu xmm1,[rsp+0]
 	add rsp,16
 	ret
 
-.tolerance:
-	dq 0.0001
+; double [rsp+8] PARAM_FUNC(double [rsp+8]);
+;	sine(x)
+PARAM_FUNC:
+	sub rsp,32
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
+	movsd xmm0,[rsp+40]
+	movsd xmm1,[TOLERANCE]
+	call sine
+	movq [rsp+40],xmm0
+	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
+	add rsp,32
+	ret
 
 START:
 
@@ -154,8 +169,11 @@ START:
 	mov rdi,rcx
 	shl rdi,3
 	call heap_alloc
-	mov r8,rax
+	mov r15,rax
 	mov r9,rax
+
+	call heap_alloc
+	mov r14,rax
 
 	; {r8} now contains the address of an array for the roots
 
@@ -178,7 +196,7 @@ START:
 	je .no_root_detected2
 	movsd xmm0,xmm1
 	movsd xmm1,xmm3
-	movsd xmm2,[.tolerance]
+	movsd xmm2,[TOLERANCE]
 	call bisection_method
 
 	movsd [r9],xmm0
@@ -193,9 +211,13 @@ START:
 	comisd xmm3,[.upper_bound]
 	jbe .find_roots_loop
 
+	mov [.root_structure+16],r15
+	mov [.root_structure+26],r14
+	mov [.root_structure+36],ecx
+
 	; print roots
 	mov rdi,SYS_STDOUT	; STDOUT file descriptor
-	mov rsi,r8		; matrix start address
+	mov rsi,r15		; matrix start address
 	; {rdx} rows
 	; {rcx} columns
 	xor r8,r8		; no extra offsets betwixt elements
@@ -204,7 +226,6 @@ START:
 	call print_array_float
 
 	call print_buffer_flush
-
 
 	; allocate arrays on heap
 	mov rdi,808	; 101x 8-byte doubles
@@ -216,9 +237,9 @@ START:
 
 	; store heap locations of arrays into structures
 	mov [.x_param+8],r12
-	mov [.scatter_dataset_structure+16],r12
+	mov [.dataset_structure+16],r12
 	mov [.y_param+8],r13
-	mov [.scatter_dataset_structure+26],r13
+	mov [.dataset_structure+26],r13
 
 	; create linear spacing in x_param
 	movsd xmm0,[.lower_bound] ; lower bound
@@ -231,7 +252,7 @@ START:
 	; evaluate function of x_param into y_param
 	mov rdi,.y_param
 	mov rsi,.x_param
-	mov rdx,FUNC
+	mov rdx,PARAM_FUNC
 	call evaluate_parameters
 
 	; open file
@@ -242,7 +263,7 @@ START:
 
 	; write scatter plot to SVG file
 	mov rdi,rax			; output file descriptor
-	mov rsi,.scatter_plot_structure		; structure start address
+	mov rsi,.plot_structure		; structure start address
 	call scatter_plot
 
 	call file_close
@@ -262,8 +283,6 @@ START:
 	dq 0.1
 .zero:
 	dq 0.0
-.tolerance:
-	dq 0.0001
 
 .x_param:
 	dq 0 ; address of next parameter in list (0 on last element)
@@ -291,18 +310,18 @@ START:
 .scatter_ylabel:
 	db `y`,0
 
-.scatter_plot_structure:
+.plot_structure:
 	dq .scatter_title; address of null-terminated title string {*+0}
 	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
-	dq .scatter_dataset_structure; address of linked list for datasets {*+24}
+	dq .dataset_structure; address of linked list for datasets {*+24}
 	dw 800; plot width (px) {*+32}
 	dw 400; plot height (px) {*+34}
 	dw 5; plot margins (px) {*+36}
 	dq -12.0; x-min (double) {*+38}
 	dq 12.0; x-max (double) {*+46}
-	dq -12.0; y-min (double) {*+54}
-	dq 12.0; y-max (double) {*+62}
+	dq -2.0; y-min (double) {*+54}
+	dq 2.0; y-max (double) {*+62}
 	dw 0; legend left x-coordinate (px) {*+70}
 	dw 0; legend top y-coordinate (px) {*+72}
 	dw 0; legend width (px) {*+74}
@@ -310,7 +329,7 @@ START:
 	dd 0x000000; #XXXXXX RGB axis color {*+80}
 	dd 0x000000; #XXXXXX RGB font color {*+84}
 	db 9; number of major x-ticks {*+88}
-	db 7; number of major y-ticks {*+89}
+	db 3; number of major y-ticks {*+89}
 	db 2; minor subdivisions per x-tick {*+90}
 	db 2; minor subdivisions per y-tick {*+91}
 	db 2; significant digits on x values {*+92}
@@ -333,21 +352,46 @@ START:
 		; bit 4		= show tick labels?
 		; bit 5		= draw legend?
 
-.scatter_dataset_structure:
-	dq 0; address of next dataset in linked list {*+0}
+.dataset_structure:
+	dq .root_structure; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string {*+8}
 	dq 0; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
 	dq 0; address of first y-coordinate {*+26}
 	dw 0; extra stride between y-coord elements {*+34}
 	dd 101; number of elements {*+36}
-	dd 0xFF0000; #XXXXXX RGB marker color {*+40}
+	dd 0x000000; #XXXXXX RGB marker color {*+40}
 	dd 0xFF0000; #XXXXXX RGB line color {*+44}
 	dd 0x000000; #XXXXXX RGB fill color {*+48}
-	db 5; marker size (px) {*+52}
+	db 0; marker size (px) {*+52}
 	db 5; line thickness (px) {*+53}
 	db 0; fill opacity (%) {*+54}
-	db 0x03; flags: {*+55}
+	db 0x02; flags: {*+55}
+		; bit 0 (LSB)	= point marker?
+		; bit 1		= connecting lines?
+		; bit 2		= dashed line? (bit 1 must be set)
+		; bit 3		= fill?
+		; bit 4		= include in legend?
+		; bits 6-5	= 00 = no curves
+		;		= 01 = quadratic bezier
+		;		= 10 = cubic bezier
+		;		= 11 = arc
+
+.root_structure:
+	dq 0; address of next dataset in linked list {*+0}
+	dq 0; address of null-terminated label string {*+8}
+	dq 0; address of first x-coordinate {*+16}
+	dw 0; extra stride between x-coord elements {*+24}
+	dq 0; address of first y-coordinate {*+26}
+	dw 0; extra stride between y-coord elements {*+34}
+	dd 0; number of elements {*+36}
+	dd 0x0000FF; #XXXXXX RGB marker color {*+40}
+	dd 0x000000; #XXXXXX RGB line color {*+44}
+	dd 0x000000; #XXXXXX RGB fill color {*+48}
+	db 10; marker size (px) {*+52}
+	db 0; line thickness (px) {*+53}
+	db 0; fill opacity (%) {*+54}
+	db 0x01; flags: {*+55}
 		; bit 0 (LSB)	= point marker?
 		; bit 1		= connecting lines?
 		; bit 2		= dashed line? (bit 1 must be set)
