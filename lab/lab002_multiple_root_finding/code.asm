@@ -140,9 +140,16 @@ START:
 	call heap_init
 
 	mov rdi,FUNC
-	xor rdx,rdx
 	xor rcx,rcx
 	movsd xmm3,[.lower_bound]
+	
+	xor rbx,rbx
+	movsd xmm0,xmm3
+	call rdi
+	comisd xmm0,[.zero]
+	jae .no_root_detected
+	inc rbx	
+	jmp .no_root_detected	
 	
 .count_roots_loop:
 	
@@ -178,8 +185,15 @@ START:
 	; {r8} now contains the address of an array for the roots
 
 	mov rdi,FUNC
-	xor rdx,rdx
 	movsd xmm3,[.lower_bound]
+	
+	xor rbx,rbx
+	movsd xmm0,xmm3
+	call rdi
+	comisd xmm0,[.zero]
+	jae .no_root_detected2
+	inc rbx	
+	jmp .no_root_detected2	
 	
 .find_roots_loop:
 	
