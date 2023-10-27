@@ -34,7 +34,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | DATE | TOPIC | VIDEO |
 | :---: | :---: | :---: |
 | AUG 11, 2023 | [Cramer's Rule](lab/lab001_cramers_rule) | [LAB 001](https://youtu.be/JyIpF5iBGxU) |
-| OCT 27, 2023 | [Multiple Root Finding](lab/lab002_multiple_root_finding) | [LAB 002](https://youtu.be/) |
+| OCT 27, 2023 | [Multiple Root Finding](lab/lab002_multiple_root_finding) | [LAB 002](https://youtu.be/KaKBrN7tHpA) |
 
 
 ### NOTE 0: 
