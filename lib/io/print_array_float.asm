@@ -27,6 +27,8 @@ print_array_float:
 	push r12	
 	push r13	
 	push r14
+	sub rsp,16
+	movdqu [rsp+0],xmm0
 
 	; grab col offsets in {rbp} 
 	; keep row offsets in {r8}
@@ -105,6 +107,8 @@ print_array_float:
 	mov rdx,3
 	call print_chars
 
+	movdqu xmm0,[rsp+0]
+	add rsp,16
 	pop r14
 	pop r13
 	pop r12
