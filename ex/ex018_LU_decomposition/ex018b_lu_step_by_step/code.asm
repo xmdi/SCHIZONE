@@ -53,12 +53,35 @@ PROGRAM_HEADER:
 ; void print_array_float(int {rdi}, double* {rsi}, int {rdx}, int {rcx}, 
 ;	int {r8}, void* {r9}, int {r10});
 
+%include "lib/math/lin_alg/lu_decomposition.asm"
+; void LU_decomposition(double* {rdi}, uint {rsi});
+
+%include "lib/math/lin_alg/forward_substitution.asm"
+; bool forward_substitution(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
+
+%include "lib/math/lin_alg/backward_substitution.asm"
+; bool backward_substitution(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
+
+%include "lib/math/lin_alg/copy_upper_triangle.asm"
+; void copy_upper_triangle(double* {rdi}, double* {rsi}, uint {rdx});
+
+%include "lib/math/lin_alg/copy_lower_triangle.asm"
+; void copy_lower_triangle(double* {rdi}, double* {rsi}, uint {rdx});
+
+%include "lib/math/lin_alg/copy_diagonal.asm"
+; void copy_diagonal(double* {rdi}, double* {rsi}, uint {rdx});
+
+%include "lib/math/lin_alg/set_identity.asm"
+; void set_identity(double* {rdi}, uint {rsi});
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+START:
 
 	; print `Trying to solve Ax=b:\n`
 	mov rdi,SYS_STDOUT
@@ -88,11 +111,10 @@ PROGRAM_HEADER:
 	; print RHS b-vector
 	mov rsi,.b
 	mov rdx,3
-	mov rcx,3
+	mov rcx,1
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
-	mov r8,1
 	call print_array_float
 
 	; compute the LU decomposition in-place
@@ -192,7 +214,7 @@ PROGRAM_HEADER:
 	; print (Ux) vector
 	mov rsi,.Ux
 	mov rdx,3
-	mov rcx,3
+	mov rcx,1
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
@@ -220,7 +242,7 @@ PROGRAM_HEADER:
 	; print resultant (x)
 	mov rsi,.x
 	mov rdx,3
-	mov rcx,3
+	mov rcx,1
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
