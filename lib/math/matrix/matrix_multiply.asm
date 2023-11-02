@@ -4,8 +4,8 @@
 matrix_multiply:
 ; void matrix_multiply(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}
 ;	uint {r8}, uint {r9});
-; 	Multiplies a {rcx}x{r8} matrix at {rsi} by a {r8}x{r9} matrix at {rdx}
-;	and places the result in the {rcx}x{r9} matrix beginning at {rdi}.
+; 	Multiplies a {rcx}x{r9} matrix at {rsi} by a {r9}x{r8} matrix at {rdx}
+;	and places the result in the {rcx}x{r8} matrix beginning at {rdi}.
 	
 	; register usage:
 

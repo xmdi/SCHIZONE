@@ -53,8 +53,12 @@ PROGRAM_HEADER:
 ; void print_array_float(int {rdi}, double* {rsi}, int {rdx}, int {rcx}, 
 ;	int {r8}, void* {r9}, int {r10});
 
-%include "lib/math/lin_alg/lu_solve.asm"
-; void lu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
+%include "lib/io/print_array_int.asm"
+; void print_array_int(int {rdi}, int* {rsi}, int {rdx}, int {rcx}, int {r8}
+;	void* {r9});
+
+%include "lib/math/lin_alg/plu_solve.asm"
+; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
 
 %include "lib/mem/memcopy.asm"
 ; void memcopy(long* {rdi}, long* {rsi}, ulong {rdx});
@@ -133,7 +137,8 @@ START:
 	mov rsi,.A
 	mov rdx,.b
 	mov rcx,10
-	call lu_solve
+	mov r8,.P
+	call plu_solve
 	
 	; print `\nx=\n`
 	mov rdi,SYS_STDOUT
@@ -150,6 +155,21 @@ START:
 	mov r9,print_float
 	mov r10,5
 	call print_array_float
+
+	; print `\nP=\n`
+	mov rdi,SYS_STDOUT
+	mov rsi,.grammar6
+	mov rdx,4
+	call print_chars
+
+	; print permutation vector P
+	mov rdi,SYS_STDOUT
+	mov rsi,.P
+	mov rdx,10
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_int_d
+	call print_array_int
 
 	; compute A_copy*x-b_copy to check our error
 	; (should be 0.00)
@@ -218,6 +238,9 @@ START:
 .x: ; space for solved unknown vector
 	times 10 dq 0.00
 
+.P: ; space for permuation vector
+	times 10 dq 0.00
+
 .Ax_minus_b: ; space to check our work (unnecessary, obviously)
 	times 10 dq 0.00
 
@@ -231,7 +254,9 @@ START:
 	db `\nx=\n`
 .grammar5:
 	db `\nAx-b=\n`
-
+.grammar6:
+	db `\nP=\n`
+.
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,

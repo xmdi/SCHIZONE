@@ -10,6 +10,7 @@ lu_solve:
 ; void {rax} lu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
 ; Solves linear system for square {rcx}x{rcx} double-precision matrix A at {rsi}
 ; and {rcx}x1 right-hand-side vector b at {rdx} into resultant {rcx}x1 vector at
+; {rdi}.
 
 	push r8	
 	push rdi
