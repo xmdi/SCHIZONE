@@ -29,6 +29,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | SEP 29, 2023 | [Data Reports](ex/ex015_data_reports) | [EP. 015](https://youtu.be/QRBNgs9ZZhY) |
 | OCT 13, 2023 | [Trigonometry](ex/ex016_trigonometry) | [EP. 016](https://youtu.be/EfaJiAeHj7E) |
 | OCT 20, 2023 | [Root Finding](ex/ex017_root_finding) | [EP. 017](https://youtu.be/TNmAOsaUJiQ) |
+| NOV 03, 2023 | [LU Decomposition](ex/ex018_lu_decomposition) | [EP. 018](https://youtu.be/) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
