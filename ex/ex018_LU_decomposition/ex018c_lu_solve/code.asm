@@ -53,26 +53,18 @@ PROGRAM_HEADER:
 ; void print_array_float(int {rdi}, double* {rsi}, int {rdx}, int {rcx}, 
 ;	int {r8}, void* {r9}, int {r10});
 
-%include "lib/math/lin_alg/lu_decomposition.asm"
-; void LU_decomposition(double* {rdi}, uint {rsi});
+%include "lib/math/lin_alg/lu_solve.asm"
+; void LU_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
 
-%include "lib/math/lin_alg/forward_substitution.asm"
-; bool forward_substitution(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
+%include "lib/mem/memcopy.asm"
+; void memcopy(long* {rdi}, long* {rsi}, ulong {rdx});
 
-%include "lib/math/lin_alg/backward_substitution.asm"
-; bool backward_substitution(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
+%include "lib/math/matrix/matrix_subtract_in_place.asm"
+; void matrix_subtract_in_place(double* {rdi}, double* {rsi}, long {rdx});
 
-%include "lib/math/lin_alg/copy_upper_triangle.asm"
-; void copy_upper_triangle(double* {rdi}, double* {rsi}, uint {rdx});
-
-%include "lib/math/lin_alg/copy_lower_triangle.asm"
-; void copy_lower_triangle(double* {rdi}, double* {rsi}, uint {rdx});
-
-%include "lib/math/lin_alg/copy_diagonal.asm"
-; void copy_diagonal(double* {rdi}, double* {rsi}, uint {rdx});
-
-%include "lib/math/lin_alg/set_identity.asm"
-; void set_identity(double* {rdi}, uint {rsi});
+%include "lib/math/matrix/matrix_multiply.asm"
+; void matrix_multiply(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}
+;	uint {r8}, uint {r9});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -83,6 +75,21 @@ PROGRAM_HEADER:
 
 START:
 
+	; Let's save a copy of A & b so we can check our work later.
+	; This is because our in-place LU destroys the input matrix A
+	; and our substitution algorithms destroy RHS vector b.
+	; This is unnecessary in a real implementation.
+
+	mov rdi,.A_copy
+	mov rsi,.A
+	mov rdx,8*10*10
+	call memcopy
+
+	mov rdi,.b_copy
+	mov rsi,.b
+	mov rdx,8*10
+	call memcopy
+
 	; print `Trying to solve Ax=b:\n`
 	mov rdi,SYS_STDOUT
 	mov rsi,.grammar1
@@ -90,158 +97,85 @@ START:
 	call print_chars
 
 	; print `\nA=\n`
+	mov rdi,SYS_STDOUT
 	mov rsi,.grammar2
 	mov rdx,4
 	call print_chars
 
 	; print original A matrix
+	mov rdi,SYS_STDOUT
 	mov rsi,.A
-	mov rdx,3
-	mov rcx,3
+	mov rdx,10
+	mov rcx,10
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
 	call print_array_float
 
 	; print `\nb=\n`
+	mov rdi,SYS_STDOUT
 	mov rsi,.grammar3
 	mov rdx,4
 	call print_chars
 
 	; print RHS b-vector
-	mov rsi,.b
-	mov rdx,3
+	mov rdi,SYS_STDOUT
+	mov rsi,.b	
+	mov rdx,10
 	mov rcx,1
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
 	call print_array_float
 
-	; compute the LU decomposition in-place
-	mov rdi,.A
-	mov rsi,3
-	call lu_decomposition
-	
-	; print `\nA decomposed into LU in-place:\n`
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar4
-	mov rdx,32
-	call print_chars
-
-	; print decomposed matrix
-	mov rsi,.A
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-
-	; copy upper half of decomposed matrix into its own memory
-	; (ultimately unnecessary, but just to show the process)
-	mov rdi,.U
-	mov rsi,.A
-	mov rdx,3
-	call copy_upper_triangle
-
-	; print `\nU=\n`
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar5
-	mov rdx,4
-	call print_chars
-
-	; print U matrix
-	mov rsi,.U
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-
-	; copy lower half of decomposed matrix into its own memory
-	; (ultimately unnecessary, but just to show the process)
-	mov rdi,.L
-	mov rsi,.A
-	mov rdx,3
-	call copy_lower_triangle
-
-	; drag the diagonal from an identity matrix into L
-	; (ultimately unnecessary, but just to show the process)
-	mov rdi,.A	;	overwrite A matrix because I'm lazy
-	mov rsi,3
-	call set_identity
-
-	mov rdi,.L
-	mov rsi,.A
-	mov rdx,3
-	call copy_diagonal
-
-	; print `\nL=\n`
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar6
-	mov rdx,4
-	call print_chars
-
-	; print L matrix
-	mov rsi,.L
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-
-	; print `\nNew problem is Ax=L(Ux)=b. Using forward substitution to find (Ux):\n`
-	mov rsi,.grammar7
-	mov rdx,69
-	call print_chars
-
-	; use forward subsitution to find (Ux) from Ax=L(Ux)=b
-	mov rdi,.Ux
-	mov rsi,.L
-	mov rdx,.b
-	xor r8,r8
-	mov rcx,3
-	call forward_substitution
-
-	; print `\n(Ux)=\n`
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar8
-	mov rdx,7
-	call print_chars
-
-	; print (Ux) vector
-	mov rsi,.Ux
-	mov rdx,3
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-
-	; print `\nNew problem is Ux=(Ux). Using backward substitution to find (x):\n`
-	mov rsi,.grammar9
-	mov rdx,64
-	call print_chars
-
-	; use backward subsitution to find (x) from U(x)=(Ux) (from above)
+	; solve the system using pivotless LU decomposition
 	mov rdi,.x
-	mov rsi,.U
-	mov rdx,.Ux
-	mov rcx,3
-	xor r8,r8
-	call backward_substitution
+	mov rsi,.A
+	mov rdx,.b
+	mov rcx,10
+	call lu_solve
 	
 	; print `\nx=\n`
 	mov rdi,SYS_STDOUT
-	mov rsi,.grammar10
+	mov rsi,.grammar4
 	mov rdx,4
 	call print_chars
 
 	; print resultant (x)
+	mov rdi,SYS_STDOUT
 	mov rsi,.x
-	mov rdx,3
+	mov rdx,10
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+
+	; compute A_copy*x-b_copy to check our error
+	; (should be 0.00)
+;	mov rdi,.Ax_minus_b
+;	mov rsi,.A_copy
+;	mov rdx,.x
+;	mov rcx,10
+;	mov r8,10
+;	mov r9,1
+;	call matrix_multiply
+
+	mov rdi,.Ax_minus_b
+	mov rsi,.b_copy
+	mov rdx,10
+	call matrix_subtract_in_place
+
+	; print `\nAx-b=\n`
+	mov rdi,SYS_STDOUT
+	mov rsi,.grammar5
+	mov rdx,7
+	call print_chars
+
+	; print the error (Ax-b)
+	mov rdi,SYS_STDOUT
+	mov rsi,.Ax_minus_b
+	mov rdx,10
 	mov rcx,1
 	xor r8,r8
 	mov r9,print_float
@@ -249,32 +183,46 @@ START:
 	call print_array_float
 	
 	; flush print buffer
+	mov rdi,SYS_STDOUT
 	call print_buffer_flush
 
-	; exit 
-	xor dil,dil
-	call exit	
-
+	; exit
+	xor rdi,rdi
+	call exit
 
 .A:	; left-hand-side matrix
-	dq -13.00, -6.66, 4.20
-	dq -6.90, 13.37, 17.76
-	dq 14.88, 42.00, 7.77
+	dq 0.315830,0.718678,0.643784,0.264561,0.026255,0.012253,0.182901,0.746122,0.778747,0.616386
+	dq 0.934982,0.772819,0.710261,0.529634,0.729353,0.800348,0.076543,0.311112,0.825929,0.628582
+	dq 0.725809,0.578045,0.886985,0.436040,0.227404,0.910350,0.418371,0.859447,0.486491,0.104371
+	dq 0.393253,0.082315,0.070661,0.401792,0.503068,0.168260,0.897839,0.154161,0.140111,0.969764
+	dq 0.181329,0.872779,0.990957,0.404892,0.557183,0.161105,0.261683,0.875127,0.502225,0.423103
+	dq 0.071594,0.469551,0.453939,0.362485,0.380149,0.562559,0.556261,0.076676,0.946100,0.853400
+	dq 0.968693,0.183503,0.028800,0.884395,0.135946,0.766381,0.828997,0.515065,0.029500,0.055620
+	dq 0.977877,0.414485,0.106278,0.231908,0.622803,0.062961,0.566598,0.404039,0.757158,0.619621
+	dq 0.019140,0.426698,0.744837,0.172939,0.345544,0.912820,0.607630,0.828331,0.824672,0.431111
+	dq 0.893784,0.131251,0.502070,0.843047,0.936461,0.241379,0.510511,0.013705,0.348640,0.267587
+
+.A_copy:; let's save a copy of A just so we can check our work after
+	; destroying A with in-place LU decomposition 
+	; (unnecessary, obviously)
+	times 100 dq 0.00
 
 .b: ; right-hand-side vector
-	dq 1.23, -4.56, 7.89
+	dq 0.1575,0.5914,0.5803,0.5691,0.7833,0.7300,0.1439,0.6159,0.9052,0.8420
 
-.L: ; space for lower-triangular matrix
-	times 9 dq 0.00
-
-.U: ; space for upper-triangular matrix
-	times 9 dq 0.00
-
-.Ux: ; space for solved (intermediate) unknown vector
-	times 3 dq 0.00
+.b_copy:; let's save a copy of B just so we can check our work after
+	; destroying A with in-place LU decomposition 
+	; (unnecesary, obviously)
+	times 10 dq 0.00
 
 .x: ; space for solved unknown vector
-	times 3 dq 0.00
+	times 10 dq 0.00
+
+;.Ax: ; space for multiplication
+;	times 100 dq 0.00
+
+.Ax_minus_b: ; space to check our work (unnecessary, obviously)
+	times 10 dq 0.00
 
 .grammar1:
 	db `Trying to solve Ax=b:\n`
@@ -283,19 +231,9 @@ START:
 .grammar3:
 	db `\nb=\n`
 .grammar4:
-	db `\nA decomposed into LU in-place:\n`
-.grammar5:
-	db `\nU=\n`
-.grammar6:
-	db `\nL=\n`
-.grammar7:
-	db `\nNew problem is Ax=L(Ux)=b. Using forward substitution to find (Ux):\n`
-.grammar8:
-	db `\n(Ux)=\n`
-.grammar9:
-	db `\nNew problem is Ux=(Ux). Using backward substitution to find x:\n`
-.grammar10:
 	db `\nx=\n`
+.grammar5:
+	db `\nAx-b=\n`
 
 END:
 
