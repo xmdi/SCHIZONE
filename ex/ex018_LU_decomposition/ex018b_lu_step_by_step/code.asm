@@ -54,7 +54,7 @@ PROGRAM_HEADER:
 ;	int {r8}, void* {r9}, int {r10});
 
 %include "lib/math/lin_alg/lu_decomposition.asm"
-; void LU_decomposition(double* {rdi}, uint {rsi});
+; void lu_decomposition(double* {rdi}, uint {rsi});
 
 %include "lib/math/lin_alg/forward_substitution.asm"
 ; bool forward_substitution(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});

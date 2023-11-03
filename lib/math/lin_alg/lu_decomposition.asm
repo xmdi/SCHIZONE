@@ -23,14 +23,14 @@ lu_decomposition:
 	movdqu [rsp+32],xmm2
 
 	; algorithm:
-	;	for k=0:(n-1)
-	;		for i=(k+1):n
-	;			A(i,k)=A(i,k)/A(k,k); <-- that's why pivotless is a bad idea
-	;			for j=(k+1):n
-	;				A(i,j)=A(i,j)-A(i,k)*A(k,j);
-	;			end
-	;		end
-	;	end
+	;   for k=0:(n-1)
+	;      for i=(k+1):n
+	;         A(i,k)=A(i,k)/A(k,k); <-- that's why pivotless is a bad idea
+	;         for j=(k+1):n
+	;	     A(i,j)=A(i,j)-A(i,k)*A(k,j);
+	;	  end
+	;      end
+	;   end
 
 	; {rdi} points to the start of the matrix A
 	; {rsi} contains the number of rows and columns in A

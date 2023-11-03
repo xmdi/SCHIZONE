@@ -58,7 +58,8 @@ PROGRAM_HEADER:
 ;	void* {r9});
 
 %include "lib/math/lin_alg/plu_solve.asm"
-; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx});
+; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
+;	uint* {r8});
 
 %include "lib/mem/memcopy.asm"
 ; void memcopy(long* {rdi}, long* {rsi}, ulong {rdx});
