@@ -37,7 +37,7 @@ inverse_2x2:
 	movsd [rdi+16],xmm0
 
 	; element 2,2
-	movsd xmm0,[rsi+24]
+	movsd xmm0,[rsi]
 	mulsd xmm0,xmm1
 	movsd [rdi+24],xmm0
 

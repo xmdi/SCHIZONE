@@ -49,14 +49,9 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/math/lin_alg/is_upper_triangular.asm"
-; bool {rax} is_upper_triangular(double* {rdi}, uint {rsi}, double {xmm0});
-
-%include "lib/math/lin_alg/is_lower_triangular.asm"
-; bool {rax} is_lower_triangular(double* {rdi}, uint {rsi}, double {xmm0});
-
-%include "lib/math/lin_alg/is_diagonal.asm"
-; bool {rax} is_diagonal(double* {rdi}, uint {rsi}, double {xmm0});
+%include "lib/math/lin_alg/linear_least_squares.asm"
+; void linear_least_squares(double* {rdi}, double* {rsi}, double* {rdx}, 
+;	uint rcx);
 
 %include "lib/io/print_array_float.asm"
 ; void print_array_float(int {rdi}, double* {rsi}, int {rdx}, int {rcx}, 
@@ -69,129 +64,30 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; this function checks the types of a matrix in {rbx} and prints stuff out
-CHECK_MATRIX_TYPES:
-
-	movsd xmm0,[.tolerance]
-
-	; print out the matrix of interest
-	mov rdi,SYS_STDOUT
-	mov rsi,rbx
-	mov rcx,4
-	mov rdx,4
-	xor r8,r8
-	mov r9,print_float
-	mov r10,3
-	call print_array_float
-
-	; print `Is this matrix upper-triangular? `
-	mov rsi,.is_this_upper_triangular
-	mov rdx,33
-	call print_chars
-
-	mov rdi,rbx
-	mov rsi,4
-	call is_upper_triangular
-	mov rdi,SYS_STDOUT
-	test rax,rax
-	jz .not_upper_triangular
-	mov rsi,.yes
-	mov rdx,4
-	call print_chars
-	jmp .check_lower_triangular
-.not_upper_triangular:
-	mov rsi,.no
-	mov rdx,7
-	call print_chars
-
-.check_lower_triangular:
-
-	; print `Is this matrix lower-triangular? `
-	mov rsi,.is_this_lower_triangular
-	mov rdx,33
-	call print_chars
-
-	mov rdi,rbx
-	mov rsi,4
-	call is_lower_triangular
-	mov rdi,SYS_STDOUT
-	test rax,rax
-	jz .not_lower_triangular
-	mov rsi,.yes
-	mov rdx,4
-	call print_chars
-	jmp .check_diagonal
-.not_lower_triangular:
-	mov rsi,.no
-	mov rdx,7
-	call print_chars
-.check_diagonal:
-	; print `Is this matrix diagonal? `
-	mov rsi,.is_this_diagonal
-	mov rdx,25
-	call print_chars
-
-	mov rdi,rbx
-	mov rsi,4
-	call is_diagonal
-	mov rdi,SYS_STDOUT
-	test rax,rax
-	jz .not_diagonal
-	mov rsi,.yes
-	mov rdx,4
-	call print_chars
-	jmp .done
-.not_diagonal:
-	mov rsi,.no
-	mov rdx,7
-	call print_chars
-.done:
-	ret
-
-.is_this_upper_triangular:
-	db `Is this matrix upper-triangular? `
-.is_this_lower_triangular:
-	db `Is this matrix lower-triangular? `
-.is_this_diagonal:
-	db `Is this matrix diagonal? `
-.yes:
-	db `yup\n`
-.no:
-	db `no lol\n`
-.tolerance:
-	dq 0.00001
-
 START:
 
-	mov rbx,.matrix_1
-	call CHECK_MATRIX_TYPES
+	; solve linear least squares
+	mov rdi,.regression_coefficients
+	mov rsi,.x_values
+	mov rdx,.y_values
+	mov rcx,6
+	call linear_least_squares
+
+	; print the coefficients
+	mov rdi,SYS_STDOUT
+	mov rsi,.regression_coefficients
+	mov rdx,2
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,6
+	call print_array_float	
 
 	; print newline
 	mov rdi,SYS_STDOUT
 	mov rsi,.newline
 	mov rdx,1
 	call print_chars
-
-	mov rbx,.matrix_2
-	call CHECK_MATRIX_TYPES
-
-	; print newline
-	mov rdi,SYS_STDOUT
-	mov rsi,.newline
-	mov rdx,1
-	call print_chars
-
-	mov rbx,.matrix_3
-	call CHECK_MATRIX_TYPES
-	
-	; print newline
-	mov rdi,SYS_STDOUT
-	mov rsi,.newline
-	mov rdx,1
-	call print_chars
-
-	mov rbx,.matrix_4
-	call CHECK_MATRIX_TYPES
 
 	; flush print buffer
 	call print_buffer_flush
@@ -203,35 +99,24 @@ START:
 .newline:
 	db `\n`
 
-.matrix_1: ; fully populated pi matrix
-	times 16 dq 3.13
+.x_values:
+	dq 1.00
+	dq 2.00
+	dq 3.00
+	dq 4.00
+	dq 5.00
+	dq 7.00
 
-.matrix_2: ; upper-triangular pi matrix
-	times 4 dq 3.13
-	dq 0.0 
-	times 3 dq 3.13
-	times 2 dq 0.0 
-	times 2 dq 3.13
-	times 3 dq 0.0
-	dq 3.13
+.y_values:
+	dq 4.50
+	dq 10.0
+	dq 15.4
+	dq 20.1
+	dq 24.8
+	dq 34.0
 
-.matrix_3: ; lower triangular pi matrix
-	dq 3.13
-	times 3 dq 0.0
-	times 2 dq 3.13
-	times 2 dq 0.0
-	times 3 dq 3.13
-	dq 0.0
-	times 4 dq 3.13
-
-.matrix_4: ; diagonal pi matrix
-	dq 3.13
-	times 4 dq 0.0
-	dq 3.13
-	times 4 dq 0.0
-	dq 3.13
-	times 4 dq 0.0
-	dq 3.13
+.regression_coefficients:
+	times 16 db 0
 
 END:
 
