@@ -27,6 +27,7 @@
 ; ioctl
 %define SYS_TCGETA 0x5401
 %define SYS_TCSETA 0x5402
+%define SYS_FBIOGET_VSCREENINFO 0x4600
 
 ; termios input flags
 %define SYS_IGNBRK 0x1 ; ignore BREAK condition
