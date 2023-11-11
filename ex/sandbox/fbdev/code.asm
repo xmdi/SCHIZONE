@@ -74,32 +74,36 @@ START:
 	call file_open
 	mov r15,rax	; save file descriptor in {r15}
 
+	call heap_init
+	mov rdi,1280
+	call heap_alloc
+	mov r13,rax	; framebuffer screeninfo will be at address in {r13}
+
+
 	; get framebuffer info
 	mov rdi,r15
 	mov rsi,SYS_FBIOGET_VSCREENINFO
-	mov rdx,.fb_var_screeninfo
-	mov rax, SYS_IOCTL
+	mov rdx,r13
+	mov rax,SYS_IOCTL
 	syscall
 
-	mov esi,[.fb_var_screeninfo+0]
-	imul esi,[.fb_var_screeninfo+4]
-	imul esi,[.fb_var_screeninfo+24]
+	mov esi,[r13+0]
+	imul esi,[r13+4]
+	imul esi,[r13+24]
 	shr esi,3		; number of bytes to map
 	mov r14,rsi
 
-	call heap_init
-	
 	mov rdi,r14
 	call heap_alloc
 	mov r11,rax	; .screenbuffer address in {r11}
 	
 	mov r8,r11
-	mov r9d,[.fb_var_screeninfo+4]
+	mov r9d,[r13+4]
 .loop_rows:
 	xor ecx,ecx
 .loop_cols:
 	xor rdx,rdx
-	mov eax,[.fb_var_screeninfo+0]
+	mov eax,[r13+0]
 	mov rbx,3
 	div rbx
 	cmp ecx,eax
@@ -123,7 +127,7 @@ START:
 	add r8,4
 	
 	inc ecx
-	cmp ecx,[.fb_var_screeninfo+0]
+	cmp ecx,[r13+0]
 	jb .loop_cols
 
 	dec r9d
@@ -141,9 +145,6 @@ START:
 
 .filename:
 	db `/dev/fb0\0` 
-
-.fb_var_screeninfo:
-	times 1280 db 0
 
 END:
 
