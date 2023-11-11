@@ -5,6 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
+%define HEAP_SIZE 0x1000000 ; ~16 MB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,7 +41,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,6 +51,12 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/io/file_open.asm"
+
+%include "lib/mem/heap_init.asm"
+; void heap_init(void);
+
+%include "lib/mem/heap_alloc.asm"
+; void* {rax} heap_alloc(long {rdi});
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -74,9 +81,62 @@ START:
 	mov rax, SYS_IOCTL
 	syscall
 
-	mov edi,[.fb_var_screeninfo+0]	; xres
-	;mov edi,[.fb_var_screeninfo+4]	; yres
-	;mov edi,[.fb_var_screeninfo+24]; bits per pixel
+	mov esi,[.fb_var_screeninfo+0]
+	imul esi,[.fb_var_screeninfo+4]
+	imul esi,[.fb_var_screeninfo+24]
+	shr esi,3		; number of bytes to map
+	mov r14,rsi
+
+	call heap_init
+	
+	mov rdi,r14
+	call heap_alloc
+	mov r11,rax	; .screenbuffer address in {r11}
+	
+	mov r8,r11
+	mov r9d,[.fb_var_screeninfo+4]
+.loop_rows:
+	xor ecx,ecx
+.loop_cols:
+	xor rdx,rdx
+	mov eax,[.fb_var_screeninfo+0]
+	mov rbx,3
+	div rbx
+	cmp ecx,eax
+	jbe .green
+	shl eax,1
+	cmp ecx,eax
+	jbe .white
+
+.red:
+	mov rax,0x00ff0000
+	mov [r8],rax
+	jmp .next_pixel
+.green:
+	mov rax,0x0000ff00
+	mov [r8],rax
+	jmp .next_pixel
+.white:	
+	mov rax,0xffffffff
+	mov [r8],rax
+.next_pixel:
+	add r8,4
+	
+	inc ecx
+	cmp ecx,[.fb_var_screeninfo+0]
+	jb .loop_cols
+
+	dec r9d
+	jnz .loop_rows
+
+	; write the screenbuffer to the framebuffer
+	mov rax,SYS_WRITE
+	mov rdi,r15
+	mov rsi,r11
+	mov rdx,r14
+	syscall
+
+	xor dil,dil
 	call exit
 
 .filename:
@@ -89,3 +149,5 @@ END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
+
+HEAP_START_ADDRESS equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)
