@@ -31,6 +31,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | OCT 20, 2023 | [Root Finding](ex/ex017_root_finding) | [EP. 017](https://youtu.be/TNmAOsaUJiQ) |
 | NOV 03, 2023 | [LU Decomposition](ex/ex018_LU_decomposition) | [EP. 018](https://youtu.be/ApkJGn0Wiss) |
 | NOV 10, 2023 | [Least Squares Regression](ex/ex019_least_squares_regression) | [EP. 019](https://youtu.be/ka0pG7-h-ig) |
+| NOV 17, 2023 | [Framebuffer](ex/ex020_framebuffer) | [EP. 020](https://youtu.be/) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
