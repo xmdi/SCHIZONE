@@ -50,14 +50,14 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/file_open.asm"
-; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
-
 %include "lib/mem/heap_init.asm"
 ; void heap_init(void);
 
-%include "lib/mem/heap_alloc.asm"
-; void* {rax} heap_alloc(long {rdi});
+%include "lib/io/framebuffer/framebuffer_init.asm"
+; void framebuffer_init(void);
+
+%include "lib/io/framebuffer/framebuffer_flush.asm"
+; void framebuffer_flush(void);
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -68,80 +68,16 @@ PROGRAM_HEADER:
 
 START:
 
-	; open framebuffer
-	mov rdi,.filename
-	mov rsi,SYS_READ_WRITE
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open
-	mov r15,rax	; save file descriptor in {r15}
-
 	call heap_init
-	mov rdi,1280
-	call heap_alloc
-	mov r13,rax	; framebuffer screeninfo will be at address in {r13}
 
-	; get framebuffer info
-	mov rdi,r15
-	mov rsi,SYS_FBIOGET_VSCREENINFO
-	mov rdx,r13
-	mov rax,SYS_IOCTL
-	syscall
+	call framebuffer_init
 
-	mov esi,[r13+0]
-	imul esi,[r13+4]
-	imul esi,[r13+24]
-	shr esi,3		; number of bytes to map
-	mov r14,rsi
+	call exit
 
-	mov rdi,r14
-	call heap_alloc
-	mov r11,rax	; .screenbuffer address in {r11}
-	
-	mov r8,r11
-	mov r9d,[r13+4]
-.loop_rows:
-	xor ecx,ecx
-.loop_cols:
-	xor rdx,rdx
-	mov eax,[r13+0]
-	mov rbx,3
-	div rbx
-	cmp ecx,eax
-	jbe .green
-	shl eax,1
-	cmp ecx,eax
-	jbe .white
-.red:
-	mov rax,0x00ff0000
-	mov [r8],rax
-	jmp .next_pixel
-.green:
-	mov rax,0x0000ff00
-	mov [r8],rax
-	jmp .next_pixel
-.white:	
-	mov rax,0x00ffffff
-	mov [r8],rax
-.next_pixel:
-	add r8,4
-	inc ecx
-	cmp ecx,[r13+0]
-	jb .loop_cols
-	dec r9d
-	jnz .loop_rows
-
-	; write the screenbuffer to the framebuffer
-	mov rax,SYS_WRITE
-	mov rdi,r15
-	mov rsi,r11
-	mov rdx,r14
-	syscall
+	call framebuffer_flush
 
 	xor dil,dil
 	call exit
-
-.filename:
-	db `/dev/fb0\0` 
 
 END:
 
