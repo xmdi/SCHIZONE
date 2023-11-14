@@ -56,6 +56,9 @@ PROGRAM_HEADER:
 %include "lib/io/framebuffer/framebuffer_init.asm"
 ; void framebuffer_init(void);
 
+%include "lib/io/framebuffer/framebuffer_clear.asm"
+; void framebuffer_clear(uint {rdi});
+
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
@@ -72,7 +75,8 @@ START:
 
 	call framebuffer_init
 
-	call exit
+	mov rdi,0x000000ff
+	call framebuffer_clear
 
 	call framebuffer_flush
 

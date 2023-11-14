@@ -25,19 +25,4 @@ framebuffer_flush:
 
 	ret
 
-.filename:
-	db `/dev/fb0\0` 
-
-.framebuffer_file_descriptor:
-	db 0
-
-.framebuffer_size:
-	dq 0
-
-.screen_info_address:
-	dq 0
-
-.framebuffer_address:
-	dq 0
-
 %endif
