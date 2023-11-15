@@ -25,17 +25,18 @@ framebuffer_init:
 	mov rdi,1280
 	call heap_alloc
 	mov [.screen_info_address],rax	; save screen info address for later access
-	
+
 	; get framebuffer info
-	mov dil,.framebuffer_file_descriptor
+	mov rdi,[.framebuffer_file_descriptor]
 	mov rsi,SYS_FBIOGET_VSCREENINFO
 	mov rdx,rax
 	mov rax,SYS_IOCTL
 	syscall
 
-	mov esi,[.screen_info_address+0]
-	imul esi,[.screen_info_address+4]
-	imul esi,[.screen_info_address+24]
+	mov rdx,[.screen_info_address]
+	mov esi,[rdx+0]
+	imul esi,[rdx+4]
+	imul esi,[rdx+24]
 	shr esi,3		; number of bytes in buffer
 	mov [.framebuffer_size],rsi
 

@@ -11,15 +11,21 @@ framebuffer_clear:
 	push rcx
 
 	; loop thru all pixels in framebuffer and set color
-	mov rcx,framebuffer_init.framebuffer_size
+	mov rcx,[framebuffer_init.framebuffer_size]
 	shr rcx,2
-	mov rsi,framebuffer_init.framebuffer_address
+	mov rsi,[framebuffer_init.framebuffer_address]
+
 .loop:
-	mov [rsi],dword edi
+	mov [rsi],edi
+;	mov rdi,SYS_STDOUT
+;	mov rsi,rcx
+;	call print_int_h
+;	call print_buffer_flush
 	add rsi,4
 	dec rcx
 	jnz .loop
 
+.end:
 	pop rcx
 	pop rsi
 
