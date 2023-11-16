@@ -44,6 +44,16 @@ framebuffer_init:
 	call heap_alloc
 	mov [.framebuffer_address],rax	; save framebuffer address
 
+	mov rdi,SYS_STDOUT
+	mov rsi,rax
+	call print_int_h
+
+	mov rsi,[.framebuffer_address]
+	call print_int_h
+	call print_buffer_flush
+;	call exit
+
+
 	pop rax
 	pop rdx
 	pop rsi

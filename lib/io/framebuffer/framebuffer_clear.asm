@@ -16,11 +16,13 @@ framebuffer_clear:
 	mov rsi,[framebuffer_init.framebuffer_address]
 
 .loop:
-	mov [rsi],edi
+	mov dword [rsi],edi
+;	push rsi
 ;	mov rdi,SYS_STDOUT
-;	mov rsi,rcx
 ;	call print_int_h
 ;	call print_buffer_flush
+;	call exit
+;	pop rsi
 	add rsi,4
 	dec rcx
 	jnz .loop

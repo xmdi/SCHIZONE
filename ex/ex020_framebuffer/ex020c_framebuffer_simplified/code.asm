@@ -79,8 +79,15 @@ START:
 
 	call framebuffer_init
 
-	mov rdi,0xffffffff
+	mov rdi,0x00ff0000
 	call framebuffer_clear
+
+	mov rdi,SYS_STDOUT
+	mov rsi,framebuffer_init.framebuffer_address
+	mov rdx,print_int_h
+	mov rcx,16
+	call print_memory
+	call print_buffer_flush
 
 	call framebuffer_flush
 
