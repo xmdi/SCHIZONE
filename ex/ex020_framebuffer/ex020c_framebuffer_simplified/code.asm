@@ -62,10 +62,6 @@ PROGRAM_HEADER:
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
-%include "lib/io/print_int_h.asm"
-%include "lib/io/print_int_d.asm"
-%include "lib/io/print_memory.asm"
-
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -79,17 +75,10 @@ START:
 
 	call framebuffer_init
 
-	mov rdi,0x00ff0000
+	mov rdi,0x0000ff00	; clear screen to green
 	call framebuffer_clear
 
-	mov rdi,SYS_STDOUT
-	mov rsi,framebuffer_init.framebuffer_address
-	mov rdx,print_int_h
-	mov rcx,16
-	call print_memory
-	call print_buffer_flush
-
-	call framebuffer_flush
+	call framebuffer_flush	; flush frame to framebuffer
 
 	xor dil,dil
 	call exit

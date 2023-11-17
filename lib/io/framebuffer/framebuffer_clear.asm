@@ -5,7 +5,7 @@
 
 framebuffer_clear:
 ; void framebuffer_clear(uint {rdi});
-; Sets the framebuffer to the 32-bit ARGB color defined in {rdi}.
+; Sets the entire frame to the 32-bit ARGB color defined in {rdi}.
 
 	push rsi
 	push rcx
@@ -17,12 +17,6 @@ framebuffer_clear:
 
 .loop:
 	mov dword [rsi],edi
-;	push rsi
-;	mov rdi,SYS_STDOUT
-;	call print_int_h
-;	call print_buffer_flush
-;	call exit
-;	pop rsi
 	add rsi,4
 	dec rcx
 	jnz .loop

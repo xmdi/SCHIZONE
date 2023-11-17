@@ -6,7 +6,7 @@
 
 framebuffer_init:
 ; void framebuffer_init(void);
-; Initializes a framebuffer for drawing purposes. User will need to be part of
+; Initializes a frame for drawing purposes. User will need to be part of
 ; video group and call this routine from a tty that isn't running X11/etc.
 ; Needs a heap to be instantiated of the appropriate size (~16 MB to be safe).
 ; No error handling; deal with it.
@@ -43,16 +43,6 @@ framebuffer_init:
 	mov rdi,rsi
 	call heap_alloc
 	mov [.framebuffer_address],rax	; save framebuffer address
-
-	mov rdi,SYS_STDOUT
-	mov rsi,rax
-	call print_int_h
-
-	mov rsi,[.framebuffer_address]
-	call print_int_h
-	call print_buffer_flush
-;	call exit
-
 
 	pop rax
 	pop rdx
