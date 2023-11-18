@@ -8,6 +8,7 @@
 %define SYS_CHMOD 15
 %define SYS_IOCTL 54
 %define SYS_GETTIMEOFDAY 116
+%define SYS_LSEEK 478
 %define SYS_GETRANDOM 563
 
 ; file descriptors
@@ -58,6 +59,11 @@
 %define SYS_ICANON 0x100 ; canonicalize input lines
 %define SYS_ISIG 0x80 ; enable INTR, QUIT, (D)SUSP signals
 %define SYS_IEXTEN 0x400 ; enable DISCARD and LNEXT
+
+; lseek modes
+%define SYS_SEEK_SET 0 ; seek offset relative to file start
+%define SYS_SEEK_CUR 1 ; seek offset relative to current position
+%define SYS_SEEK_END 2 ; seek offset relative to file end
 
 ; pointer to argc at program start
 %define SYS_ARGC_START_POINTER rdi

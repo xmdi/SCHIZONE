@@ -3,6 +3,7 @@
 %define SYS_WRITE 1
 %define SYS_OPEN 2
 %define SYS_CLOSE 3
+%define SYS_LSEEK 8
 %define SYS_IOCTL 16
 %define SYS_EXIT 60
 %define SYS_UNLINK 87
@@ -59,6 +60,11 @@
 %define SYS_ICANON 0x2 ; canonicalize input lines
 %define SYS_ISIG 0x1 ; enable INTR, QUIT, (D)SUSP signals
 %define SYS_IEXTEN 0x8000 ; enable DISCARD and LNEXT
+
+; lseek modes
+%define SYS_SEEK_SET 0 ; seek offset relative to file start
+%define SYS_SEEK_CUR 1 ; seek offset relative to current position
+%define SYS_SEEK_END 2 ; seek offset relative to file end
 
 ; pointer to argc at program start
 %define SYS_ARGC_START_POINTER rsp

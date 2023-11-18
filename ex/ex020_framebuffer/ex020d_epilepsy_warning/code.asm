@@ -75,30 +75,25 @@ PROGRAM_HEADER:
 START:
 
 	call heap_init
-
 	call framebuffer_init
-
 
 .loop:
 
-	mov rdi,10000
+	mov rdi,50000		; small delay
 	call sleep
 
-	mov rdi,0x0000ffff	; clear screen to green
+	mov rdi,0x0000ffff	; clear screen to cyan
 	call framebuffer_clear
 	
 	call framebuffer_flush	; flush frame to framebuffer
 	
-	mov rdi,10000
+	mov rdi,50000		; small delay
 	call sleep
 
-	mov rdi,0x00ff0000	; clear screen to green
+	mov rdi,0x00ff0000	; clear screen to red
 	call framebuffer_clear
 	
 	call framebuffer_flush	; flush frame to framebuffer
-
-	xor dil,dil
-	call exit
 
 	jmp .loop
 
