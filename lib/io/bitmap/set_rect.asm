@@ -6,7 +6,7 @@
 %include "lib/io/bitmap/set_pixel.asm"
 
 set_rect:
-; void set_line(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+; void set_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 ;	Draws rectangle from ({r8d},{r9d}) to ({r10d},{r11d}) (from (0,0)
 ;	@ top-left) in ARGB data array starting at {rdi} for an 

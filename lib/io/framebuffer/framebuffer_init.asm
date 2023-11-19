@@ -33,6 +33,13 @@ framebuffer_init:
 	mov rax,SYS_IOCTL
 	syscall
 
+	; save width and height
+	mov rax,[.screen_info_address]
+	mov edi,[rax+0]
+	mov [.framebuffer_width],edi
+	mov edi,[rax+4]
+	mov [.framebuffer_height],edi
+
 	mov rdx,[.screen_info_address]
 	mov esi,[rdx+0]
 	imul esi,[rdx+4]
@@ -56,6 +63,12 @@ framebuffer_init:
 
 .framebuffer_file_descriptor:
 	db 0
+
+.framebuffer_width:
+	dd 0
+
+.framebuffer_height:
+	dd 0
 
 .framebuffer_size:
 	dq 0
