@@ -10,8 +10,7 @@ set_filled_rect:
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 ;	Draws rectangle from ({r8d},{r9d}) to ({r10d},{r11d}) (from (0,0)
 ;	@ top-left) in ARGB data array starting at {rdi} for an 
-;	{edx}x{ecx} (WxH) image with a border color in the low 32 bits of
-;	{rsi}, and a fill color in the high 32 bits of {rsi}.
+;	{edx}x{ecx} (WxH) image with a fill color in the low 32 bits of {rsi}.
 
 	push r8
 	push r9

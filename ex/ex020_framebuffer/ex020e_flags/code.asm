@@ -65,6 +65,7 @@ PROGRAM_HEADER:
 %include "lib/io/bitmap/set_filled_rect.asm"
 
 %include "lib/io/print_int_d.asm"
+%include "lib/io/print_int_h.asm"
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -72,6 +73,60 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+GREECE: ; draws flag of greece with top-left at ({r14},{r15})
+
+	; blue background
+	mov rsi,0x1000D5EAF
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,600
+	mov r11d,r15d
+	add r11d,400
+	call set_filled_rect
+
+	; white stripes
+	mov rsi,0x1FFFFFFFF
+	add r9d,311
+	sub r11d,45
+	call set_filled_rect
+
+	sub r9d,89
+	sub r11d,89
+	call set_filled_rect
+
+	add r8d,222
+	sub r9d,89
+	sub r11d,89
+	call set_filled_rect
+	
+	sub r9d,89
+	sub r11d,89
+	call set_filled_rect
+	
+	; white cross
+	mov r8d,r14d
+	mov r9d,r15d
+	add r9d,89
+	mov r10d,r14d
+	mov r11d,r15d
+	add r10d,221
+	add r11d,132
+	call set_filled_rect
+
+	mov r8d,r14d
+	add r8d,89
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,133
+	mov r11d,r15d
+	add r11d,221
+	call set_filled_rect
+
+	ret
 
 START:
 
@@ -81,48 +136,13 @@ START:
 	mov rdi,0x00000000	; clear screen to black
 	call framebuffer_clear
 
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov esi,0x000D5EAF
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8d,200
-	mov r9d,200
-	mov r10d,200+600
-	mov r11d,200+400
-	call set_filled_rect
 
-	mov esi,0xFFFFFFFF
-	mov r9d,200+44
-	mov r11d,200+88
-	call set_filled_rect
+	mov r14d,100
+	mov r15d,1
+	call GREECE
 
-	mov r9d,200+133
-	mov r11d,200+177
-	call set_filled_rect
-
-	mov r8d,200+222
-	mov r9d,200+222
-	mov r11d,200+266
-	call set_filled_rect
-	
-	mov r9d,200+311
-	mov r11d,200+355
-	call set_filled_rect
-
-	mov r8d,200
-	mov r9d,200+267
-	mov r10d,200+221
-	mov r11d,200+310
-	call set_filled_rect
-
-	mov r8d,200+89
-	mov r9d,200+400
-	mov r10d,200+133
-	mov r11d,200+177
-	call set_filled_rect
 	
 	call framebuffer_flush	; flush frame to framebuffer
-
 
 	db 0xEB,0xFE		; old times' sake
 
