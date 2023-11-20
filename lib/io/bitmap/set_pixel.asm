@@ -28,14 +28,8 @@ set_pixel:
 	add rcx,r8
 	shl rcx,2	; offset to pixel address
 
-	mov rax,rsi
-	and rax,0xFFFFFFFF
-
-	mov rdi,SYS_STDOUT
-	mov rsi,rax
-	call print_int_h
-	call print_buffer_flush
-	call exit
+	mov rax,0xFFFFFFFF
+	and rax,rsi
 
 	mov [rdi+rcx], dword eax
 

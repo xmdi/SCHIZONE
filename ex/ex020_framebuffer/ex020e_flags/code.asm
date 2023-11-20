@@ -63,9 +63,7 @@ PROGRAM_HEADER:
 ; void framebuffer_flush(void);
 
 %include "lib/io/bitmap/set_filled_rect.asm"
-
-%include "lib/io/print_int_d.asm"
-%include "lib/io/print_int_h.asm"
+%include "lib/math/rand/rand_int.asm"
 
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
@@ -75,11 +73,9 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 GREECE: ; draws flag of greece with top-left at ({r14},{r15})
-
+	
 	; blue background
 	mov rsi,0x1000D5EAF
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8d,r14d
 	mov r9d,r15d
 	mov r10d,r14d
@@ -128,23 +124,226 @@ GREECE: ; draws flag of greece with top-left at ({r14},{r15})
 
 	ret
 
+ITALY:
+
+	; stripe 1
+	mov rsi,0x1FF008C45
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,200
+	mov r11d,r15d
+	add r11d,400
+	call set_filled_rect
+
+	; stripe 2
+	mov rsi,0x1FFF4F9FF
+	add r8d,201
+	add r10d,200
+	call set_filled_rect
+
+	; stripe 3
+	mov rsi,0x1FFCD212A
+	add r8d,200
+	add r10d,200
+	call set_filled_rect
+
+	ret
+
+FRANCE:
+
+	; stripe 1
+	mov rsi,0x1FF002654
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,200
+	mov r11d,r15d
+	add r11d,400
+	call set_filled_rect
+
+	; stripe 2
+	mov rsi,0x1FFFFFFFF
+	add r8d,201
+	add r10d,200
+	call set_filled_rect
+
+	; stripe 3
+	mov rsi,0x1FFED2939
+	add r8d,200
+	add r10d,200
+	call set_filled_rect
+
+	ret
+
+BELGIUM:
+
+	; stripe 1
+	mov rsi,0x1FF2D2926
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,200
+	mov r11d,r15d
+	add r11d,400
+	call set_filled_rect
+
+	; stripe 2
+	mov rsi,0x1FFFFCD00
+	add r8d,201
+	add r10d,200
+	call set_filled_rect
+
+	; stripe 3
+	mov rsi,0x1FFC8102E
+	add r8d,200
+	add r10d,200
+	call set_filled_rect
+
+	ret
+
+IRELAND:
+
+	; stripe 1
+	mov rsi,0x1FF009A44
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,200
+	mov r11d,r15d
+	add r11d,400
+	call set_filled_rect
+
+	; stripe 2
+	mov rsi,0x1FFFFFFFF
+	add r8d,201
+	add r10d,200
+	call set_filled_rect
+
+	; stripe 3
+	mov rsi,0x1FFFF8200
+	add r8d,200
+	add r10d,200
+	call set_filled_rect
+
+	ret
+
+POLAND:
+
+	; stripe 1
+	mov rsi,0x1FFFFFFFF
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,600
+	mov r11d,r15d
+	add r11d,200
+	call set_filled_rect
+
+	; stripe 2
+	mov rsi,0x1FFDC143C
+	add r9d,201
+	add r11d,200
+	call set_filled_rect
+
+	ret
+
+
 START:
 
 	call heap_init
 	call framebuffer_init
 
-	mov rdi,0x00000000	; clear screen to black
-	call framebuffer_clear
-
-
-	mov r14d,100
-	mov r15d,1
-	call GREECE
-
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
 	
-	call framebuffer_flush	; flush frame to framebuffer
+	; starting x
+	xor rdi,rdi	
+	mov esi,[framebuffer_init.framebuffer_width]
+	sub esi,600
+	call rand_int
+	mov r14,rax
 
-	db 0xEB,0xFE		; old times' sake
+	; starting y
+	mov esi,[framebuffer_init.framebuffer_height]
+	sub esi,400
+	call rand_int
+	mov r15,rax
+
+	; starting country
+	mov rsi,[NUMBER_OF_COUNTRIES]
+	dec rsi
+	call rand_int
+	shl rax,3
+	add rax,COUNTRIES
+	mov rbp,[rax]
+	xor rbx,rbx
+	
+	mov r12,1	; dx
+	mov r13,1	; dy
+	xor rbx,rbx	; wall-collision flag
+
+.loop:
+
+	cmp r14d,0
+	jne .not_left
+	neg r12
+	mov rbx,1
+.not_left:
+	mov eax,[framebuffer_init.framebuffer_width]
+	sub eax,600
+	cmp r14d,eax
+	jne .not_right
+	neg r12
+	mov rbx,1
+.not_right:
+	cmp r15d,0
+	jne .not_top
+	neg r13
+	mov rbx,1
+.not_top:
+	mov eax,[framebuffer_init.framebuffer_height]
+	sub eax,400
+	cmp r15d,eax
+	jne .not_bottom
+	neg r13
+	mov rbx,1
+.not_bottom:
+	add r14d,r12d
+	add r15d,r13d
+
+	cmp rbx,1
+	jne .flag_unchanged
+	xor rdi,rdi
+	mov rsi,[NUMBER_OF_COUNTRIES]
+	dec rsi
+	call rand_int
+	shl rax,3
+	add rax,COUNTRIES
+	mov rbp,[rax]
+	xor rbx,rbx
+.flag_unchanged:
+
+	xor rdi,rdi	
+	call framebuffer_clear
+	
+	mov rdi,[framebuffer_init.framebuffer_address]
+	call rbp
+
+	call framebuffer_flush	; flush frame to framebuffer
+	
+	jmp .loop
+
+NUMBER_OF_COUNTRIES:
+	dq 6
+
+COUNTRIES:
+	dq GREECE
+	dq ITALY
+	dq POLAND
+	dq FRANCE
+	dq BELGIUM
+	dq IRELAND
 
 END:
 
