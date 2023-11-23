@@ -2,7 +2,7 @@
 %define RASTERIZE_EDGES
 
 ; dependency
-%include "lib/io/bitmap/set_pixel.asm"
+%include "lib/io/bitmap/set_line.asm"
 
 rasterize_edges:
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
@@ -34,6 +34,24 @@ rasterize_edges:
 	dq 0 ; starting address of point array (3N elements)
 	dq 0 ; starting address of edge array (2M elements)
 %endif
+
+	push rax
+	push r10
+	push r11
+	push r12
+	push r13
+	push r14
+	push r15
+	sub rsp,144
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
+	movdqu [rsp+32],xmm2
+	movdqu [rsp+48],xmm3
+	movdqu [rsp+64],xmm4
+	movdqu [rsp+80],xmm5
+	movdqu [rsp+96],xmm6
+	movdqu [rsp+112],xmm7
+	movdqu [rsp+128],xmm8
 
 	; Uy = (upDir)
 	; Ux = (upDir)x(lookFrom-lookAt)
@@ -67,28 +85,120 @@ rasterize_edges:
 	mov r15,[r9+8]	; number of edges in r15
 	mov rax,[r9+24]
 	;loop thru all edges
+
 .loop_edges:
 
 	; grab first point
 	
-	mov r11,[rax]
-	shl r11,3
-	add r11,r11
-	add r11,r11	; {r11} points to the x value of the first point
+	mov r10,[rax]
+	shl r10,3
+	add r10,r10
+	add r10,r10	; {r10} points to the x value of the first point
+	add r10,[r9+16]
 	
-	movsd xmm0,[r11]	; Pt_x
-	movsd xmm1,[r11+8]	; Pt_y
-	movsd xmm2,[r11+16]	; Pt_z
+	movsd xmm0,[r10]	; Pt_x
+	movsd xmm1,[r10+8]	; Pt_y
+	movsd xmm2,[r10+16]	; Pt_z
 
-	mov
+	mulsd xmm0,xmm6		
+	mulsd xmm1,xmm7
+	mulsd xmm2,xmm8
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2		; Pt.Ux*zoom in {xmm0}
 
-	cvtsd2si
+	cvtsd2si r11,xmm0	
+	inc r11
+	imul r11,rdx		; {r11} contains pixel 1 x-coord
+	
+	movsd xmm0,[r10]	; Pt_x
+	movsd xmm1,[r10+8]	; Pt_y
+	movsd xmm2,[r10+16]	; Pt_z
+
+	mulsd xmm0,xmm3
+	mulsd xmm1,xmm4
+	mulsd xmm2,xmm5
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2		; Pt.Uy*zoom in {xmm0}
+
+	cvtsd2si r12,xmm0	
+	neg r12
+	inc r12
+	imul r12,rcx		; {r12} contains pixel 1 y-coord
+
+	add rax,8
+	
+	mov r10,[rax]
+	shl r10,3
+	add r10,r10
+	add r10,r10	; {r10} points to the x value of the second point
+	add r10,[r9+16]
+	
+	movsd xmm0,[r10]	; Pt_x
+	movsd xmm1,[r10+8]	; Pt_y
+	movsd xmm2,[r10+16]	; Pt_z
+
+	mulsd xmm0,xmm6		
+	mulsd xmm1,xmm7
+	mulsd xmm2,xmm8
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2		; Pt.Ux*zoom in {xmm0}
+
+	cvtsd2si r13,xmm0	
+	inc r13
+	imul r13,rdx		; {r13} contains pixel 2 x-coord
+	
+	movsd xmm0,[r10]	; Pt_x
+	movsd xmm1,[r10+8]	; Pt_y
+	movsd xmm2,[r10+16]	; Pt_z
+
+	mulsd xmm0,xmm3
+	mulsd xmm1,xmm4
+	mulsd xmm2,xmm5
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2		; Pt.Uy*zoom in {xmm0}
+
+	cvtsd2si r14,xmm0	
+	neg r14
+	inc r14
+	imul r14,rcx		; {r14} contains pixel 2 y-coord
+
+	push r8
+	push r9
+	push r10
+	push r11
+	mov r8,r11
+	mov r9,r12
+	mov r10,r13
+	mov r11,r14
+	shl rdx,1
+	shl rcx,1
+	call set_line
+	shr rdx,1
+	shr rcx,1
+	pop r11
+	pop r10
+	pop r9
+	pop r8
 
 	dec r15
 	jnz .loop_edges
 
-	
-
+	movdqu xmm0,[rsp+0]
+	movdqu xmm2,[rsp+32]
+	movdqu xmm3,[rsp+48]
+	movdqu xmm4,[rsp+64]
+	movdqu xmm5,[rsp+80]
+	movdqu xmm6,[rsp+96]
+	movdqu xmm7,[rsp+112]
+	movdqu xmm8,[rsp+128]
+	add rsp,144
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop rax
 
 	ret
 

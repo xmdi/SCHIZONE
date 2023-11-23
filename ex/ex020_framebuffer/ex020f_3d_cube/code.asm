@@ -62,6 +62,10 @@ PROGRAM_HEADER:
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
+%include "lib/io/bitmap/rasterize_edges.asm"
+; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+;		 struct* {r8}, struct* {r9});
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -77,10 +81,64 @@ START:
 
 	xor rdi,rdi	
 	call framebuffer_clear
+
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,0x1FFFFFFFF
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,.perspective_structure
+	mov r9,.edge_structure
+	call rasterize_edges	
+
+.loop:
 	
 	call framebuffer_flush	; flush frame to framebuffer
 
-	db 0xEB,0xFE	
+	db 0xEB,0xFE
+	
+	;jmp .loop
+
+.perspective_structure:
+	dq 5.00 ; lookFrom_x	
+	dq 0.00 ; lookFrom_y	
+	dq 0.00 ; lookFrom_z	
+	dq 0.00 ; lookAt_x	
+	dq 0.00 ; lookAt_y	
+	dq 0.00 ; lookAt_z	
+	dq 0.00 ; upDir_x	
+	dq 1.00 ; upDir_y	
+	dq 0.00 ; upDir_z	
+	dq 1.00	; zoom
+
+.edge_structure:
+	dq 8 ; number of points (N)
+	dq 12 ; number of edges (M)
+	dq .points ; starting address of point array (3N elements)
+	dq .edges ; starting address of edge array (2M elements)
+
+.points:
+	dq -1.00,-1.00,-1.00
+	dq -1.00,-1.00,1.00
+	dq -1.00,1.00,-1.00
+	dq -1.00,1.00,1.00
+	dq 1.00,-1.00,-1.00
+	dq 1.00,-1.00,1.00
+	dq 1.00,1.00,-1.00
+	dq 1.00,1.00,1.00
+
+.edges:
+	dq 0,1	
+	dq 2,3	
+	dq 4,5	
+	dq 6,7	
+	dq 0,2	
+	dq 1,3
+	dq 4,6
+	dq 5,7
+	dq 0,4	
+	dq 1,5	
+	dq 2,6
+	dq 3,7	
 
 END:
 
