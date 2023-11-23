@@ -8,6 +8,16 @@ set_pixel:
 ;	array starting at {rdi} for an {edx}x{ecx} (WxH) image to the 
 ;	value in {esi}. The 32nd bit of {rsi} indicates the y stacking direction:
 ;	0 for bottom-to-top formats (bmp) and 1 for top-to-bottom (framebuffer).
+;	Silently skips any pixel outside the image.
+
+	cmp r8d,0
+	jl .skip
+	cmp r9d,0
+	jl .skip
+	cmp r8d,edx
+	jge .skip
+	cmp r9d,ecx
+	jge .skip
 
 	push rcx
 	push rax
@@ -35,7 +45,7 @@ set_pixel:
 
 	pop rax
 	pop rcx
-
+.skip:
 	ret		; return
 
 %endif
