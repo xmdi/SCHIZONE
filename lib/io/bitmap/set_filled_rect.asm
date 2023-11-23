@@ -3,7 +3,6 @@
 
 ; dependency
 %include "lib/io/bitmap/set_line.asm"
-%include "lib/io/bitmap/set_pixel.asm"
 
 set_filled_rect:
 ; void set_filled_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
@@ -27,22 +26,22 @@ set_filled_rect:
 .start:
 
 	mov r11,r9
-	
+
 	; loop thru all rows
 .loop:
 
-	call set_line	
+	call set_line
 
 	add r9,rax
 	add r11,rax
 
 	cmp r9,[rsp+8]
 	jne .loop
-	
-	call set_line	
+
+	call set_line
 
 .ret:
-	pop rax	
+	pop rax
 	pop r11
 	pop r10
 	pop r9
