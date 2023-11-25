@@ -3,6 +3,8 @@
 
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
+%include "lib/math/int/max_int.asm"
+%include "lib/math/int/min_int.asm"
 
 set_filled_polygon:
 ; void set_filled_polygon(void* {rdi}, int {rsi}, int {edx}, int {ecx},
@@ -19,9 +21,28 @@ set_filled_polygon:
 	push r13
 	push rax
 
+	; find min and max y values
 
+	push rdi
+	push rsi
+	push rdx
 
+	mov rdi,r9
+	mov rsi,r8
+	add rsi,8
+	mov rdx,8
+	call min_int
+	mov r10,rax	; min y in r10
 
+	mov rdx,8
+	call max_int
+	mov r11,rax	; max y in r11
+
+	pop rdx
+	pop rsi
+	pop rdi
+
+	
 
 .ret:
 	pop rax
