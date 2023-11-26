@@ -8,7 +8,7 @@
 
 set_filled_polygon:
 ; void set_filled_polygon(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 double* {r8}, int {r9});
+;		 long* {r8}, int {r9});
 ;	Draws filled polygon with {r9} vertices in 2*{r9} length long (8-byte) int array at {r8}
 ;	to ARGB data array starting at {rdi} for an
 ;	{edx}x{ecx} (WxH) image with a fill color in the low 32 bits of {rsi}.
@@ -42,7 +42,27 @@ set_filled_polygon:
 	pop rsi
 	pop rdi
 
-	
+	; loop thru y rows low to high
+.loop:
+	mov r12,r8
+	add r12,8	; {r12} to 0th y
+	; check if and where last edge instersects y
+	mov rax,r9
+	dec rax
+	shl rax,4
+	add rax,r12	; {rax} to N-1th y
+
+
+.first_pt_
+	; loop thru edges to see if and where they cross the current y value
+.edge_loop:
+
+
+	add r12,
+
+	inc r10
+	cmp r10,r11
+	jle .loop
 
 .ret:
 	pop rax
