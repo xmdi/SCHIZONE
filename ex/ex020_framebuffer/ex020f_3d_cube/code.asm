@@ -66,6 +66,9 @@ PROGRAM_HEADER:
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
+%include "lib/io/print_int_d.asm"
+%include "lib/io/print_float.asm"
+
 %include "lib/sys/exit.asm"	
 ; void exit(byte {dil});
 
@@ -108,7 +111,7 @@ START:
 	dq 0.00 ; upDir_x	
 	dq 1.00 ; upDir_y	
 	dq 0.00 ; upDir_z	
-	dq 1.00	; zoom
+	dq 40.00	; zoom
 
 .edge_structure:
 	dq 8 ; number of points (N)

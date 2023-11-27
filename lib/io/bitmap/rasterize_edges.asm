@@ -114,6 +114,20 @@ rasterize_edges:
 	movsd xmm1,[r10+8]	; Pt_y
 	movsd xmm2,[r10+16]	; Pt_z
 
+%if 1
+	push rdi
+	push rsi
+	mov rdi,SYS_STDOUT
+	mov rsi,r11
+	call print_int_d
+;	movsd xmm0,xmm0
+;	mov rsi,8
+;	call print_float
+	call print_buffer_flush
+;	call exit
+	pop rsi
+	pop rdi
+%endif
 	mulsd xmm0,xmm3
 	mulsd xmm1,xmm4
 	mulsd xmm2,xmm5
@@ -201,5 +215,8 @@ rasterize_edges:
 	pop rax
 
 	ret
+
+.grammar:
+	db `\n`
 
 %endif
