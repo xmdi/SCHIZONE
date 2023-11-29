@@ -86,7 +86,7 @@ START:
 	call framebuffer_clear
 
 	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,0x1FFFFFFFF
+	mov rsi,0x1FFFFA500
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,.perspective_structure
@@ -97,21 +97,21 @@ START:
 	
 	call framebuffer_flush	; flush frame to framebuffer
 
-	db 0xEB,0xFE
-	
+;	db 0xEB,0xFE
+	call exit	
 	;jmp .loop
 
 .perspective_structure:
 	dq 5.00 ; lookFrom_x	
-	dq 0.00 ; lookFrom_y	
-	dq 0.00 ; lookFrom_z	
+	dq 5.00 ; lookFrom_y	
+	dq 5.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 0.00 ; lookAt_z	
-	dq 0.00 ; upDir_x	
-	dq 1.00 ; upDir_y	
-	dq 0.00 ; upDir_z	
-	dq 40.00	; zoom
+	dq 0.8 ; upDir_x	
+	dq 1.0 ; upDir_y	
+	dq 0.8 ; upDir_z	
+	dq 0.100	; zoom
 
 .edge_structure:
 	dq 8 ; number of points (N)
