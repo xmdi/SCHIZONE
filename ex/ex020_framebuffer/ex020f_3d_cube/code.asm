@@ -111,7 +111,7 @@ START:
 	dq 0.8 ; upDir_x	
 	dq 1.0 ; upDir_y	
 	dq 0.8 ; upDir_z	
-	dq 0.100	; zoom
+	dq 1.00	; zoom
 
 .edge_structure:
 	dq 8 ; number of points (N)
