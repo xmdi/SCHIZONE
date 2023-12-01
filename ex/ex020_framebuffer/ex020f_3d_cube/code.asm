@@ -107,7 +107,7 @@ START:
 	mov rsi,.perspective_structure+0
 	call perpendicularize_3
 
-	; propject & rasterize the cube onto the framebuffer
+	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FFFFA500
 	mov edx,[framebuffer_init.framebuffer_width]

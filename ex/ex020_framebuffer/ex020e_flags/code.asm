@@ -202,6 +202,33 @@ BELGIUM:
 
 	ret
 
+ROMANIA:
+
+	; stripe 1
+	mov rsi,0x1FF002B7F
+	mov r8d,r14d
+	mov r9d,r15d
+	mov r10d,r14d
+	add r10d,200
+	mov r11d,r15d
+	add r11d,400
+	call set_filled_rect
+
+	; stripe 2
+	mov rsi,0x1FFFCD116
+	add r8d,201
+	add r10d,200
+	call set_filled_rect
+
+	; stripe 3
+	mov rsi,0x1FFCE1126
+	add r8d,200
+	add r10d,200
+	call set_filled_rect
+
+	ret
+
+
 IRELAND:
 
 	; stripe 1
@@ -335,7 +362,7 @@ START:
 	jmp .loop
 
 NUMBER_OF_COUNTRIES:
-	dq 6
+	dq 7
 
 COUNTRIES:
 	dq GREECE
@@ -344,6 +371,7 @@ COUNTRIES:
 	dq FRANCE
 	dq BELGIUM
 	dq IRELAND
+	dq ROMANIA
 
 END:
 
