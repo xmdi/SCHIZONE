@@ -66,11 +66,14 @@ PROGRAM_HEADER:
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
-%include "lib/io/print_int_d.asm"
-%include "lib/io/print_float.asm"
+%include "lib/math/vector/perpendicularize_3.asm"
+; void perpendicularize_3(double* {rdi}, double* {rsi});
 
-%include "lib/sys/exit.asm"	
-; void exit(byte {dil});
+%include "lib/math/expressions/trig/sine.asm"
+; double {xmm0} sine(double {xmm0}, double {xmm1});
+
+%include "lib/math/expressions/trig/cosine.asm"
+; double {xmm0} cosine(double {xmm0}, double {xmm1});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -82,9 +85,29 @@ START:
 	call heap_init
 	call framebuffer_init
 
+.loop:
+
+	; clear screen to black
 	xor rdi,rdi	
 	call framebuffer_clear
 
+	; rotate the look_From point about the origin and global Z
+	movsd xmm0,[.rotation_angle]
+	movsd xmm1,[.tolerance]
+	call cosine
+	movsd [.perspective_structure+0],xmm0
+
+	movsd xmm0,[.rotation_angle]
+	movsd xmm1,[.tolerance]
+	call sine
+	movsd [.perspective_structure+8],xmm0
+
+	; perpendicularize the Up-direction vector
+	mov rdi,.perspective_structure+48
+	mov rsi,.perspective_structure+0
+	call perpendicularize_3
+
+	; propject & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FFFFA500
 	mov edx,[framebuffer_init.framebuffer_width]
@@ -93,25 +116,34 @@ START:
 	mov r9,.edge_structure
 	call rasterize_edges	
 
-.loop:
-	
+	; orbit
+	movsd xmm0,[.rotation_angle]
+	movsd xmm1,[.angle_increment]
+	addsd xmm0,xmm1
+	movsd [.rotation_angle],xmm0
+
 	call framebuffer_flush	; flush frame to framebuffer
 
-;	db 0xEB,0xFE
-	call exit	
-	;jmp .loop
+	jmp .loop
+
+.rotation_angle:
+	dq 0.0
+.angle_increment:
+	dq 0.005
+.tolerance:
+	dq 0.00001
 
 .perspective_structure:
-	dq 5.00 ; lookFrom_x	
-	dq 5.00 ; lookFrom_y	
-	dq 5.00 ; lookFrom_z	
+	dq 1.00 ; lookFrom_x	
+	dq 0.00 ; lookFrom_y	
+	dq 1.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 0.00 ; lookAt_z	
-	dq 0.8 ; upDir_x	
+	dq 1.0 ; upDir_x	
 	dq 1.0 ; upDir_y	
-	dq 0.8 ; upDir_z	
-	dq 1.00	; zoom
+	dq -1.0 ; upDir_z	
+	dq 0.3	; zoom
 
 .edge_structure:
 	dq 8 ; number of points (N)

@@ -72,9 +72,9 @@ rasterize_edges:
 
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2
+	sqrtsd xmm0,xmm0
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0		; 1/magnitude factor
-;	mulsd xmm1,[r8+72]	; zoom factor
 
 	movsd xmm3,[r8+48]
 	movsd xmm4,[r8+56]
@@ -82,8 +82,7 @@ rasterize_edges:
 
 	mulsd xmm3,xmm1
 	mulsd xmm4,xmm1
-	mulsd xmm5,xmm1		; Uy is now normalized and then scaled by zoom
-
+	mulsd xmm5,xmm1		; Uy is now normalized
 
 	movsd xmm6,[r8+0]
 	subsd xmm6,[r8+24]
@@ -91,7 +90,6 @@ rasterize_edges:
 	subsd xmm7,[r8+32]
 	movsd xmm8,[r8+16]
 	subsd xmm8,[r8+40]
-
 
 	; normalize lookFrom-lookAt
 
@@ -105,9 +103,10 @@ rasterize_edges:
 
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2
+	sqrtsd xmm0,xmm0
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0		; 1/magnitude factor
-;	mulsd xmm1,[r8+72]	; zoom factor
+;	mulsd xmm1,[r8+72]	; zoom factor, can't do this yet. need unit vector
 
 	mulsd xmm6,xmm1
 	mulsd xmm7,xmm1
@@ -146,7 +145,12 @@ rasterize_edges:
 	addsd xmm0,xmm2
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0		; 1/magnitude factor
-;	mulsd xmm1,[r8+72]	; zoom factor
+	mulsd xmm1,[r8+72]	; zoom factor
+	
+	cvtsi2sd xmm0,rdx
+	cvtsi2sd xmm2,rcx
+	divsd xmm2,xmm0
+	mulsd xmm1,xmm2		; scale by aspect ratio
 
 	mulsd xmm13,xmm1
 	mulsd xmm14,xmm1
@@ -156,14 +160,10 @@ rasterize_edges:
 	movsd xmm7,xmm14
 	movsd xmm8,xmm15
 
-
-	
+	; scale Uy by zoom	
 	mulsd xmm3,[r8+72]
 	mulsd xmm4,[r8+72]
 	mulsd xmm5,[r8+72]
-	mulsd xmm6,[r8+72]
-	mulsd xmm7,[r8+72]
-	mulsd xmm8,[r8+72]
 
 	; width/2 and height/2
 	mov rax,rdx
@@ -217,7 +217,6 @@ rasterize_edges:
 	mulsd xmm0,xmm10
 
 	cvtsd2si r12,xmm0	; {r12} contains pixel 1 y-coord
-
 	
 	add rax,8
 	

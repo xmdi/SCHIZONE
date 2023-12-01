@@ -19,6 +19,7 @@ normalize_3:
 	mulsd xmm2,xmm2
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2
+	sqrtsd xmm0,xmm2
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0
 
