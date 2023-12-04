@@ -5,7 +5,6 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 0x1000000 ; ~16 MB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,7 +40,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,14 +51,10 @@ PROGRAM_HEADER:
 
 %include "lib/io/file_open.asm"
 
-%include "lib/mem/heap_init.asm"
-; void heap_init(void);
+%include "lib/io/print_chars.asm"
 
-%include "lib/mem/heap_alloc.asm"
-; void* {rax} heap_alloc(long {rdi});
-
-%include "lib/sys/exit.asm"	
-; void exit(byte {dil});
+%include "lib/io/print_int_h.asm"
+%include "lib/io/print_int_d.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,81 +69,106 @@ START:
 	call file_open
 	mov r15,rax	; save file descriptor in {r15}
 
-	call heap_init
-	mov rdi,1280
-	call heap_alloc
-	mov r13,rax	; framebuffer screeninfo will be at address in {r13}
-
-
-	; get framebuffer info
+.loop:
+	mov rax,SYS_READ
 	mov rdi,r15
-	mov rsi,SYS_FBIOGET_VSCREENINFO
-	mov rdx,r13
-	mov rax,SYS_IOCTL
+	mov rsi,.buffer
+	mov rdx,4
 	syscall
 
-	mov esi,[r13+0]
-	imul esi,[r13+4]
-	imul esi,[r13+24]
-	shr esi,3		; number of bytes to map
-	mov r14,rsi
+	test rax,rax
+	js .loop
 
-	mov rdi,r14
-	call heap_alloc
-	mov r11,rax	; .screenbuffer address in {r11}
+	; first byte
+	mov rdi,SYS_STDOUT
+
+	xor rsi,rsi
+	mov esi,[.buffer]
+
+	shr esi,4
+	and esi,0xf
+
+	cmp rsi,127
+	jle .no_adjust
+	sub rsi,256
+.no_adjust:
+	call print_int_h
+
+	; dx
+	mov rsi,.dx
+	mov rdx,5
+	call print_chars
+
+	xor rsi,rsi
+	mov esi,[.buffer]
+
+	shr esi,8
+	and esi,0xff
+
+	cmp rsi,127
+	jle .no_adjust_x
+	sub rsi,256
+.no_adjust_x:
+	call print_int_d
+
+	; dy
+	mov rsi,.dy
+	mov rdx,5
+	call print_chars
+
+	xor rsi,rsi
+	mov esi,[.buffer]
+
+	shr esi,16
+	and esi,0xff
+
+	cmp rsi,127
+	jle .no_adjust_y
+	sub rsi,256
+.no_adjust_y:
+	call print_int_d
+
+
+	mov rsi,.newline
+	mov rdx,1
+	call print_chars
+
+	call print_buffer_flush
+
 	
-	mov r8,r11
-	mov r9d,[r13+4]
-.loop_rows:
-	xor ecx,ecx
-.loop_cols:
-	xor rdx,rdx
-	mov eax,[r13+0]
-	mov rbx,3
-	div rbx
-	cmp ecx,eax
-	jbe .green
-	shl eax,1
-	cmp ecx,eax
-	jbe .white
 
-.red:
-	mov rax,0x00ff0000
-	mov [r8],rax
-	jmp .next_pixel
-.green:
-	mov rax,0x0000ff00
-	mov [r8],rax
-	jmp .next_pixel
-.white:	
-	mov rax,0xffffffff
-	mov [r8],rax
-.next_pixel:
-	add r8,4
 	
-	inc ecx
-	cmp ecx,[r13+0]
-	jb .loop_cols
+	jmp .loop
 
-	dec r9d
-	jnz .loop_rows
-
-	; write the screenbuffer to the framebuffer
-	mov rax,SYS_WRITE
-	mov rdi,r15
-	mov rsi,r11
-	mov rdx,r14
-	syscall
-
-	xor dil,dil
-	call exit
+.buffer:
+	times 4 db 0
 
 .filename:
-	db `/dev/fb0\0` 
+	db `/dev/input/mice\0` 
+.newline:
+	db `\n`
+.dx:
+	db ` dx: `
+.dy:
+	db ` dy: `
+.left_click:
+	db `left click\n`
+.middle_click:
+	db `middle click\n`
+.right_click:
+	db `right click\n`
+.wheel:
+	db `wheel\n`
+.mouse_up:
+	dq `mouse moved up\n`
+.mouse_down:
+	dq `mouse moved down\n`
+.mouse_left:
+	dq `mouse moved left\n`
+.mouse_right:
+	dq `mouse moved right\n`
 
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
-
-HEAP_START_ADDRESS equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)

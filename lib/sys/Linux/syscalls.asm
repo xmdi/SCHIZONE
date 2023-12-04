@@ -66,6 +66,17 @@
 %define SYS_SEEK_CUR 1 ; seek offset relative to current position
 %define SYS_SEEK_END 2 ; seek offset relative to file end
 
+; input events & mouse device
+%define SYS_MOUSE_REL_X 0x00
+%define SYS_MOUSE_REL_Y 0x01
+%define SYS_MOUSE_REL_WHEEL 0x08
+%define SYS_MOUSE_BTN_LEFT 0x110
+%define SYS_MOUSE_BTN_RIGHT 0x111
+%define SYS_MOUSE_BTN_MIDDLE 0x112
+%define SYS_EVENT_SYN_REPORT 0x00
+%define SYS_SYN_EVENT 0x00
+%define SYS_KEY_EVENT 0x01
+
 ; pointer to argc at program start
 %define SYS_ARGC_START_POINTER rsp
 
