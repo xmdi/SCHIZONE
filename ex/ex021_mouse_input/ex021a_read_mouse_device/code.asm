@@ -50,15 +50,19 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/io/file_open.asm"
+; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
 
 %include "lib/io/print_chars.asm"
+; void print_chars(int {rdi}, char* {rsi}, uint {rdx});
 
-%include "lib/io/print_int_h.asm"
 %include "lib/io/print_int_d.asm"
+; void print_int_d(int {rdi}, int {rsi});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; NOTE: NEED TO RUN THIS AS SUDO
 
 START:
 
