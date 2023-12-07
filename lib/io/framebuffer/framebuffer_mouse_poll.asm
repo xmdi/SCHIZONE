@@ -15,11 +15,16 @@ framebuffer_mouse_poll:
 	push rdx
 	push rax
 
+	SYS_PUSH_SYSCALL_CLOBBERED_REGISTERS
+
 	mov rax,SYS_READ
+	xor rdi,rdi
 	mov dil,[framebuffer_mouse_init.file_descriptor]
 	mov rsi,.buffer
 	mov rdx,4
 	syscall
+
+	SYS_POP_SYSCALL_CLOBBERED_REGISTERS
 
 	test rax,rax
 	js .ret

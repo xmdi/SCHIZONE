@@ -54,10 +54,21 @@ PROGRAM_HEADER:
 ; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
 
 %include "lib/mem/heap_init.asm"
+; void heap_init(void);
+
 %include "lib/io/framebuffer/framebuffer_init.asm"
+; void framebuffer_init(void);
+
 %include "lib/io/framebuffer/framebuffer_mouse_init.asm"
+; void framebuffer_mouse_init(void);
+
 %include "lib/io/framebuffer/framebuffer_mouse_poll.asm"
+; void framebuffer_mouse_poll(void);
+
 %include "lib/io/bitmap/set_pixel.asm"
+; void set_pixel(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+;		 int {r8d}, int {r9d});
+
 %include "lib/io/framebuffer/framebuffer_clear.asm"
 ; void framebuffer_clear(uint {rdi});
 
@@ -77,18 +88,36 @@ START:
 	
 	call framebuffer_mouse_init
 
+	; clear the screen to start
 	xor rdi,rdi
 	call framebuffer_clear
+	call framebuffer_flush
 	
-	mov rsi,0x1FFFF8200
+	mov r13,0x1FFFF8200	; left click color
+	mov r14,0x1FFFF0000	; right click color
+	mov r15,0x1FF00FFFF	; middle click color
+
+	; framebuffer width and height	
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	
 .loop:
-	xor rdi,rdi ; bug. this instruction should be deletable, but isn't. FIX!
-	
+	; check mouse status	
 	call framebuffer_mouse_poll
-	
+
+	; if no button is pressed, go back up
+	cmp byte [framebuffer_mouse_init.mouse_state],0
+	je .loop
+
+	; change "cursor" color based on which mouse button is pressed
+	cmp byte [framebuffer_mouse_init.mouse_state],0b001
+	cmove rsi,r13
+	cmp byte [framebuffer_mouse_init.mouse_state],0b010
+	cmove rsi,r14
+	cmp byte [framebuffer_mouse_init.mouse_state],0b100
+	cmove rsi,r15
+
+	; draw a 2x2 mouse "cursor" directly to the framebufferbuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov r8d,[framebuffer_mouse_init.mouse_x]
 	mov r9d,[framebuffer_mouse_init.mouse_y]
@@ -100,8 +129,9 @@ START:
 	dec r8d
 	call set_pixel
 
+	; flush output to the screen
 	call framebuffer_flush
-	
+
 	jmp .loop
 
 END:
