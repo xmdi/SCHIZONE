@@ -5,6 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
+%define HEAP_SIZE 0x1000000 ; ~16 MB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,7 +41,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,16 +53,16 @@ PROGRAM_HEADER:
 %include "lib/io/file_open.asm"
 ; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
 
-%include "lib/io/print_chars.asm"
-; void print_chars(int {rdi}, char* {rsi}, uint {rdx});
-
-%include "lib/io/print_int_d.asm"
-; void print_int_d(int {rdi}, int {rsi});
-
-
+%include "lib/mem/heap_init.asm"
+%include "lib/io/framebuffer/framebuffer_init.asm"
 %include "lib/io/framebuffer/framebuffer_mouse_init.asm"
 %include "lib/io/framebuffer/framebuffer_mouse_poll.asm"
+%include "lib/io/bitmap/set_pixel.asm"
+%include "lib/io/framebuffer/framebuffer_clear.asm"
+; void framebuffer_clear(uint {rdi});
 
+%include "lib/io/framebuffer/framebuffer_flush.asm"
+; void framebuffer_flush(void);
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,113 +71,43 @@ PROGRAM_HEADER:
 
 START:
 
-	mov rdi,.filename
-	mov rsi,SYS_READ_WRITE
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open
-	mov r15,rax	; save file descriptor in {r15}
+	call heap_init
 
+	call framebuffer_init
+	
+	call framebuffer_mouse_init
+
+	xor rdi,rdi
+	call framebuffer_clear
+	
+	mov rsi,0x1FFFF8200
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	
 .loop:
-	mov rax,SYS_READ
-	mov rdi,r15
-	mov rsi,.buffer
-	mov rdx,4
-	syscall
+	xor rdi,rdi ; bug. this instruction should be deletable, but isn't. FIX!
+	
+	call framebuffer_mouse_poll
+	
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov r8d,[framebuffer_mouse_init.mouse_x]
+	mov r9d,[framebuffer_mouse_init.mouse_y]
+	call set_pixel
+	inc r8d
+	call set_pixel
+	inc r9d
+	call set_pixel
+	dec r8d
+	call set_pixel
 
-	test rax,rax
-	js .loop
-
-	; first byte
-	mov rdi,SYS_STDOUT
-
-	xor rsi,rsi
-	mov esi,[.buffer]
-
-	and esi,0x7
-
-	test esi,0x1
-	jnz .left_clicked
-	test esi,0x2
-	jnz .right_clicked
-	test esi,0x4
-	jnz .middle_clicked
-	jmp .next
-.left_clicked:
-	mov rsi,.left_click
-	mov rdx,11
-	call print_chars
-	jmp .next
-.right_clicked:
-	mov rsi,.right_click
-	mov rdx,12
-	call print_chars
-	jmp .next
-.middle_clicked:
-	mov rsi,.middle_click
-	mov rdx,13
-	call print_chars
-.next:
-	; dx
-	mov rsi,.dx
-	mov rdx,5
-	call print_chars
-
-	xor rsi,rsi
-	mov esi,[.buffer]
-
-	shr esi,8
-	and esi,0xff
-
-	cmp rsi,127
-	jle .no_adjust_x
-	sub rsi,256
-.no_adjust_x:
-	call print_int_d
-
-	; dy
-	mov rsi,.dy
-	mov rdx,5
-	call print_chars
-
-	xor rsi,rsi
-	mov esi,[.buffer]
-
-	shr esi,16
-	and esi,0xff
-
-	cmp rsi,127
-	jle .no_adjust_y
-	sub rsi,256
-.no_adjust_y:
-	call print_int_d
-
-	mov rsi,.newline
-	mov rdx,1
-	call print_chars
-
-	call print_buffer_flush
+	call framebuffer_flush
 	
 	jmp .loop
-
-.buffer:
-	times 4 db 0
-
-.filename:
-	db `/dev/input/mice\0` 
-.newline:
-	db `\n`
-.dx:
-	db ` dx: `
-.dy:
-	db ` dy: `
-.left_click:
-	db `left click\n`
-.middle_click:
-	db `middle click\n`
-.right_click:
-	db `right click\n`
 
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
+
+HEAP_START_ADDRESS equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)
+

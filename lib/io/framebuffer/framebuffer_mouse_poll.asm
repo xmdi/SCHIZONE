@@ -42,9 +42,14 @@ framebuffer_mouse_poll:
 	add [framebuffer_mouse_init.mouse_x],esi
 	mov esi,[framebuffer_init.framebuffer_width]
 	cmp [framebuffer_mouse_init.mouse_x],esi
-	jl .within_limit_x
+	jl .within_upper_limit_x
 	mov [framebuffer_mouse_init.mouse_x],esi
-.within_limit_x:
+.within_upper_limit_x:
+	xor esi,esi
+	cmp [framebuffer_mouse_init.mouse_x],esi
+	jge .within_lower_limit_x
+	mov [framebuffer_mouse_init.mouse_x],esi
+.within_lower_limit_x:
 
 	; dy
 	mov esi,[.buffer]
@@ -55,10 +60,15 @@ framebuffer_mouse_poll:
 	jle .no_adjust_y
 	sub rsi,256
 .no_adjust_y:
-	add [framebuffer_mouse_init.mouse_y],esi
+	sub [framebuffer_mouse_init.mouse_y],esi
 	mov esi,[framebuffer_init.framebuffer_height]
 	cmp [framebuffer_mouse_init.mouse_y],esi
-	jl .ret
+	jl .within_upper_limit_y
+	mov [framebuffer_mouse_init.mouse_y],esi
+.within_upper_limit_y:
+	xor esi,esi
+	cmp [framebuffer_mouse_init.mouse_y],esi
+	jge .ret
 	mov [framebuffer_mouse_init.mouse_y],esi
 
 .ret:
