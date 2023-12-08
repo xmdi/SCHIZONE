@@ -32,7 +32,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | NOV 03, 2023 | [LU Decomposition](ex/ex018_LU_decomposition) | [EP. 018](https://youtu.be/ApkJGn0Wiss) |
 | NOV 10, 2023 | [Least Squares Regression](ex/ex019_least_squares_regression) | [EP. 019](https://youtu.be/ka0pG7-h-ig) |
 | DEC 01, 2023 | [Framebuffer](ex/ex020_framebuffer) | [EP. 020](https://youtu.be/PvXeZidA82I) |
-| DEC 08, 2023 | [Mouse Input](ex/ex021_mouse_input) | [EP. 021](https://youtu.be/) |
+| DEC 08, 2023 | [Mouse Input](ex/ex021_mouse_input) | [EP. 021](https://youtu.be/M7ejglSgWtc) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
