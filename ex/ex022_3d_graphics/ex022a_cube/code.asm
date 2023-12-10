@@ -106,6 +106,9 @@ PROGRAM_HEADER:
 ; void matrix_multiply(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}
 ;	uint {r8}, uint {r9});
 
+%include "lib/math/vector/cross_product_3.asm"
+; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,6 +135,12 @@ START:
 	mov rdi,.perspective_structure+48
 	mov rsi,.perspective_structure+0
 	call perpendicularize_3
+
+	; compute rightward direction
+	mov rdi,.right_dir
+	mov rsi,.perspective_structure+48	; NOTE maybe these 2 are switched
+	mov rdx,.perspective_structure+0
+	call cross_product_3	
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -212,58 +221,11 @@ START:
 	call sine
 	movsd [.sin_yaw],xmm0
 
-	; rotation matrix (0,0)
-	movsd xmm0,[.cos_yaw]
-	mulsd xmm0,[.cos_pitch]
-	movsd [.rotation_matrix+0],xmm0
+	mov xmm0
 
-	; rotation matrix (0,1)
-	movsd xmm0,[.sin_yaw]
-	mulsd xmm0,[.neg_one]
-	movsd [.rotation_matrix+8],xmm0
 
-	; rotation matrix (0,2)
-	movsd xmm0,[.cos_yaw]
-	mulsd xmm0,[.sin_pitch]
-	movsd [.rotation_matrix+16],xmm0
 
-	; rotation matrix (1,0)
-	movsd xmm0,[.sin_yaw]
-	mulsd xmm0,[.cos_pitch]
-	movsd [.rotation_matrix+24],xmm0
 
-	; rotation matrix (1,1)
-	movsd xmm0,[.cos_yaw]
-	movsd [.rotation_matrix+32],xmm0
-
-	; rotation matrix (1,2)
-	movsd xmm0,[.sin_yaw]
-	mulsd xmm0,[.sin_pitch]
-	movsd [.rotation_matrix+40],xmm0
-
-	; rotation matrix (2,0)
-	movsd xmm0,[.sin_pitch]
-	mulsd xmm0,[.neg_one]
-	movsd [.rotation_matrix+48],xmm0
-
-	; rotation matrix (2,1)
-
-	; rotation matrix (2,2)
-	movsd xmm0,[.cos_pitch]
-	movsd [.rotation_matrix+64],xmm0
-
-	mov rdi,.perspective_structure
-	mov rsi,.rotation_matrix
-	mov rdx,.lookFrom
-	mov rcx,3
-	mov r8,1
-	mov r9,3	
-	call matrix_multiply	
-
-	; perpendicularize the Up-direction vector
-	mov rdi,.perspective_structure+48
-	mov rsi,.perspective_structure+0
-	call perpendicularize_3
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,r15
@@ -331,10 +293,22 @@ START:
 	dq 0.005
 .rotation_matrix:
 	times 9 dq 0.0
+
+view_axes:
+.u1:
+	times 3 dq 0.0
+.u2:
+	times 3 dq 0.0
+.u3:	
+	times 3 dq 0.0
+
+
 .lookFrom:
 	dq 1.0
 	dq 1.0
 	dq 0.0
+.right_dir:
+	times 3 dq 0.0
 
 .perspective_structure:
 	dq 1.00 ; lookFrom_x	
