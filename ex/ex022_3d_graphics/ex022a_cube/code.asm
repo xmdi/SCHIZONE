@@ -221,10 +221,53 @@ START:
 	call sine
 	movsd [.sin_yaw],xmm0
 
-	mov xmm0
+	; from CAD-from-Scratch series: (C code)
 
+			// rotation theta_u2 about u2
+			mag=u2[0]*u3[0]+u2[1]*u3[1]+u2[2]*u3[2];
+			u3_new[0]=u3[0]*cos(theta_u2)+(u2[1]*u3[2]-u2[2]*u3[1])*sin(theta_u2)+u2[0]*mag*(1-cos(theta_u2));
+			u3_new[1]=u3[1]*cos(theta_u2)+(u2[2]*u3[0]-u2[0]*u3[2])*sin(theta_u2)+u2[1]*mag*(1-cos(theta_u2));
+			u3_new[2]=u3[2]*cos(theta_u2)+(u2[0]*u3[1]-u2[1]*u3[0])*sin(theta_u2)+u2[2]*mag*(1-cos(theta_u2));
 
+			mag=u2[0]*u1[0]+u2[1]*u1[1]+u2[2]*u1[2];
+			u1_new[0]=u1[0]*cos(theta_u2)+(u2[1]*u1[2]-u2[2]*u1[1])*sin(theta_u2)+u2[0]*mag*(1-cos(theta_u2));
+			u1_new[1]=u1[1]*cos(theta_u2)+(u2[2]*u1[0]-u2[0]*u1[2])*sin(theta_u2)+u2[1]*mag*(1-cos(theta_u2));
+			u1_new[2]=u1[2]*cos(theta_u2)+(u2[0]*u1[1]-u2[1]*u1[0])*sin(theta_u2)+u2[2]*mag*(1-cos(theta_u2));
 
+			// normalize
+			normalizeVector(u1_new);
+			normalizeVector(u3_new);
+
+			u1_pend[0]=u1_new[0];u1_pend[1]=u1_new[1];u1_pend[2]=u1_new[2];
+			u2_pend[0]=u2[0];u2_pend[1]=u2[1];u2_pend[2]=u2[2];
+			u3_pend[0]=u3_new[0];u3_pend[1]=u3_new[1];u3_pend[2]=u3_new[2];
+			
+			// rotation theta_u1 about u1
+			mag=u1_pend[0]*u3_pend[0]+u1_pend[1]*u3_pend[1]+u1_pend[2]*u3_pend[2];
+			u3_new[0]=u3_pend[0]*cos(theta_u1)+(u1_pend[1]*u3_pend[2]-u1_pend[2]*u3_pend[1])*sin(theta_u1)+u1_pend[0]*mag*(1-cos(theta_u1));
+			u3_new[1]=u3_pend[1]*cos(theta_u1)+(u1_pend[2]*u3_pend[0]-u1_pend[0]*u3_pend[2])*sin(theta_u1)+u1_pend[1]*mag*(1-cos(theta_u1));
+			u3_new[2]=u3_pend[2]*cos(theta_u1)+(u1_pend[0]*u3_pend[1]-u1_pend[1]*u3_pend[0])*sin(theta_u1)+u1_pend[2]*mag*(1-cos(theta_u1));
+
+			mag=u1_pend[0]*u2_pend[0]+u1_pend[1]*u2_pend[1]+u1_pend[2]*u2_pend[2];
+			u2_new[0]=u2_pend[0]*cos(theta_u1)+(u1_pend[1]*u2_pend[2]-u1_pend[2]*u2_pend[1])*sin(theta_u1)+u1_pend[0]*mag*(1-cos(theta_u1));
+			u2_new[1]=u2_pend[1]*cos(theta_u1)+(u1_pend[2]*u2_pend[0]-u1_pend[0]*u2_pend[2])*sin(theta_u1)+u1_pend[1]*mag*(1-cos(theta_u1));
+			u2_new[2]=u2_pend[2]*cos(theta_u1)+(u1_pend[0]*u2_pend[1]-u1_pend[1]*u2_pend[0])*sin(theta_u1)+u1_pend[2]*mag*(1-cos(theta_u1));
+			
+			// normalize
+			normalizeVector(u2_new);
+			normalizeVector(u3_new);
+	
+	; compute	mag=u2[0]*u3[0]+u2[1]*u3[1]+u2[2]*u3[2];
+	movsd xmm0,[.view_axes+24]
+	mulsd xmm0,[.view_axes+48]
+	movsd xmm1,[.view_axes+32]
+	mulsd xmm1,[.view_axes+56]
+	addsd xmm0,xmm1
+	movsd xmm1,[.view_axes+40]
+	mulsd xmm1,[.view_axes+64]
+	addsd xmm0,xmm1
+	
+	
 
 
 	; project & rasterize the cube onto the framebuffer
@@ -294,7 +337,7 @@ START:
 .rotation_matrix:
 	times 9 dq 0.0
 
-view_axes:
+.view_axes:
 .u1:
 	times 3 dq 0.0
 .u2:
