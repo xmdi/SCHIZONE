@@ -3,7 +3,7 @@
 
 normalize_3:
 ; void normalize_3(double* {rdi});
-; 	Normalizes the 3x1 double vector starting at {rsi} in-place.
+; 	Normalizes the 3x1 double vector starting at {rdi} in-place.
 
 	sub rsp,48
 	movdqu [rsp],xmm0
@@ -19,7 +19,7 @@ normalize_3:
 	mulsd xmm2,xmm2
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2
-	sqrtsd xmm0,xmm2
+	sqrtsd xmm0,xmm0
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0
 

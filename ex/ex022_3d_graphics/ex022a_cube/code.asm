@@ -93,6 +93,9 @@ PROGRAM_HEADER:
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
+%include "lib/math/vector/normalize_3.asm"
+; void normalize_3(double* {rdi});
+
 %include "lib/math/vector/perpendicularize_3.asm"
 ; void perpendicularize_3(double* {rdi}, double* {rsi});
 
@@ -108,6 +111,10 @@ PROGRAM_HEADER:
 
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
+
+%include "lib/sys/exit.asm"
+
+%include "lib/io/print_array_float.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,10 +144,33 @@ START:
 	call perpendicularize_3
 
 	; compute rightward direction
-	mov rdi,.right_dir
+	mov rdi,.view_axes_old+0
 	mov rsi,.perspective_structure+48	; NOTE maybe these 2 are switched
 	mov rdx,.perspective_structure+0
 	call cross_product_3	
+
+	mov rdi,.view_axes_old+24
+	mov rsi,.perspective_structure+48
+	mov rdx,24
+	call memcopy
+
+	movsd xmm15,[.perspective_structure+0]
+	subsd xmm15,[.perspective_structure+24]
+	movsd [.view_axes_old+48],xmm15
+	movsd xmm15,[.perspective_structure+8]
+	subsd xmm15,[.perspective_structure+32]
+	movsd [.view_axes_old+56],xmm15
+	movsd xmm15,[.perspective_structure+16]
+	subsd xmm15,[.perspective_structure+40]
+	movsd [.view_axes_old+64],xmm15
+
+	; normalize the axes
+	mov rdi,.view_axes_old+0
+	call normalize_3
+	mov rdi,.view_axes_old+24
+	call normalize_3
+	mov rdi,.view_axes_old+48
+	call normalize_3
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -162,6 +192,21 @@ START:
 	; these track the previous cursor location (while holding left mouse)
 	xor r12,r12 ; x
 	xor r13,r13 ; y
+
+%if 0
+	mov rdi,SYS_STDOUT
+	mov rsi,.view_axes_old
+	mov rdx,3
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,6
+	call print_array_float
+
+	call print_buffer_flush
+
+	call exit
+%endif
 
 .loop:
 	; check mouse status	
@@ -221,54 +266,122 @@ START:
 	call sine
 	movsd [.sin_yaw],xmm0
 
-	; from CAD-from-Scratch series: (C code)
+	;.u1'[0]
+	movsd xmm15,[.view_axes+8]
+	mulsd xmm15,[.view_axes+40]
+	movsd xmm14,[.view_axes+16]
+	mulsd xmm14,[.view_axes+32]
+	subsd xmm15,xmm14
+	mulsd xmm15,[.sin_yaw]
+	movsd xmm0,[.view_axes+0]
+	mulsd xmm0,[.cos_yaw]
+	addsd xmm0,xmm15
 
-			// rotation theta_u2 about u2
-			mag=u2[0]*u3[0]+u2[1]*u3[1]+u2[2]*u3[2];
-			u3_new[0]=u3[0]*cos(theta_u2)+(u2[1]*u3[2]-u2[2]*u3[1])*sin(theta_u2)+u2[0]*mag*(1-cos(theta_u2));
-			u3_new[1]=u3[1]*cos(theta_u2)+(u2[2]*u3[0]-u2[0]*u3[2])*sin(theta_u2)+u2[1]*mag*(1-cos(theta_u2));
-			u3_new[2]=u3[2]*cos(theta_u2)+(u2[0]*u3[1]-u2[1]*u3[0])*sin(theta_u2)+u2[2]*mag*(1-cos(theta_u2));
+	;.u1'[1]
+	movsd xmm15,[.view_axes+16]
+	mulsd xmm15,[.view_axes+24]
+	movsd xmm14,[.view_axes+0]
+	mulsd xmm14,[.view_axes+40]
+	subsd xmm15,xmm14
+	mulsd xmm15,[.sin_yaw]
+	movsd xmm1,[.view_axes+8]
+	mulsd xmm1,[.cos_yaw]
+	addsd xmm1,xmm15
 
-			mag=u2[0]*u1[0]+u2[1]*u1[1]+u2[2]*u1[2];
-			u1_new[0]=u1[0]*cos(theta_u2)+(u2[1]*u1[2]-u2[2]*u1[1])*sin(theta_u2)+u2[0]*mag*(1-cos(theta_u2));
-			u1_new[1]=u1[1]*cos(theta_u2)+(u2[2]*u1[0]-u2[0]*u1[2])*sin(theta_u2)+u2[1]*mag*(1-cos(theta_u2));
-			u1_new[2]=u1[2]*cos(theta_u2)+(u2[0]*u1[1]-u2[1]*u1[0])*sin(theta_u2)+u2[2]*mag*(1-cos(theta_u2));
+	;.u1'[2]
+	movsd xmm15,[.view_axes+0]
+	mulsd xmm15,[.view_axes+32]
+	movsd xmm14,[.view_axes+8]
+	mulsd xmm14,[.view_axes+24]
+	subsd xmm15,xmm14
+	mulsd xmm15,[.sin_yaw]
+	movsd xmm2,[.view_axes+16]
+	mulsd xmm2,[.cos_yaw]
+	addsd xmm2,xmm15
 
-			// normalize
-			normalizeVector(u1_new);
-			normalizeVector(u3_new);
+	; move rotated .u1' into the view_axes
+	movsd [.view_axes+0],xmm0
+	movsd [.view_axes+8],xmm1
+	movsd [.view_axes+16],xmm2
 
-			u1_pend[0]=u1_new[0];u1_pend[1]=u1_new[1];u1_pend[2]=u1_new[2];
-			u2_pend[0]=u2[0];u2_pend[1]=u2[1];u2_pend[2]=u2[2];
-			u3_pend[0]=u3_new[0];u3_pend[1]=u3_new[1];u3_pend[2]=u3_new[2];
-			
-			// rotation theta_u1 about u1
-			mag=u1_pend[0]*u3_pend[0]+u1_pend[1]*u3_pend[1]+u1_pend[2]*u3_pend[2];
-			u3_new[0]=u3_pend[0]*cos(theta_u1)+(u1_pend[1]*u3_pend[2]-u1_pend[2]*u3_pend[1])*sin(theta_u1)+u1_pend[0]*mag*(1-cos(theta_u1));
-			u3_new[1]=u3_pend[1]*cos(theta_u1)+(u1_pend[2]*u3_pend[0]-u1_pend[0]*u3_pend[2])*sin(theta_u1)+u1_pend[1]*mag*(1-cos(theta_u1));
-			u3_new[2]=u3_pend[2]*cos(theta_u1)+(u1_pend[0]*u3_pend[1]-u1_pend[1]*u3_pend[0])*sin(theta_u1)+u1_pend[2]*mag*(1-cos(theta_u1));
+	;.u2'[0]
+	movsd xmm15,[.view_axes+32]
+	mulsd xmm15,[.view_axes+16]
+	movsd xmm14,[.view_axes+40]
+	mulsd xmm14,[.view_axes+8]
+	subsd xmm15,xmm14
+	mulsd xmm15,[.sin_pitch]
+	movsd xmm0,[.view_axes+0]
+	mulsd xmm0,[.cos_pitch]
+	addsd xmm0,xmm15
 
-			mag=u1_pend[0]*u2_pend[0]+u1_pend[1]*u2_pend[1]+u1_pend[2]*u2_pend[2];
-			u2_new[0]=u2_pend[0]*cos(theta_u1)+(u1_pend[1]*u2_pend[2]-u1_pend[2]*u2_pend[1])*sin(theta_u1)+u1_pend[0]*mag*(1-cos(theta_u1));
-			u2_new[1]=u2_pend[1]*cos(theta_u1)+(u1_pend[2]*u2_pend[0]-u1_pend[0]*u2_pend[2])*sin(theta_u1)+u1_pend[1]*mag*(1-cos(theta_u1));
-			u2_new[2]=u2_pend[2]*cos(theta_u1)+(u1_pend[0]*u2_pend[1]-u1_pend[1]*u2_pend[0])*sin(theta_u1)+u1_pend[2]*mag*(1-cos(theta_u1));
-			
-			// normalize
-			normalizeVector(u2_new);
-			normalizeVector(u3_new);
-	
-	; compute	mag=u2[0]*u3[0]+u2[1]*u3[1]+u2[2]*u3[2];
-	movsd xmm0,[.view_axes+24]
-	mulsd xmm0,[.view_axes+48]
-	movsd xmm1,[.view_axes+32]
-	mulsd xmm1,[.view_axes+56]
-	addsd xmm0,xmm1
-	movsd xmm1,[.view_axes+40]
-	mulsd xmm1,[.view_axes+64]
-	addsd xmm0,xmm1
-	
-	
+	;.u2'[1]
+	movsd xmm15,[.view_axes+40]
+	mulsd xmm15,[.view_axes+0]
+	movsd xmm14,[.view_axes+24]
+	mulsd xmm14,[.view_axes+16]
+	subsd xmm15,xmm14
+	mulsd xmm15,[.sin_pitch]
+	movsd xmm1,[.view_axes+8]
+	mulsd xmm1,[.cos_pitch]
+	addsd xmm1,xmm15
 
+	;.u2'[2]
+	movsd xmm15,[.view_axes+24]
+	mulsd xmm15,[.view_axes+8]
+	movsd xmm14,[.view_axes+32]
+	mulsd xmm14,[.view_axes+0]
+	subsd xmm15,xmm14
+	mulsd xmm15,[.sin_pitch]
+	movsd xmm2,[.view_axes+16]
+	mulsd xmm2,[.cos_pitch]
+	addsd xmm2,xmm15
+
+	; move rotated .u2' into the view_axes
+	movsd [.view_axes+24],xmm0
+	movsd [.view_axes+32],xmm1
+	movsd [.view_axes+40],xmm2
+
+	;.u3'[0]
+	movsd xmm15,[.view_axes+8]
+	mulsd xmm15,[.view_axes+40]
+	movsd xmm14,[.view_axes+16]
+	mulsd xmm14,[.view_axes+32]
+	subsd xmm15,xmm14
+	movsd [.view_axes+48],xmm15
+
+	;.u3'[1]
+	movsd xmm15,[.view_axes+16]
+	mulsd xmm15,[.view_axes+24]
+	movsd xmm14,[.view_axes+0]
+	mulsd xmm14,[.view_axes+40]
+	subsd xmm15,xmm14
+	movsd [.view_axes+56],xmm15
+
+	;.u3'[2]
+	movsd xmm15,[.view_axes+0]
+	mulsd xmm15,[.view_axes+32]
+	movsd xmm14,[.view_axes+8]
+	mulsd xmm14,[.view_axes+24]
+	subsd xmm15,xmm14
+	movsd [.view_axes+64],xmm15
+
+	; copy up-direction into structure
+	mov rdi,.perspective_structure+48
+	mov rsi,.view_axes+24
+	mov rdx,24
+	call memcopy
+
+	; copy looking direction into structure
+	movsd xmm15,[.view_axes+48]
+	addsd xmm15,[.perspective_structure+24]
+	movsd [.perspective_structure+0],xmm15
+	movsd xmm15,[.view_axes+56]
+	addsd xmm15,[.perspective_structure+32]
+	movsd [.perspective_structure+8],xmm15
+	movsd xmm15,[.view_axes+64]
+	addsd xmm15,[.perspective_structure+40]
+	movsd [.perspective_structure+16],xmm15
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,r15
@@ -279,12 +392,27 @@ START:
 	mov r9,.edge_structure
 	call rasterize_edges	
 
+%if 1
+	mov rdi,SYS_STDOUT
+	mov rsi,.view_axes
+	mov rdx,3
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,6
+	call print_array_float
+
+	call print_buffer_flush
+
+%endif
+
+
 	jmp .no_drawing
 
 .first_click:
-	mov rdi,.lookFrom
-	mov rsi,.perspective_structure
-	mov rdx,24
+	mov rdi,.view_axes
+	mov rsi,.view_axes_old
+	mov rdx,72
 	call memcopy
 
 	mov r12d,[framebuffer_mouse_init.mouse_x]
@@ -328,14 +456,10 @@ START:
 	dq 0.0
 .cos_pitch:
 	dq 0.0
-.neg_one:
-	dq -1.0
 .tolerance:
 	dq 0.0001
 .scale:
 	dq 0.005
-.rotation_matrix:
-	times 9 dq 0.0
 
 .view_axes:
 .u1:
@@ -345,12 +469,9 @@ START:
 .u3:	
 	times 3 dq 0.0
 
-
-.lookFrom:
-	dq 1.0
-	dq 1.0
-	dq 0.0
-.right_dir:
+.view_axes_old:
+	times 3 dq 0.0
+	times 3 dq 0.0
 	times 3 dq 0.0
 
 .perspective_structure:
