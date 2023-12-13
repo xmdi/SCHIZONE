@@ -112,10 +112,6 @@ PROGRAM_HEADER:
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
-%include "lib/sys/exit.asm"
-
-%include "lib/io/print_array_float.asm"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -172,6 +168,23 @@ START:
 	mov rdi,.view_axes_old+48
 	call normalize_3
 
+	; copy up-direction into structure
+	mov rdi,.perspective_structure+48
+	mov rsi,.view_axes_old+24
+	mov rdx,24
+	call memcopy
+
+	; copy looking direction into structure
+	movsd xmm15,[.view_axes_old+48]
+	addsd xmm15,[.perspective_structure+24]
+	movsd [.perspective_structure+0],xmm15
+	movsd xmm15,[.view_axes_old+56]
+	addsd xmm15,[.perspective_structure+32]
+	movsd [.perspective_structure+8],xmm15
+	movsd xmm15,[.view_axes_old+64]
+	addsd xmm15,[.perspective_structure+40]
+	movsd [.perspective_structure+16],xmm15
+
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FFFFA500
@@ -193,20 +206,7 @@ START:
 	xor r12,r12 ; x
 	xor r13,r13 ; y
 
-%if 0
-	mov rdi,SYS_STDOUT
-	mov rsi,.view_axes_old
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,6
-	call print_array_float
-
-	call print_buffer_flush
-
-	call exit
-%endif
+	xor r14,r14	; flag to track if we have been holding left click
 
 .loop:
 	; check mouse status	
@@ -222,6 +222,9 @@ START:
 ;;; draw cube
 	; if we just clicked for the first time, just save the current 
 	;    mouse position and don't draw anything new
+
+	mov r14,1
+	
 	mov rax,r12
 	add rax,r13
 	cmp rax,0
@@ -233,19 +236,19 @@ START:
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memset
 
-	mov r8d,[framebuffer_mouse_init.mouse_x]
-	mov r9d,[framebuffer_mouse_init.mouse_y]
+	movsxd r8,[framebuffer_mouse_init.mouse_x]
+	movsxd r9,[framebuffer_mouse_init.mouse_y]
 
 	; rotate the look_From point about the origin and global Z
 
-	mov eax,r8d
-	sub eax,r12d
+	mov rax,r8
+	sub rax,r12
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[.scale]
 	movsd [.yaw],xmm0	
 	
-	mov eax,r9d
-	sub eax,r13d
+	mov rax,r9
+	sub rax,r13
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[.scale]
 	movsd [.pitch],xmm0
@@ -265,6 +268,12 @@ START:
 	movsd xmm0,[.yaw]
 	call sine
 	movsd [.sin_yaw],xmm0
+
+	; grab the old view system
+	mov rdi,.view_axes
+	mov rsi,.view_axes_old
+	mov rdx,72
+	call memcopy
 
 	;.u1'[0]
 	movsd xmm15,[.view_axes+8]
@@ -311,7 +320,7 @@ START:
 	mulsd xmm14,[.view_axes+8]
 	subsd xmm15,xmm14
 	mulsd xmm15,[.sin_pitch]
-	movsd xmm0,[.view_axes+0]
+	movsd xmm0,[.view_axes+24]
 	mulsd xmm0,[.cos_pitch]
 	addsd xmm0,xmm15
 
@@ -322,7 +331,7 @@ START:
 	mulsd xmm14,[.view_axes+16]
 	subsd xmm15,xmm14
 	mulsd xmm15,[.sin_pitch]
-	movsd xmm1,[.view_axes+8]
+	movsd xmm1,[.view_axes+32]
 	mulsd xmm1,[.cos_pitch]
 	addsd xmm1,xmm15
 
@@ -333,7 +342,7 @@ START:
 	mulsd xmm14,[.view_axes+0]
 	subsd xmm15,xmm14
 	mulsd xmm15,[.sin_pitch]
-	movsd xmm2,[.view_axes+16]
+	movsd xmm2,[.view_axes+40]
 	mulsd xmm2,[.cos_pitch]
 	addsd xmm2,xmm15
 
@@ -392,22 +401,8 @@ START:
 	mov r9,.edge_structure
 	call rasterize_edges	
 
-%if 1
-	mov rdi,SYS_STDOUT
-	mov rsi,.view_axes
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,6
-	call print_array_float
 
-	call print_buffer_flush
-
-%endif
-
-
-	jmp .no_drawing
+	jmp .was_not_dragging
 
 .first_click:
 	mov rdi,.view_axes
@@ -415,11 +410,21 @@ START:
 	mov rdx,72
 	call memcopy
 
-	mov r12d,[framebuffer_mouse_init.mouse_x]
-	mov r13d,[framebuffer_mouse_init.mouse_y]
+	movsxd r12,[framebuffer_mouse_init.mouse_x]
+	movsxd r13,[framebuffer_mouse_init.mouse_y]
 
 .no_drawing:
-	
+
+	cmp r14,1
+	jne .was_not_dragging
+.just_finished_dragging:
+	mov rdi,.view_axes_old
+	mov rsi,.view_axes
+	mov rdx,72
+	call memcopy
+	xor r14,r14	
+
+.was_not_dragging:
 ;;; combine layers to plot the cursor to the screen
 	
 	; first copy intermediate buffer to framebuffer
