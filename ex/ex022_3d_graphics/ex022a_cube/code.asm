@@ -219,7 +219,7 @@ START:
 	cmovne r13,rax
 	jne .no_drawing
 
-;;; draw cube
+	;;; draw cube
 	; if we just clicked for the first time, just save the current 
 	;    mouse position and don't draw anything new
 

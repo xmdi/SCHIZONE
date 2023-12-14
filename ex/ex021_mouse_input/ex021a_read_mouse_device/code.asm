@@ -89,7 +89,6 @@ START:
 	mov esi,[.buffer]
 
 	and esi,0x7
-
 	test esi,0x1
 	jnz .left_clicked
 	test esi,0x2
