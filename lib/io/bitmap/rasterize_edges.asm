@@ -190,6 +190,11 @@ rasterize_edges:
 	movsd xmm0,[r10]	; Pt_x
 	movsd xmm1,[r10+8]	; Pt_y
 	movsd xmm2,[r10+16]	; Pt_z
+	
+	; correct relative to lookAt point
+	subsd xmm0,[r8+24]
+	subsd xmm1,[r8+32]
+	subsd xmm2,[r8+40]
 
 	mulsd xmm0,xmm6		
 	mulsd xmm1,xmm7
@@ -205,6 +210,13 @@ rasterize_edges:
 	movsd xmm0,[r10]	; Pt_x
 	movsd xmm1,[r10+8]	; Pt_y
 	movsd xmm2,[r10+16]	; Pt_z
+
+	; correct relative to lookAt point
+	subsd xmm0,[r8+24]
+	subsd xmm1,[r8+32]
+	subsd xmm2,[r8+40]
+
+
 
 	mulsd xmm0,xmm3
 	mulsd xmm1,xmm4
@@ -229,6 +241,11 @@ rasterize_edges:
 	movsd xmm1,[r10+8]	; Pt_y
 	movsd xmm2,[r10+16]	; Pt_z
 
+	; correct relative to lookAt point
+	subsd xmm0,[r8+24]
+	subsd xmm1,[r8+32]
+	subsd xmm2,[r8+40]
+
 	mulsd xmm0,xmm6		
 	mulsd xmm1,xmm7
 	mulsd xmm2,xmm8
@@ -239,11 +256,15 @@ rasterize_edges:
 	mulsd xmm0,xmm9
 
 	cvtsd2si r13,xmm0	; {r13} contains pixel 1 x-coord
-	
 
 	movsd xmm0,[r10]	; Pt_x
 	movsd xmm1,[r10+8]	; Pt_y
 	movsd xmm2,[r10+16]	; Pt_z
+
+	; correct relative to lookAt point
+	subsd xmm0,[r8+24]
+	subsd xmm1,[r8+32]
+	subsd xmm2,[r8+40]
 
 	mulsd xmm0,xmm3
 	mulsd xmm1,xmm4

@@ -256,13 +256,13 @@ jmp .no_drawing
 	mov rax,r8
 	sub rax,r12
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.scale]
+	mulsd xmm0,[.rotate_scale]
 	movsd [.yaw],xmm0	
 	
 	mov rax,r9
 	sub rax,r13
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.scale]
+	mulsd xmm0,[.rotate_scale]
 	movsd [.pitch],xmm0
 	
 	movsd xmm1,[.tolerance]
@@ -411,13 +411,13 @@ jmp .no_drawing
 	mov rax,r8
 	sub rax,r12
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.scale]
+	mulsd xmm0,[.pan_scale_x]
 	movsd xmm7,xmm0	; rightward shifting
 	
 	mov rax,r9
 	sub rax,r13
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.scale]
+	mulsd xmm0,[.pan_scale_y]
 	movsd xmm8,xmm0 ; upward shifting
 	
 	; adjust vector x-coords
@@ -425,12 +425,12 @@ jmp .no_drawing
 	mulsd xmm0,xmm7
 	movsd xmm1,[.view_axes_old+24]
 	mulsd xmm1,xmm8
-	addsd xmm0,xmm1
-	movsd xmm1,[.perspective_structure+0]
-	addsd xmm1,xmm0
+	subsd xmm0,xmm1
+	movsd xmm1,[.perspective_old+0]
+	subsd xmm1,xmm0
 	movsd [.perspective_structure+0],xmm1	
-	movsd xmm1,[.perspective_structure+24]
-	addsd xmm1,xmm0
+	movsd xmm1,[.perspective_old+24]
+	subsd xmm1,xmm0
 	movsd [.perspective_structure+24],xmm1	
 	
 	; adjust vector y-coords
@@ -438,12 +438,12 @@ jmp .no_drawing
 	mulsd xmm0,xmm7
 	movsd xmm1,[.view_axes_old+32]
 	mulsd xmm1,xmm8
-	addsd xmm0,xmm1
-	movsd xmm1,[.perspective_structure+8]
-	addsd xmm1,xmm0
+	subsd xmm0,xmm1
+	movsd xmm1,[.perspective_old+8]
+	subsd xmm1,xmm0
 	movsd [.perspective_structure+8],xmm1	
-	movsd xmm1,[.perspective_structure+32]
-	addsd xmm1,xmm0
+	movsd xmm1,[.perspective_old+32]
+	subsd xmm1,xmm0
 	movsd [.perspective_structure+32],xmm1	
 
 	; adjust vector z-coords
@@ -451,23 +451,13 @@ jmp .no_drawing
 	mulsd xmm0,xmm7
 	movsd xmm1,[.view_axes_old+40]
 	mulsd xmm1,xmm8
-	addsd xmm0,xmm1
-	movsd xmm1,[.perspective_structure+16]
-	addsd xmm1,xmm0
+	subsd xmm0,xmm1
+	movsd xmm1,[.perspective_old+16]
+	subsd xmm1,xmm0
 	movsd [.perspective_structure+16],xmm1	
-	movsd xmm1,[.perspective_structure+40]
-	addsd xmm1,xmm0
+	movsd xmm1,[.perspective_old+40]
+	subsd xmm1,xmm0
 	movsd [.perspective_structure+40],xmm1	
-
-;	mov rdi,SYS_STDOUT
-;	mov rsi,.perspective_structure
-;	mov rdx,2
-;	mov rcx,3
-;	xor r8,r8
-;	mov r9,print_float
-;	mov r10,5
-;	call print_array_float
-;	call print_buffer_flush
 
 	jmp .draw_cube
 
@@ -487,6 +477,11 @@ jmp .no_drawing
 	mov rdi,.view_axes
 	mov rsi,.view_axes_old
 	mov rdx,72
+	call memcopy
+
+	mov rdi,.perspective_old
+	mov rsi,.perspective_structure
+	mov rdx,48
 	call memcopy
 
 	movsxd r12,[framebuffer_mouse_init.mouse_x]
@@ -542,8 +537,12 @@ jmp .no_drawing
 	dq 0.0
 .tolerance:
 	dq 0.0001
-.scale:
+.rotate_scale:
 	dq 0.005
+.pan_scale_x:
+	dq 0.013
+.pan_scale_y:
+	dq 0.0062
 
 .view_axes:
 .u1:
@@ -569,6 +568,9 @@ jmp .no_drawing
 	dq 1.0 ; upDir_y	
 	dq -1.0 ; upDir_z	
 	dq 0.3	; zoom
+
+.perspective_old:
+	times 6 dq 0.0
 
 .edge_structure:
 	dq 8 ; number of points (N)
