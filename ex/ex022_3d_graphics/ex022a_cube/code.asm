@@ -112,6 +112,10 @@ PROGRAM_HEADER:
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
+
+
+%include "lib/io/print_array_float.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -214,12 +218,11 @@ START:
 
 	xor rax,rax
 	; if left click isn't pressed, nothing to draw but cursor
-	cmp byte [framebuffer_mouse_init.mouse_state],1
-	cmovne r12,rax
-	cmovne r13,rax
-	jne .no_drawing
+	cmp byte [framebuffer_mouse_init.mouse_state],0
+	cmove r12,rax
+	cmove r13,rax
+	je .no_drawing
 
-	;;; draw cube
 	; if we just clicked for the first time, just save the current 
 	;    mouse position and don't draw anything new
 
@@ -239,7 +242,16 @@ START:
 	movsxd r8,[framebuffer_mouse_init.mouse_x]
 	movsxd r9,[framebuffer_mouse_init.mouse_y]
 
-	; rotate the look_From point about the origin and global Z
+	cmp byte [framebuffer_mouse_init.mouse_state],1
+	je .left_click
+	cmp byte [framebuffer_mouse_init.mouse_state],2
+	je .right_click
+	
+jmp .no_drawing
+
+.left_click:
+
+	; rotate the look_From point look_At point
 
 	mov rax,r8
 	sub rax,r12
@@ -392,6 +404,74 @@ START:
 	addsd xmm15,[.perspective_structure+40]
 	movsd [.perspective_structure+16],xmm15
 
+	jmp .draw_cube
+
+.right_click:
+
+	mov rax,r8
+	sub rax,r12
+	cvtsi2sd xmm0,rax
+	mulsd xmm0,[.scale]
+	movsd xmm7,xmm0	; rightward shifting
+	
+	mov rax,r9
+	sub rax,r13
+	cvtsi2sd xmm0,rax
+	mulsd xmm0,[.scale]
+	movsd xmm8,xmm0 ; upward shifting
+	
+	; adjust vector x-coords
+	movsd xmm0,[.view_axes_old+0]
+	mulsd xmm0,xmm7
+	movsd xmm1,[.view_axes_old+24]
+	mulsd xmm1,xmm8
+	addsd xmm0,xmm1
+	movsd xmm1,[.perspective_structure+0]
+	addsd xmm1,xmm0
+	movsd [.perspective_structure+0],xmm1	
+	movsd xmm1,[.perspective_structure+24]
+	addsd xmm1,xmm0
+	movsd [.perspective_structure+24],xmm1	
+	
+	; adjust vector y-coords
+	movsd xmm0,[.view_axes_old+8]
+	mulsd xmm0,xmm7
+	movsd xmm1,[.view_axes_old+32]
+	mulsd xmm1,xmm8
+	addsd xmm0,xmm1
+	movsd xmm1,[.perspective_structure+8]
+	addsd xmm1,xmm0
+	movsd [.perspective_structure+8],xmm1	
+	movsd xmm1,[.perspective_structure+32]
+	addsd xmm1,xmm0
+	movsd [.perspective_structure+32],xmm1	
+
+	; adjust vector z-coords
+	movsd xmm0,[.view_axes_old+16]
+	mulsd xmm0,xmm7
+	movsd xmm1,[.view_axes_old+40]
+	mulsd xmm1,xmm8
+	addsd xmm0,xmm1
+	movsd xmm1,[.perspective_structure+16]
+	addsd xmm1,xmm0
+	movsd [.perspective_structure+16],xmm1	
+	movsd xmm1,[.perspective_structure+40]
+	addsd xmm1,xmm0
+	movsd [.perspective_structure+40],xmm1	
+
+;	mov rdi,SYS_STDOUT
+;	mov rsi,.perspective_structure
+;	mov rdx,2
+;	mov rcx,3
+;	xor r8,r8
+;	mov r9,print_float
+;	mov r10,5
+;	call print_array_float
+;	call print_buffer_flush
+
+	jmp .draw_cube
+
+.draw_cube:
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,r15
 	mov rsi,0x1FFFFA500
@@ -400,7 +480,6 @@ START:
 	mov r8,.perspective_structure
 	mov r9,.edge_structure
 	call rasterize_edges	
-
 
 	jmp .was_not_dragging
 
