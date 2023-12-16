@@ -112,10 +112,6 @@ PROGRAM_HEADER:
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
-
-
-%include "lib/io/print_array_float.asm"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -145,7 +141,7 @@ START:
 
 	; compute rightward direction
 	mov rdi,.view_axes_old+0
-	mov rsi,.perspective_structure+48	; NOTE maybe these 2 are switched
+	mov rsi,.perspective_structure+48
 	mov rdx,.perspective_structure+0
 	call cross_product_3	
 
@@ -246,12 +242,12 @@ START:
 	je .left_click
 	cmp byte [framebuffer_mouse_init.mouse_state],2
 	je .right_click
+	cmp byte [framebuffer_mouse_init.mouse_state],4
+	je .middle_click
 	
-jmp .no_drawing
-
 .left_click:
-
-	; rotate the look_From point look_At point
+	; (rotating)
+	; rotate the look_From point about the look_At point
 
 	mov rax,r8
 	sub rax,r12
@@ -407,6 +403,8 @@ jmp .no_drawing
 	jmp .draw_cube
 
 .right_click:
+	; (panning)
+	; translate both the lookat and lookfrom point along u1 and u2
 
 	mov rax,r8
 	sub rax,r12
@@ -461,6 +459,17 @@ jmp .no_drawing
 
 	jmp .draw_cube
 
+.middle_click:
+	; (zooming)
+	; adjust the zoom factor
+	mov rax,r9
+	sub rax,r13
+	cvtsi2sd xmm0,rax
+	mulsd xmm0,[.zoom_scale] ; zooming
+	movsd xmm1,[.zoom_old]
+	subsd xmm1,xmm0
+	movsd [.perspective_structure+72],xmm1	
+
 .draw_cube:
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,r15
@@ -482,6 +491,11 @@ jmp .no_drawing
 	mov rdi,.perspective_old
 	mov rsi,.perspective_structure
 	mov rdx,48
+	call memcopy
+
+	mov rdi,.zoom_old
+	mov rsi,.perspective_structure+72
+	mov rdx,8
 	call memcopy
 
 	movsxd r12,[framebuffer_mouse_init.mouse_x]
@@ -543,6 +557,9 @@ jmp .no_drawing
 	dq 0.013
 .pan_scale_y:
 	dq 0.0062
+.zoom_scale:
+	dq 0.001
+
 
 .view_axes:
 .u1:
@@ -571,6 +588,8 @@ jmp .no_drawing
 
 .perspective_old:
 	times 6 dq 0.0
+.zoom_old:
+	dq 0.0
 
 .edge_structure:
 	dq 8 ; number of points (N)
