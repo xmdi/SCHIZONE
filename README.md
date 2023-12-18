@@ -33,7 +33,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | NOV 10, 2023 | [Least Squares Regression](ex/ex019_least_squares_regression) | [EP. 019](https://youtu.be/ka0pG7-h-ig) |
 | DEC 01, 2023 | [Framebuffer](ex/ex020_framebuffer) | [EP. 020](https://youtu.be/PvXeZidA82I) |
 | DEC 08, 2023 | [Mouse Input](ex/ex021_mouse_input) | [EP. 021](https://youtu.be/M7ejglSgWtc) |
-| DEC 15, 2023 | [3D Graphics](ex/ex022_3d_graphics) | [EP. 022](https://youtu.be/) |
+| DEC 22, 2023 | [3D Graphics](ex/ex022_3d_graphics) | [EP. 022](https://youtu.be/) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
