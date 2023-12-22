@@ -1,6 +1,9 @@
 %ifndef FRAMEBUFFER_3D_RENDER_LOOP
 %define FRAMEBUFFER_3D_RENDER_LOOP
 
+%include "lib/io/framebuffer/framebuffer_3d_render_init.asm"
+; void framebuffer_3d_render_init(struct* {rdi}, struct* {rsi}, void* {rdx});
+
 %include "lib/mem/memset.asm"
 ; void memset(void* {rdi}, char {sil}, ulong {rdx});
 
@@ -56,6 +59,8 @@
 
 framebuffer_3d_render_loop:
 ; void framebuffer_3d_render_loop(void);
+;	Query mouse position and redraw the scene initialized by
+;	framebuffer_3d_render_init.
 
 ; No error handling; deal with it.
 
@@ -104,30 +109,30 @@ framebuffer_3d_render_loop:
 	mov rax,r8
 	sub rax,r12
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.rotate_scale]
-	movsd [.yaw],xmm0	
+	mulsd xmm0,[framebuffer_3d_render_init.rotate_scale]
+	movsd [framebuffer_3d_render_init.yaw],xmm0	
 	
 	mov rax,r9
 	sub rax,r13
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.rotate_scale]
-	movsd [.pitch],xmm0
+	mulsd xmm0,[framebuffer_3d_render_init.rotate_scale]
+	movsd [framebuffer_3d_render_init.pitch],xmm0
 	
-	movsd xmm1,[.tolerance]
+	movsd xmm1,[framebuffer_3d_render_init.tolerance]
 	call cosine
-	movsd [.cos_pitch],xmm0
+	movsd [framebuffer_3d_render_init.cos_pitch],xmm0
 
-	movsd xmm0,[.pitch]
+	movsd xmm0,[framebuffer_3d_render_init.pitch]
 	call sine
-	movsd [.sin_pitch],xmm0
+	movsd [framebuffer_3d_render_init.sin_pitch],xmm0
 
-	movsd xmm0,[.yaw]
+	movsd xmm0,[framebuffer_3d_render_init.yaw]
 	call cosine
-	movsd [.cos_yaw],xmm0
+	movsd [framebuffer_3d_render_init.cos_yaw],xmm0
 
-	movsd xmm0,[.yaw]
+	movsd xmm0,[framebuffer_3d_render_init.yaw]
 	call sine
-	movsd [.sin_yaw],xmm0
+	movsd [framebuffer_3d_render_init.sin_yaw],xmm0
 
 	; grab the old view system
 	mov rdi,.view_axes
@@ -136,104 +141,104 @@ framebuffer_3d_render_loop:
 	call memcopy
 
 	;.u1'[0]
-	movsd xmm15,[.view_axes+8]
-	mulsd xmm15,[.view_axes+40]
-	movsd xmm14,[.view_axes+16]
-	mulsd xmm14,[.view_axes+32]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+8]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+40]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+16]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+32]
 	subsd xmm15,xmm14
-	mulsd xmm15,[.sin_yaw]
-	movsd xmm0,[.view_axes+0]
-	mulsd xmm0,[.cos_yaw]
+	mulsd xmm15,[framebuffer_3d_render_init.sin_yaw]
+	movsd xmm0,[framebuffer_3d_render_init.view_axes+0]
+	mulsd xmm0,[framebuffer_3d_render_init.cos_yaw]
 	addsd xmm0,xmm15
 
 	;.u1'[1]
-	movsd xmm15,[.view_axes+16]
-	mulsd xmm15,[.view_axes+24]
-	movsd xmm14,[.view_axes+0]
-	mulsd xmm14,[.view_axes+40]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+16]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+24]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+0]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+40]
 	subsd xmm15,xmm14
-	mulsd xmm15,[.sin_yaw]
-	movsd xmm1,[.view_axes+8]
-	mulsd xmm1,[.cos_yaw]
+	mulsd xmm15,[framebuffer_3d_render_init.sin_yaw]
+	movsd xmm1,[framebuffer_3d_render_init.view_axes+8]
+	mulsd xmm1,[framebuffer_3d_render_init.cos_yaw]
 	addsd xmm1,xmm15
 
 	;.u1'[2]
-	movsd xmm15,[.view_axes+0]
-	mulsd xmm15,[.view_axes+32]
-	movsd xmm14,[.view_axes+8]
-	mulsd xmm14,[.view_axes+24]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+0]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+32]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+8]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+24]
 	subsd xmm15,xmm14
-	mulsd xmm15,[.sin_yaw]
-	movsd xmm2,[.view_axes+16]
-	mulsd xmm2,[.cos_yaw]
+	mulsd xmm15,[framebuffer_3d_render_init.sin_yaw]
+	movsd xmm2,[framebuffer_3d_render_init.view_axes+16]
+	mulsd xmm2,[framebuffer_3d_render_init.cos_yaw]
 	addsd xmm2,xmm15
 
 	; move rotated .u1' into the view_axes
-	movsd [.view_axes+0],xmm0
-	movsd [.view_axes+8],xmm1
-	movsd [.view_axes+16],xmm2
+	movsd [framebuffer_3d_render_init.view_axes+0],xmm0
+	movsd [framebuffer_3d_render_init.view_axes+8],xmm1
+	movsd [framebuffer_3d_render_init.view_axes+16],xmm2
 
 	;.u2'[0]
-	movsd xmm15,[.view_axes+32]
-	mulsd xmm15,[.view_axes+16]
-	movsd xmm14,[.view_axes+40]
-	mulsd xmm14,[.view_axes+8]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+32]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+16]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+40]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+8]
 	subsd xmm15,xmm14
-	mulsd xmm15,[.sin_pitch]
-	movsd xmm0,[.view_axes+24]
-	mulsd xmm0,[.cos_pitch]
+	mulsd xmm15,[framebuffer_3d_render_init.sin_pitch]
+	movsd xmm0,[framebuffer_3d_render_init.view_axes+24]
+	mulsd xmm0,[framebuffer_3d_render_init.cos_pitch]
 	addsd xmm0,xmm15
 
 	;.u2'[1]
-	movsd xmm15,[.view_axes+40]
-	mulsd xmm15,[.view_axes+0]
-	movsd xmm14,[.view_axes+24]
-	mulsd xmm14,[.view_axes+16]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+40]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+0]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+24]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+16]
 	subsd xmm15,xmm14
-	mulsd xmm15,[.sin_pitch]
-	movsd xmm1,[.view_axes+32]
-	mulsd xmm1,[.cos_pitch]
+	mulsd xmm15,[framebuffer_3d_render_init.sin_pitch]
+	movsd xmm1,[framebuffer_3d_render_init.view_axes+32]
+	mulsd xmm1,[framebuffer_3d_render_init.cos_pitch]
 	addsd xmm1,xmm15
 
 	;.u2'[2]
-	movsd xmm15,[.view_axes+24]
-	mulsd xmm15,[.view_axes+8]
-	movsd xmm14,[.view_axes+32]
-	mulsd xmm14,[.view_axes+0]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+24]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+8]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+32]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+0]
 	subsd xmm15,xmm14
-	mulsd xmm15,[.sin_pitch]
-	movsd xmm2,[.view_axes+40]
-	mulsd xmm2,[.cos_pitch]
+	mulsd xmm15,[framebuffer_3d_render_init.sin_pitch]
+	movsd xmm2,[framebuffer_3d_render_init.view_axes+40]
+	mulsd xmm2,[framebuffer_3d_render_init.cos_pitch]
 	addsd xmm2,xmm15
 
 	; move rotated .u2' into the view_axes
-	movsd [.view_axes+24],xmm0
-	movsd [.view_axes+32],xmm1
-	movsd [.view_axes+40],xmm2
+	movsd [framebuffer_3d_render_init.view_axes+24],xmm0
+	movsd [framebuffer_3d_render_init.view_axes+32],xmm1
+	movsd [framebuffer_3d_render_init.view_axes+40],xmm2
 
 	;.u3'[0]
-	movsd xmm15,[.view_axes+8]
-	mulsd xmm15,[.view_axes+40]
-	movsd xmm14,[.view_axes+16]
-	mulsd xmm14,[.view_axes+32]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+8]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+40]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+16]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+32]
 	subsd xmm15,xmm14
-	movsd [.view_axes+48],xmm15
+	movsd [framebuffer_3d_render_init.view_axes+48],xmm15
 
 	;.u3'[1]
-	movsd xmm15,[.view_axes+16]
-	mulsd xmm15,[.view_axes+24]
-	movsd xmm14,[.view_axes+0]
-	mulsd xmm14,[.view_axes+40]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+16]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+24]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+0]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+40]
 	subsd xmm15,xmm14
-	movsd [.view_axes+56],xmm15
+	movsd [framebuffer_3d_render_init.view_axes+56],xmm15
 
 	;.u3'[2]
-	movsd xmm15,[.view_axes+0]
-	mulsd xmm15,[.view_axes+32]
-	movsd xmm14,[.view_axes+8]
-	mulsd xmm14,[.view_axes+24]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+0]
+	mulsd xmm15,[framebuffer_3d_render_init.view_axes+32]
+	movsd xmm14,[framebuffer_3d_render_init.view_axes+8]
+	mulsd xmm14,[framebuffer_3d_render_init.view_axes+24]
 	subsd xmm15,xmm14
-	movsd [.view_axes+64],xmm15
+	movsd [framebuffer_3d_render_init.view_axes+64],xmm15
 
 	; copy up-direction into structure
 	mov rdi,.perspective_structure+48
@@ -261,51 +266,51 @@ framebuffer_3d_render_loop:
 	mov rax,r8
 	sub rax,r12
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.pan_scale_x]
+	mulsd xmm0,[framebuffer_3d_render_init.pan_scale_x]
 	movsd xmm7,xmm0	; rightward shifting
 	
 	mov rax,r9
 	sub rax,r13
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.pan_scale_y]
+	mulsd xmm0,[framebuffer_3d_render_init.pan_scale_y]
 	movsd xmm8,xmm0 ; upward shifting
 	
 	; adjust vector x-coords
-	movsd xmm0,[.view_axes_old+0]
+	movsd xmm0,[framebuffer_3d_render_init.view_axes_old+0]
 	mulsd xmm0,xmm7
-	movsd xmm1,[.view_axes_old+24]
+	movsd xmm1,[framebuffer_3d_render_init.view_axes_old+24]
 	mulsd xmm1,xmm8
 	subsd xmm0,xmm1
-	movsd xmm1,[.perspective_old+0]
+	movsd xmm1,[framebuffer_3d_render_init.perspective_old+0]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+0],xmm1	
-	movsd xmm1,[.perspective_old+24]
+	movsd xmm1,[framebuffer_3d_render_init.perspective_old+24]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+24],xmm1	
 	
 	; adjust vector y-coords
-	movsd xmm0,[.view_axes_old+8]
+	movsd xmm0,[framebuffer_3d_render_init.view_axes_old+8]
 	mulsd xmm0,xmm7
-	movsd xmm1,[.view_axes_old+32]
+	movsd xmm1,[framebuffer_3d_render_init.view_axes_old+32]
 	mulsd xmm1,xmm8
 	subsd xmm0,xmm1
-	movsd xmm1,[.perspective_old+8]
+	movsd xmm1,[framebuffer_3d_render_init.perspective_old+8]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+8],xmm1	
-	movsd xmm1,[.perspective_old+32]
+	movsd xmm1,[framebuffer_3d_render_init.perspective_old+32]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+32],xmm1	
 
 	; adjust vector z-coords
-	movsd xmm0,[.view_axes_old+16]
+	movsd xmm0,[framebuffer_3d_render_init.view_axes_old+16]
 	mulsd xmm0,xmm7
-	movsd xmm1,[.view_axes_old+40]
+	movsd xmm1,[framebuffer_3d_render_init.view_axes_old+40]
 	mulsd xmm1,xmm8
 	subsd xmm0,xmm1
-	movsd xmm1,[.perspective_old+16]
+	movsd xmm1,[framebuffer_3d_render_init.perspective_old+16]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+16],xmm1	
-	movsd xmm1,[.perspective_old+40]
+	movsd xmm1,[framebuffer_3d_render_init.perspective_old+40]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+40],xmm1	
 
@@ -317,8 +322,8 @@ framebuffer_3d_render_loop:
 	mov rax,r9
 	sub rax,r13
 	cvtsi2sd xmm0,rax
-	mulsd xmm0,[.zoom_scale] ; zooming
-	movsd xmm1,[.zoom_old]
+	mulsd xmm0,[framebuffer_3d_render_init.zoom_scale] ; zooming
+	movsd xmm1,[framebuffer_3d_render_init.zoom_old]
 	subsd xmm1,xmm0
 	movsd [.perspective_structure+72],xmm1	
 
@@ -335,17 +340,17 @@ framebuffer_3d_render_loop:
 	jmp .was_not_dragging
 
 .first_click:
-	mov rdi,.view_axes
-	mov rsi,.view_axes_old
+	mov rdi,framebuffer_3d_render_init.view_axes
+	mov rsi,framebuffer_3d_render_init.view_axes_old
 	mov rdx,72
 	call memcopy
 
-	mov rdi,.perspective_old
+	mov rdi,framebuffer_3d_render_init.perspective_old
 	mov rsi,.perspective_structure
 	mov rdx,48
 	call memcopy
 
-	mov rdi,.zoom_old
+	mov rdi,framebuffer_3d_render_init.zoom_old
 	mov rsi,.perspective_structure+72
 	mov rdx,8
 	call memcopy
@@ -375,14 +380,11 @@ framebuffer_3d_render_loop:
 
 	; then copy the cursor as foreground onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,PEPE_BIG
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8d,26
-	mov r9d,14
-	mov r10d,[framebuffer_mouse_init.mouse_x]
-	mov r11d,[framebuffer_mouse_init.mouse_y]
-	call set_foreground
+	mov r8d,[framebuffer_mouse_init.mouse_x]
+	mov r9d,[framebuffer_mouse_init.mouse_y]
+	call [framebuffer_3d_render_init.cursor_function_address]
 
 	; flush output to the screen
 	call framebuffer_flush
