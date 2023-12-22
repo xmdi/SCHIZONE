@@ -80,6 +80,7 @@ framebuffer_3d_render_loop:
 	;    mouse position and don't draw anything new
 
 	mov r14,1
+	mov r15,[framebuffer_3d_render_init.perspective_structure_address]
 	
 	mov rax,r12
 	add rax,r13
@@ -87,7 +88,7 @@ framebuffer_3d_render_loop:
 	je .first_click
 
 	; clear the background first
-	mov rdi,r15
+	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	xor sil,sil
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memset
@@ -241,21 +242,21 @@ framebuffer_3d_render_loop:
 	movsd [framebuffer_3d_render_init.view_axes+64],xmm15
 
 	; copy up-direction into structure
-	mov rdi,.perspective_structure+48
+	mov rdi,[r15+48]
 	mov rsi,.view_axes+24
 	mov rdx,24
 	call memcopy
 
 	; copy looking direction into structure
 	movsd xmm15,[.view_axes+48]
-	addsd xmm15,[.perspective_structure+24]
-	movsd [.perspective_structure+0],xmm15
+	addsd xmm15,[r15+24]
+	movsd [r15+0],xmm15
 	movsd xmm15,[.view_axes+56]
-	addsd xmm15,[.perspective_structure+32]
-	movsd [.perspective_structure+8],xmm15
+	addsd xmm15,[r15+32]
+	movsd [r15+8],xmm15
 	movsd xmm15,[.view_axes+64]
-	addsd xmm15,[.perspective_structure+40]
-	movsd [.perspective_structure+16],xmm15
+	addsd xmm15,[r15+40]
+	movsd [r15+16],xmm15
 
 	jmp .draw_cube
 
@@ -283,10 +284,10 @@ framebuffer_3d_render_loop:
 	subsd xmm0,xmm1
 	movsd xmm1,[framebuffer_3d_render_init.perspective_old+0]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+0],xmm1	
+	movsd [r15+0],xmm1	
 	movsd xmm1,[framebuffer_3d_render_init.perspective_old+24]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+24],xmm1	
+	movsd [r15+24],xmm1	
 	
 	; adjust vector y-coords
 	movsd xmm0,[framebuffer_3d_render_init.view_axes_old+8]
@@ -296,10 +297,10 @@ framebuffer_3d_render_loop:
 	subsd xmm0,xmm1
 	movsd xmm1,[framebuffer_3d_render_init.perspective_old+8]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+8],xmm1	
+	movsd [r15+8],xmm1	
 	movsd xmm1,[framebuffer_3d_render_init.perspective_old+32]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+32],xmm1	
+	movsd [r15+32],xmm1	
 
 	; adjust vector z-coords
 	movsd xmm0,[framebuffer_3d_render_init.view_axes_old+16]
@@ -309,10 +310,10 @@ framebuffer_3d_render_loop:
 	subsd xmm0,xmm1
 	movsd xmm1,[framebuffer_3d_render_init.perspective_old+16]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+16],xmm1	
+	movsd [r15+16],xmm1	
 	movsd xmm1,[framebuffer_3d_render_init.perspective_old+40]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+40],xmm1	
+	movsd [r15+40],xmm1	
 
 	jmp .draw_cube
 
@@ -325,15 +326,15 @@ framebuffer_3d_render_loop:
 	mulsd xmm0,[framebuffer_3d_render_init.zoom_scale] ; zooming
 	movsd xmm1,[framebuffer_3d_render_init.zoom_old]
 	subsd xmm1,xmm0
-	movsd [.perspective_structure+72],xmm1	
+	movsd [r15+72],xmm1	
 
 .draw_cube:
 	; project & rasterize the cube onto the framebuffer
-	mov rdi,r15
+	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rsi,0x1FFFFA500
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,.perspective_structure
+	mov r8,r15
 	mov r9,.edge_structure
 	call rasterize_edges	
 
@@ -346,12 +347,13 @@ framebuffer_3d_render_loop:
 	call memcopy
 
 	mov rdi,framebuffer_3d_render_init.perspective_old
-	mov rsi,.perspective_structure
+	mov rsi,r15
 	mov rdx,48
 	call memcopy
 
 	mov rdi,framebuffer_3d_render_init.zoom_old
-	mov rsi,.perspective_structure+72
+	mov rsi,r15
+	add rsi,72
 	mov rdx,8
 	call memcopy
 
@@ -374,7 +376,7 @@ framebuffer_3d_render_loop:
 	
 	; first copy intermediate buffer to framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,r15
+	mov rsi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
 

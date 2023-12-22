@@ -1,6 +1,9 @@
 %ifndef FRAMEBUFFER_3D_RENDER_INIT
 %define FRAMEBUFFER_3D_RENDER_INIT
 
+%include "lib/mem/heap_init.asm"
+; void heap_init(void);
+
 %include "lib/mem/memcopy.asm"
 ; void memcopy(long* {rdi}, long* {rsi}, ulong {rdx});
 
@@ -83,11 +86,11 @@ framebuffer_3d_render_init:
 	movsd xmm15,[r15]
 	subsd xmm15,[r15+24]
 	movsd [.view_axes_old+48],xmm15
-	movsd xmm15,[.r15+8]
-	subsd xmm15,[.r15+32]
+	movsd xmm15,[r15+8]
+	subsd xmm15,[r15+32]
 	movsd [.view_axes_old+56],xmm15
-	movsd xmm15,[.r15+16]
-	subsd xmm15,[.r15+40]
+	movsd xmm15,[r15+16]
+	subsd xmm15,[r15+40]
 	movsd [.view_axes_old+64],xmm15
 
 	; normalize the axes
