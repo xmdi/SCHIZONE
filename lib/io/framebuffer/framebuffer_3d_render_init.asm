@@ -47,10 +47,10 @@ framebuffer_3d_render_init:
 	push r15
 	sub rsp,16
 	movdqu [rsp+0],xmm15
-
-	mov .perspective_structure_address,rdi
-	mov .edge_structure_address,rsi
-	mov .cursor_function_address,rdx
+	
+	mov [.perspective_structure_address],rdi
+	mov [.edge_structure_address],rsi
+	mov [.cursor_function_address],rdx
 	mov r15,rdi
 
 	call heap_init
@@ -62,24 +62,28 @@ framebuffer_3d_render_init:
 	mov rdi,[framebuffer_init.framebuffer_size]
 	call heap_alloc
 	mov rbx,rax	; buffer to combine multiple layers
+	mov [.intermediate_buffer_address],rbx
 
 	; clear the screen to start
 	mov rdi,0xFF000000
 	call framebuffer_clear
 
 	; perpendicularize the Up-direction vector
-	mov rdi,[r15+48]
-	mov rsi,[r15]
+	mov rdi,r15
+	add rdi,48
+	mov rsi,r15
 	call perpendicularize_3
 
 	; compute rightward direction
 	mov rdi,.view_axes_old+0
-	mov rsi,[r15+48]
-	mov rdx,[r15]
+	mov rsi,r15
+	add rsi,48
+	mov rdx,r15
 	call cross_product_3	
 
 	mov rdi,.view_axes_old+24
-	mov rsi,[r15+48]
+	mov rsi,r15
+	add rsi,48
 	mov rdx,24
 	call memcopy
 
@@ -198,5 +202,7 @@ framebuffer_3d_render_init:
 	times 6 dq 0.0
 .zoom_old:
 	dq 0.0
+.was_dragging:
+	db 0
 
 %endif	

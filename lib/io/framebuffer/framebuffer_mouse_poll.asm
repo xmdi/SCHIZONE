@@ -30,10 +30,12 @@ framebuffer_mouse_poll:
 	js .ret
 
 	; mouse state
+	;xor rsi,rsi
 	mov esi,[.buffer]
 
 	and esi,0x7
-	mov [framebuffer_mouse_init.mouse_state],sil
+	mov byte [framebuffer_mouse_init.mouse_state],sil
+	;mov [framebuffer_mouse_init.mouse_state],rsi
 
 	; dx
 	mov esi,[.buffer]

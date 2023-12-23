@@ -26,14 +26,6 @@
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
-%include "lib/io/bitmap/set_pixel.asm"
-; void set_pixel(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d});
-
-%include "lib/io/bitmap/set_line.asm"
-; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
-
 %include "lib/io/bitmap/rasterize_edges.asm"
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
@@ -66,24 +58,56 @@ framebuffer_3d_render_loop:
 
 ; NOTE: NEED TO RUN THIS AS SUDO
 
-	; check mouse status	
-	call framebuffer_mouse_poll
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push rax
+	push r8
+	push r9
+	push r10
+	push r11
+	push r12
+	push r13
+	push r14
+	push r15
+	sub rsp,112
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
+	movdqu [rsp+32],xmm2
+	movdqu [rsp+48],xmm7
+	movdqu [rsp+64],xmm8
+	movdqu [rsp+80],xmm14
+	movdqu [rsp+96],xmm15
 
+	; check mouse status	
+.l:	
+	call framebuffer_mouse_poll
+	xor r14,r14
+	mov r14b,byte [framebuffer_mouse_init.mouse_state]
+;	mov rdi,SYS_STDOUT
+;	mov rsi,r14
+;	call print_int_d
+;	call print_buffer_flush
+;	jmp .l
+
+	cmp r14,0
+	jg .drawing
 	xor rax,rax
-	; if left click isn't pressed, nothing to draw but cursor
-	cmp byte [framebuffer_mouse_init.mouse_state],0
-	cmove r12,rax
-	cmove r13,rax
-	je .no_drawing
+	mov [framebuffer_3d_render_init.prev_mouse_x],rax
+	mov [framebuffer_3d_render_init.prev_mouse_y],rax
+	jmp .no_drawing
+
+.drawing:
 
 	; if we just clicked for the first time, just save the current 
 	;    mouse position and don't draw anything new
-
 	mov r14,1
-	mov r15,[framebuffer_3d_render_init.perspective_structure_address]
+	mov byte [framebuffer_3d_render_init.was_dragging],r14b
 	
-	mov rax,r12
-	add rax,r13
+	mov r15,[framebuffer_3d_render_init.perspective_structure_address]
+	mov rax,[framebuffer_3d_render_init.prev_mouse_x]
+	add rax,[framebuffer_3d_render_init.prev_mouse_y]
 	cmp rax,0
 	je .first_click
 
@@ -108,17 +132,17 @@ framebuffer_3d_render_loop:
 	; rotate the look_From point about the look_At point
 
 	mov rax,r8
-	sub rax,r12
+	sub rax,[framebuffer_3d_render_init.prev_mouse_x]
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[framebuffer_3d_render_init.rotate_scale]
 	movsd [framebuffer_3d_render_init.yaw],xmm0	
 	
 	mov rax,r9
-	sub rax,r13
+	sub rax,[framebuffer_3d_render_init.prev_mouse_y]
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[framebuffer_3d_render_init.rotate_scale]
 	movsd [framebuffer_3d_render_init.pitch],xmm0
-	
+
 	movsd xmm1,[framebuffer_3d_render_init.tolerance]
 	call cosine
 	movsd [framebuffer_3d_render_init.cos_pitch],xmm0
@@ -136,8 +160,8 @@ framebuffer_3d_render_loop:
 	movsd [framebuffer_3d_render_init.sin_yaw],xmm0
 
 	; grab the old view system
-	mov rdi,.view_axes
-	mov rsi,.view_axes_old
+	mov rdi,framebuffer_3d_render_init.view_axes
+	mov rsi,framebuffer_3d_render_init.view_axes_old
 	mov rdx,72
 	call memcopy
 
@@ -242,19 +266,20 @@ framebuffer_3d_render_loop:
 	movsd [framebuffer_3d_render_init.view_axes+64],xmm15
 
 	; copy up-direction into structure
-	mov rdi,[r15+48]
-	mov rsi,.view_axes+24
+	mov rdi,r15
+	add rdi,48
+	mov rsi,framebuffer_3d_render_init.view_axes+24
 	mov rdx,24
 	call memcopy
 
 	; copy looking direction into structure
-	movsd xmm15,[.view_axes+48]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+48]
 	addsd xmm15,[r15+24]
 	movsd [r15+0],xmm15
-	movsd xmm15,[.view_axes+56]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+56]
 	addsd xmm15,[r15+32]
 	movsd [r15+8],xmm15
-	movsd xmm15,[.view_axes+64]
+	movsd xmm15,[framebuffer_3d_render_init.view_axes+64]
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
 
@@ -265,13 +290,13 @@ framebuffer_3d_render_loop:
 	; translate both the lookat and lookfrom point along u1 and u2
 
 	mov rax,r8
-	sub rax,r12
+	sub rax,[framebuffer_3d_render_init.prev_mouse_x]
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[framebuffer_3d_render_init.pan_scale_x]
 	movsd xmm7,xmm0	; rightward shifting
 	
 	mov rax,r9
-	sub rax,r13
+	sub rax,[framebuffer_3d_render_init.prev_mouse_y]
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[framebuffer_3d_render_init.pan_scale_y]
 	movsd xmm8,xmm0 ; upward shifting
@@ -329,18 +354,45 @@ framebuffer_3d_render_loop:
 	movsd [r15+72],xmm1	
 
 .draw_cube:
+
+%if 0
+	mov rdi,SYS_STDOUT
+;	mov rsi,framebuffer_3d_render_init.view_axes_old
+	mov rsi,framebuffer_3d_render_init.view_axes
+	mov rdx,3
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	call print_buffer_flush
+%endif
+
+%if 0
+	mov rdi,SYS_STDOUT
+	mov rsi,r15
+	mov rdx,8
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	call print_buffer_flush
+%endif
+
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rsi,0x1FFFFA500
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,r15
-	mov r9,.edge_structure
+	mov r9,[framebuffer_3d_render_init.edge_structure_address]
 	call rasterize_edges	
 
 	jmp .was_not_dragging
 
 .first_click:
+	
 	mov rdi,framebuffer_3d_render_init.view_axes
 	mov rsi,framebuffer_3d_render_init.view_axes_old
 	mov rdx,72
@@ -357,19 +409,21 @@ framebuffer_3d_render_loop:
 	mov rdx,8
 	call memcopy
 
-	movsxd r12,[framebuffer_mouse_init.mouse_x]
-	movsxd r13,[framebuffer_mouse_init.mouse_y]
+	mov eax,[framebuffer_mouse_init.mouse_x]
+	mov [framebuffer_3d_render_init.prev_mouse_x],rax
+	mov eax,[framebuffer_mouse_init.mouse_y]
+	mov [framebuffer_3d_render_init.prev_mouse_y],rax
 
 .no_drawing:
-
-	cmp r14,1
+	cmp byte [framebuffer_3d_render_init.was_dragging],1
 	jne .was_not_dragging
 .just_finished_dragging:
-	mov rdi,.view_axes_old
-	mov rsi,.view_axes
+	mov rdi,framebuffer_3d_render_init.view_axes_old
+	mov rsi,framebuffer_3d_render_init.view_axes
 	mov rdx,72
 	call memcopy
 	xor r14,r14	
+	mov byte [framebuffer_3d_render_init.was_dragging],r14b
 
 .was_not_dragging:
 ;;; combine layers to plot the cursor to the screen
@@ -380,7 +434,7 @@ framebuffer_3d_render_loop:
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
 
-	; then copy the cursor as foreground onto the framebuffer
+	; then draw the cursor as foreground onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
@@ -390,5 +444,29 @@ framebuffer_3d_render_loop:
 
 	; flush output to the screen
 	call framebuffer_flush
+	
+	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
+	movdqu xmm2,[rsp+32]
+	movdqu xmm7,[rsp+48]
+	movdqu xmm8,[rsp+64]
+	movdqu xmm14,[rsp+80]
+	movdqu xmm15,[rsp+96]
+	add rsp,112
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rax
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	
+	ret
 
 %endif	

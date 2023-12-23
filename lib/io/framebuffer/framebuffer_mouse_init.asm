@@ -15,6 +15,9 @@ framebuffer_mouse_init:
 	push rdx
 	push rax
 
+	xor al,al
+	mov [.mouse_state],al
+
 	mov rdi,.filename
 	mov rsi,SYS_READ_WRITE
 	mov rdx,SYS_DEFAULT_PERMISSIONS

@@ -58,6 +58,8 @@ PROGRAM_HEADER:
 ; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
+%include "lib/sys/exit.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -76,27 +78,39 @@ DRAW_CROSS_CURSOR:
 	
 	push r8
 	push r9
+	push r10
+	push r11
 
 	mov r10,r8
-	sub r8,4
-	add r10,4
+	sub r8,7
+	add r10,7
+	mov r11,r9
 	call set_line
 	
-	mov r8,[rsp+8]
+	mov r8,[rsp+24]
+	mov r10,r8
 	mov r11,r9
-	add r9,4
-	sub r11,8
+	add r9,14
+	sub r11,7
 	call set_line
 
+	pop r11
+	pop r10
 	pop r9
 	pop r8
 	ret
 
 START:
 
+	mov rdi,.perspective_structure
+	mov rsi,.edge_structure
+	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_init
 
+.loop:
 	call framebuffer_3d_render_loop
+	jmp .loop
+
 
 .perspective_structure:
 	dq 1.00 ; lookFrom_x	
