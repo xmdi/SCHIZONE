@@ -113,20 +113,20 @@ START:
 
 
 .perspective_structure:
-	dq 1.00 ; lookFrom_x	
-	dq 1.00 ; lookFrom_y	
-	dq 0.00 ; lookFrom_z	
+	dq 0.00 ; lookFrom_x	
+	dq 2.00 ; lookFrom_y	
+	dq 2.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
-	dq 0.00 ; lookAt_z	
-	dq -1.0 ; upDir_x	
-	dq -1.0 ; upDir_y	
+	dq 2.00 ; lookAt_z	
+	dq 0.0 ; upDir_x	
+	dq 0.0 ; upDir_y	
 	dq 1.0 ; upDir_z	
 	dq 0.3	; zoom
 
 .edge_structure:
 	dq 24 ; number of points (N)
-	dq 12 ; number of edges (M)
+	dq 36 ; number of edges (M)
 	dq .points ; starting address of point array (3N elements)
 	dq .edges ; starting address of edge array (2M elements)
 
@@ -168,12 +168,50 @@ START:
 	dq -1.5,0.5,3.0
 
 .edges:
-	dq 0,1	
+	dq 0,1
 	dq 1,2
 	dq 2,3
 	dq 3,0
 	
-	dq
+	dq 12,13
+	dq 13,14
+	dq 14,15
+	dq 15,12
+
+	dq 16,17
+	dq 17,18
+	dq 18,19
+	dq 19,16
+	
+	dq 20,21
+	dq 21,22
+	dq 22,23
+	dq 23,20
+
+	dq 0,4
+	dq 1,5
+	dq 2,6
+	dq 3,7
+
+	dq 8,12
+	dq 9,13
+	dq 10,14
+	dq 11,15
+
+	dq 5,16
+	dq 6,17
+	dq 9,19
+	dq 10,18
+
+	dq 4,20
+	dq 7,21
+	dq 8,23
+	dq 11,22
+
+	dq 4,7
+	dq 5,6
+	dq 9,10
+	dq 8,11
 
 END:
 
