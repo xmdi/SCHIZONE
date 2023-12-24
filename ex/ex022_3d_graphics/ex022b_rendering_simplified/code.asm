@@ -119,40 +119,61 @@ START:
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 0.00 ; lookAt_z	
-	dq 1.0 ; upDir_x	
-	dq 1.0 ; upDir_y	
-	dq -1.0 ; upDir_z	
+	dq -1.0 ; upDir_x	
+	dq -1.0 ; upDir_y	
+	dq 1.0 ; upDir_z	
 	dq 0.3	; zoom
 
 .edge_structure:
-	dq 8 ; number of points (N)
+	dq 24 ; number of points (N)
 	dq 12 ; number of edges (M)
 	dq .points ; starting address of point array (3N elements)
 	dq .edges ; starting address of edge array (2M elements)
 
 .points:
-	dq -1.00,-1.00,-1.00
-	dq -1.00,-1.00,1.00
-	dq -1.00,1.00,-1.00
-	dq -1.00,1.00,1.00
-	dq 1.00,-1.00,-1.00
-	dq 1.00,-1.00,1.00
-	dq 1.00,1.00,-1.00
-	dq 1.00,1.00,1.00
+	; base of vertical beam
+	dq 0.5,0.5,0.0
+	dq -0.5,0.5,0.0
+	dq -0.5,-0.5,0.0
+	dq 0.5,-0.5,0.0
+
+	; bottom of cross beam
+	dq 0.5,0.5,2.0
+	dq -0.5,0.5,2.0
+	dq -0.5,-0.5,2.0
+	dq 0.5,-0.5,2.0
+
+	; top of cross beam
+	dq 0.5,0.5,3.0
+	dq -0.5,0.5,3.0
+	dq -0.5,-0.5,3.0
+	dq 0.5,-0.5,3.0
+
+	; top of vertical beam
+	dq 0.5,0.5,4.0
+	dq -0.5,0.5,4.0
+	dq -0.5,-0.5,4.0
+	dq 0.5,-0.5,4.0
+
+	; right side of cross beam
+	dq 1.5,0.5,2.0
+	dq 1.5,-0.5,2.0
+	dq 1.5,-0.5,3.0
+	dq 1.5,0.5,3.0
+
+	; left side of cross beam
+	dq -1.5,0.5,2.0
+	dq -1.5,-0.5,2.0
+	dq -1.5,-0.5,3.0
+	dq -1.5,0.5,3.0
 
 .edges:
 	dq 0,1	
-	dq 2,3	
-	dq 4,5	
-	dq 6,7	
-	dq 0,2	
-	dq 1,3
-	dq 4,6
-	dq 5,7
-	dq 0,4	
-	dq 1,5	
-	dq 2,6
-	dq 3,7	
+	dq 1,2
+	dq 2,3
+	dq 3,0
+	
+	dq
 
 END:
 

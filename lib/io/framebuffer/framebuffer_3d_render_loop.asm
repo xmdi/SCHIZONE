@@ -65,10 +65,6 @@ framebuffer_3d_render_loop:
 	push rax
 	push r8
 	push r9
-	push r10
-	push r11
-	push r12
-	push r13
 	push r14
 	push r15
 	sub rsp,112
@@ -81,15 +77,9 @@ framebuffer_3d_render_loop:
 	movdqu [rsp+96],xmm15
 
 	; check mouse status	
-.l:	
 	call framebuffer_mouse_poll
 	xor r14,r14
 	mov r14b,byte [framebuffer_mouse_init.mouse_state]
-;	mov rdi,SYS_STDOUT
-;	mov rsi,r14
-;	call print_int_d
-;	call print_buffer_flush
-;	jmp .l
 
 	cmp r14,0
 	jg .drawing
@@ -346,7 +336,7 @@ framebuffer_3d_render_loop:
 	; (zooming)
 	; adjust the zoom factor
 	mov rax,r9
-	sub rax,r13
+	sub rax,[framebuffer_3d_render_init.prev_mouse_y]
 	cvtsi2sd xmm0,rax
 	mulsd xmm0,[framebuffer_3d_render_init.zoom_scale] ; zooming
 	movsd xmm1,[framebuffer_3d_render_init.zoom_old]
@@ -354,31 +344,6 @@ framebuffer_3d_render_loop:
 	movsd [r15+72],xmm1	
 
 .draw_cube:
-
-%if 0
-	mov rdi,SYS_STDOUT
-;	mov rsi,framebuffer_3d_render_init.view_axes_old
-	mov rsi,framebuffer_3d_render_init.view_axes
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush
-%endif
-
-%if 0
-	mov rdi,SYS_STDOUT
-	mov rsi,r15
-	mov rdx,8
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush
-%endif
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
@@ -455,10 +420,6 @@ framebuffer_3d_render_loop:
 	add rsp,112
 	pop r15
 	pop r14
-	pop r13
-	pop r12
-	pop r11
-	pop r10
 	pop r9
 	pop r8
 	pop rax

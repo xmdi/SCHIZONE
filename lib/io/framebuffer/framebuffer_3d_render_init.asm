@@ -199,7 +199,7 @@ framebuffer_3d_render_init:
 	times 3 dq 0.0
 	times 3 dq 0.0
 .perspective_old:
-	times 6 dq 0.0
+	times 10 dq 0.0
 .zoom_old:
 	dq 0.0
 .was_dragging:
