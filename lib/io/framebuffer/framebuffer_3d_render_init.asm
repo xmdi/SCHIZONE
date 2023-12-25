@@ -26,6 +26,9 @@
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
+%include "lib/io/print_array_float.asm"
+
+
 framebuffer_3d_render_init:
 ; void framebuffer_3d_render_init(struct* {rdi}, struct* {rsi}, void* {rdx});
 ;	Initializes a 3D rendering setup with a perspective structure at
