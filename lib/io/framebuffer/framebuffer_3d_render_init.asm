@@ -115,6 +115,9 @@ framebuffer_3d_render_init:
 	mov rdx,24
 	call memcopy
 
+
+	; something going wrong here:
+
 	; copy looking direction into structure
 	movsd xmm15,[.view_axes_old+48]
 	addsd xmm15,[r15+24]
@@ -125,6 +128,9 @@ framebuffer_3d_render_init:
 	movsd xmm15,[.view_axes_old+64]
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
+
+	
+	jmp .ret
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -142,7 +148,7 @@ framebuffer_3d_render_init:
 	mov rsi,[framebuffer_init.framebuffer_address]
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
-	
+	.ret:
 	movdqu xmm15,[rsp+0]
 	add rsp,16
 	pop r15
