@@ -129,7 +129,7 @@ framebuffer_3d_render_init:
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
 
-	
+	jmp .print_it	
 	jmp .ret
 
 	; project & rasterize the cube onto the framebuffer
@@ -162,6 +162,19 @@ framebuffer_3d_render_init:
 	pop rdi
 
 	ret
+
+
+.print_it:
+	mov rdi,SYS_STDOUT
+	mov rsi,[.perspective_structure_address]
+	mov rdx,10
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	call print_buffer_flush	
+	call exit
 
 .perspective_structure_address:
 	dq 0
