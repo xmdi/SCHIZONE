@@ -26,8 +26,6 @@
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
-%include "lib/io/print_array_float.asm"
-
 
 framebuffer_3d_render_init:
 ; void framebuffer_3d_render_init(struct* {rdi}, struct* {rsi}, void* {rdx});
@@ -87,12 +85,12 @@ framebuffer_3d_render_init:
 	add rdi,48
 	mov rsi,.view_axes_old+48
 	call perpendicularize_3
-
+	
 	; compute rightward direction
 	mov rdi,.view_axes_old+0
 	mov rsi,r15
 	add rsi,48
-	mov rdx,r15
+	mov rdx,.view_axes_old+48
 	call cross_product_3	
 
 	mov rdi,.view_axes_old+24
@@ -110,7 +108,7 @@ framebuffer_3d_render_init:
 	movsd xmm15,[r15+16]
 	subsd xmm15,[r15+40]
 	movsd [.view_axes_old+64],xmm15
-
+	
 	; normalize the axes
 	mov rdi,.view_axes_old+0
 	call normalize_3
@@ -126,22 +124,19 @@ framebuffer_3d_render_init:
 	mov rdx,24
 	call memcopy
 
-
 	; something going wrong here:
-
+	; we shouldnt be updating the looking direction. it is gospel.
+	
 	; copy looking direction into structure
-	movsd xmm15,[.view_axes_old+48]
-	addsd xmm15,[r15+24]
-	movsd [r15+0],xmm15
-	movsd xmm15,[.view_axes_old+56]
-	addsd xmm15,[r15+32]
-	movsd [r15+8],xmm15
-	movsd xmm15,[.view_axes_old+64]
-	addsd xmm15,[r15+40]
-	movsd [r15+16],xmm15
-
-;	jmp .print_it	
-;	jmp .ret
+;	movsd xmm15,[.view_axes_old+48]
+;	addsd xmm15,[r15+24]
+;	movsd [r15+0],xmm15
+;	movsd xmm15,[.view_axes_old+56]
+;	addsd xmm15,[r15+32]
+;	movsd [r15+8],xmm15
+;	movsd xmm15,[.view_axes_old+64]
+;	addsd xmm15,[r15+40]
+;	movsd [r15+16],xmm15
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -159,7 +154,7 @@ framebuffer_3d_render_init:
 	mov rsi,[framebuffer_init.framebuffer_address]
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
-	.ret:
+	
 	movdqu xmm15,[rsp+0]
 	add rsp,16
 	pop r15
@@ -173,26 +168,6 @@ framebuffer_3d_render_init:
 	pop rdi
 
 	ret
-
-
-.print_it:
-	mov rdi,SYS_STDOUT
-	mov rsi,[.perspective_structure_address]
-	mov rdx,10
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	mov rsi,.view_axes_old
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush	
-	call exit
 
 .perspective_structure_address:
 	dq 0

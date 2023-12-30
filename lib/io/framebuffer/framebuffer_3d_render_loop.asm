@@ -76,16 +76,6 @@ framebuffer_3d_render_loop:
 	movdqu [rsp+80],xmm14
 	movdqu [rsp+96],xmm15
 
-	mov rdi,SYS_STDOUT
-	mov rsi,[framebuffer_3d_render_init.perspective_structure_address]
-	mov rdx,10
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	
-
 	; check mouse status	
 	call framebuffer_mouse_poll
 	xor r14,r14
@@ -417,17 +407,6 @@ framebuffer_3d_render_loop:
 	mov r9d,[framebuffer_mouse_init.mouse_y]
 	call [framebuffer_3d_render_init.cursor_function_address]
 
-	mov rdi,SYS_STDOUT
-	mov rsi,[framebuffer_3d_render_init.perspective_structure_address]
-	mov rdx,10
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush
-;	call exit
-	
 	; flush output to the screen
 	call framebuffer_flush
 	
