@@ -19,10 +19,10 @@ cross_product_3:
 	subsd xmm0,xmm1
 	movsd xmm2,xmm0
 
-	movsd xmm0,[rsi+24]
+	movsd xmm0,[rsi+16]
 	mulsd xmm0,[rdx+0]
 	movsd xmm1,[rsi+0]
-	mulsd xmm1,[rdx+24]
+	mulsd xmm1,[rdx+16]
 	subsd xmm0,xmm1
 	movsd xmm3,xmm0
 
