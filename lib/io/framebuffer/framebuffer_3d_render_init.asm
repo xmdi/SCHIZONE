@@ -71,10 +71,21 @@ framebuffer_3d_render_init:
 	mov rdi,0xFF000000
 	call framebuffer_clear
 
+	; compute the view axes Z-direction
+	movsd xmm15,[r15]
+	subsd xmm15,[r15+24]
+	movsd [.view_axes_old+48],xmm15
+	movsd xmm15,[r15+8]
+	subsd xmm15,[r15+32]
+	movsd [.view_axes_old+56],xmm15
+	movsd xmm15,[r15+16]
+	subsd xmm15,[r15+40]
+	movsd [.view_axes_old+64],xmm15
+	
 	; perpendicularize the Up-direction vector
 	mov rdi,r15
 	add rdi,48
-	mov rsi,r15
+	mov rsi,.view_axes_old+48
 	call perpendicularize_3
 
 	; compute rightward direction
@@ -129,8 +140,8 @@ framebuffer_3d_render_init:
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
 
-	jmp .print_it	
-	jmp .ret
+;	jmp .print_it	
+;	jmp .ret
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -169,6 +180,13 @@ framebuffer_3d_render_init:
 	mov rsi,[.perspective_structure_address]
 	mov rdx,10
 	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	mov rsi,.view_axes_old
+	mov rdx,3
+	mov rcx,3
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5

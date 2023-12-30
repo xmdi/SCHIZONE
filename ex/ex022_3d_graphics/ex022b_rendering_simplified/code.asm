@@ -113,7 +113,7 @@ START:
 
 
 .perspective_structure:
-	dq 0.00 ; lookFrom_x	
+	dq 1.00 ; lookFrom_x	
 	dq 2.00 ; lookFrom_y	
 	dq 2.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
