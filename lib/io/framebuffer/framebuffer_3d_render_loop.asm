@@ -273,7 +273,7 @@ framebuffer_3d_render_loop:
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
 
-	jmp .draw_cube
+	jmp .draw_wires
 
 .right_click:
 	; (panning)
@@ -330,7 +330,7 @@ framebuffer_3d_render_loop:
 	subsd xmm1,xmm0
 	movsd [r15+40],xmm1	
 
-	jmp .draw_cube
+	jmp .draw_wires
 
 .middle_click:
 	; (zooming)
@@ -343,9 +343,9 @@ framebuffer_3d_render_loop:
 	subsd xmm1,xmm0
 	movsd [r15+72],xmm1	
 
-.draw_cube:
+.draw_wires:
 
-	; project & rasterize the cube onto the framebuffer
+	; project & rasterize the wires onto the framebuffer
 	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rsi,0x1FFFFA500
 	mov edx,[framebuffer_init.framebuffer_width]

@@ -30,12 +30,19 @@
 framebuffer_3d_render_init:
 ; void framebuffer_3d_render_init(struct* {rdi}, struct* {rsi}, void* {rdx});
 ;	Initializes a 3D rendering setup with a perspective structure at
-;	{rdi}, and edge structure at {rsi}, and a cursor plotting function
+;	{rdi}, geometry linked list at {rsi}, and a cursor plotting function
 ;	at {rdx}.
 
 ; No error handling; deal with it.
 
 ; NOTE: NEED TO RUN THIS AS SUDO
+
+%if 0
+.geometry_linked_list:
+	dq 0 ; next geometry in linked list
+	dq 0 ; address of point/edge/face structure
+	dq 0 ; color (0xARGB)
+%endif
 
 	push rdi
 	push rsi
@@ -123,20 +130,6 @@ framebuffer_3d_render_init:
 	mov rsi,.view_axes_old+24
 	mov rdx,24
 	call memcopy
-
-	; something going wrong here:
-	; we shouldnt be updating the looking direction. it is gospel.
-	
-	; copy looking direction into structure
-;	movsd xmm15,[.view_axes_old+48]
-;	addsd xmm15,[r15+24]
-;	movsd [r15+0],xmm15
-;	movsd xmm15,[.view_axes_old+56]
-;	addsd xmm15,[r15+32]
-;	movsd [r15+8],xmm15
-;	movsd xmm15,[.view_axes_old+64]
-;	addsd xmm15,[r15+40]
-;	movsd [r15+16],xmm15
 
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
