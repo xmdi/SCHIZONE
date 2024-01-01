@@ -124,6 +124,12 @@ START:
 	dq 1.0 ; upDir_z	
 	dq 0.3	; zoom
 
+.geometry_linked_list:
+	dq 0 ; next geometry in linked list
+	dq .edge_structure ; address of point/edge/face structure
+	dq 0x1FFFFA500 ; color (0xARGB)
+	db 0b00000001
+
 .edge_structure:
 	dq 24 ; number of points (N)
 	dq 36 ; number of edges (M)
