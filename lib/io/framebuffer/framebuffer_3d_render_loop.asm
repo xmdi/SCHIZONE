@@ -65,6 +65,7 @@ framebuffer_3d_render_loop:
 	push rax
 	push r8
 	push r9
+	push r13
 	push r14
 	push r15
 	sub rsp,112
@@ -345,14 +346,27 @@ framebuffer_3d_render_loop:
 
 .draw_wires:
 
-	; project & rasterize the wires onto the framebuffer
-	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
-	mov rsi,0x1FFFFA500
+	mov r13,[framebuffer_3d_render_init.geometry_linked_list_address]
+
+.loop:
+	; need to put some logic hear to accommodate things that aren't wireframes
+
+	; project & rasterize the cube onto the framebuffer
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,[r13+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,r15
-	mov r9,[framebuffer_3d_render_init.edge_structure_address]
+	mov r9,[r13+8]
 	call rasterize_edges	
+	
+	cmp qword [r13],0
+	je .done
+
+	mov r13,[r13]
+	jmp .loop
+
+.done:
 
 	jmp .was_not_dragging
 
@@ -420,6 +434,7 @@ framebuffer_3d_render_loop:
 	add rsp,112
 	pop r15
 	pop r14
+	pop r13
 	pop r9
 	pop r8
 	pop rax

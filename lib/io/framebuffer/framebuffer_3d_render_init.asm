@@ -42,6 +42,7 @@ framebuffer_3d_render_init:
 	dq 0 ; next geometry in linked list
 	dq 0 ; address of point/edge/face structure
 	dq 0 ; color (0xARGB)
+	db 0 ; type of structure to render
 %endif
 
 	push rdi
@@ -52,12 +53,13 @@ framebuffer_3d_render_init:
 	push rbx
 	push r8
 	push r9	
+	push r14
 	push r15
 	sub rsp,16
 	movdqu [rsp+0],xmm15
 	
 	mov [.perspective_structure_address],rdi
-	mov [.edge_structure_address],rsi
+	mov [.geometry_linked_list_address],rsi
 	mov [.cursor_function_address],rdx
 	mov r15,rdi
 
@@ -131,15 +133,28 @@ framebuffer_3d_render_init:
 	mov rdx,24
 	call memcopy
 
+	mov r14,[.geometry_linked_list_address]
+
+.loop:
+	; need to put some logic hear to accommodate things that aren't wireframes
+
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,0x1FFFFA500
+	mov rsi,[r14+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,r15
-	mov r9,[.edge_structure_address]
+	mov r9,[r14+8]
 	call rasterize_edges	
 	
+	cmp qword [r14],0
+	je .done
+
+	mov r14,[r14]
+	jmp .loop
+
+.done:
+
 	call framebuffer_flush
 	
 	; copy this to the intermediate buffer to start
@@ -151,6 +166,7 @@ framebuffer_3d_render_init:
 	movdqu xmm15,[rsp+0]
 	add rsp,16
 	pop r15
+	pop r14
 	pop r9
 	pop r8
 	pop rbx
@@ -164,7 +180,7 @@ framebuffer_3d_render_init:
 
 .perspective_structure_address:
 	dq 0
-.edge_structure_address:
+.geometry_linked_list_address:
 	dq 0
 .cursor_function_address:
 	dq 0

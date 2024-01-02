@@ -103,7 +103,7 @@ DRAW_CROSS_CURSOR:
 START:
 
 	mov rdi,.perspective_structure
-	mov rsi,.edge_structure
+	mov rsi,.geometry_linked_list
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_init
 
@@ -128,7 +128,7 @@ START:
 	dq 0 ; next geometry in linked list
 	dq .edge_structure ; address of point/edge/face structure
 	dq 0x1FFFFA500 ; color (0xARGB)
-	db 0b00000001
+	db 0b00000010 ; type of structure to render
 
 .edge_structure:
 	dq 24 ; number of points (N)
