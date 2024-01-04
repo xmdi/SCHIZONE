@@ -352,14 +352,14 @@ framebuffer_3d_render_loop:
 	; need to put some logic hear to accommodate things that aren't wireframes
 
 	; project & rasterize the cube onto the framebuffer
-	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rsi,[r13+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,r15
 	mov r9,[r13+8]
 	call rasterize_edges	
-	
+
 	cmp qword [r13],0
 	je .done
 

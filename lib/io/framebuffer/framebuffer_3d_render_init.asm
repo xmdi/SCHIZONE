@@ -26,7 +26,6 @@
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
-
 framebuffer_3d_render_init:
 ; void framebuffer_3d_render_init(struct* {rdi}, struct* {rsi}, void* {rdx});
 ;	Initializes a 3D rendering setup with a perspective structure at
@@ -143,7 +142,7 @@ framebuffer_3d_render_init:
 	mov rsi,[r14+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,r15
+	mov r8,[framebuffer_3d_render_init.perspective_structure_address]
 	mov r9,[r14+8]
 	call rasterize_edges	
 	
