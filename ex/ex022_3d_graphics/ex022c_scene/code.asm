@@ -291,13 +291,13 @@ START:
 
 .plane_1_structure:
 	dq 56 ; number of points (N)
-	dq 91 ; number of edges (M)
+	dq 92 ; number of edges (M)
 	dq .plane_1_points ; starting address of point array (3N elements)
 	dq .plane_edges ; starting address of edge array (2M elements)
 
 .plane_2_structure:
 	dq 56 ; number of points (N)
-	dq 91 ; number of edges (M)
+	dq 92 ; number of edges (M)
 	dq .plane_2_points ; starting address of point array (3N elements)
 	dq .plane_edges ; starting address of edge array (2M elements)
 
