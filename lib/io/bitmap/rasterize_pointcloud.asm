@@ -1,13 +1,13 @@
-%ifndef RASTERIZE_EDGES
-%define RASTERIZE_EDGES
+%ifndef RASTERIZE_POINTCLOUD
+%define RASTERIZE_POINTCLOUD
 
 ; dependency
-%include "lib/io/bitmap/set_line.asm"
+%include "lib/io/bitmap/set_circle.asm"
 
-rasterize_edges:
-; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+rasterize_pointcloud:
+; void rasterize_pointcloud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
-;	Rasterizes a set of edges described by the structure at {r9} from the
+;	Rasterizes a cloud of points described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
 ;	image using the color value in the low 32 bits of {rsi} to the bitmap
 ;	starting at address {rdi}. The 32nd bit of {rsi} indicates the stacking
@@ -28,11 +28,11 @@ rasterize_edges:
 %endif
 
 %if 0
-.edge_structure:
-	dq 0 ; number of points (N)
-	dq 0 ; number of edges (M)
-	dq 0 ; starting address of point array (3N elements)
-	dq 0 ; starting address of edge array (2M elements)
+.point_structure:
+	dq 24 ; number of points (N)
+	dq .points ; starting address of point array (3N elements)
+	dq 1 ; point render type (1=circle)
+	dq 5 ; characteristic size of each point
 %endif
 
 	push rax
@@ -173,19 +173,13 @@ rasterize_edges:
 	shr rax,1
 	cvtsi2sd xmm10,rax
 
-	mov r15,[r9+8]	; number of edges in r15
-	mov rax,[r9+24]
-	;loop thru all edges
-
-.loop_edges:
-
-	; grab first point
+	mov r15,[r9+0]	; number of points in r15
+	mov rax,[r9+8]	; pointer to point array
+	;loop thru all points
 	
-	mov r10,[rax]
-	shl r10,3
-	imul r10,r10,3	; {r10} points to the x value of the first point
-	add r10,[r9+16]
-	
+.loop_points:
+
+	mov r10,rax
 
 	movsd xmm0,[r10]	; Pt_x
 	movsd xmm1,[r10+8]	; Pt_y
@@ -216,8 +210,6 @@ rasterize_edges:
 	subsd xmm1,[r8+32]
 	subsd xmm2,[r8+40]
 
-
-
 	mulsd xmm0,xmm3
 	mulsd xmm1,xmm4
 	mulsd xmm2,xmm5
@@ -230,75 +222,25 @@ rasterize_edges:
 
 	cvtsd2si r12,xmm0	; {r12} contains pixel 1 y-coord
 	
-	add rax,8
-	
-	mov r10,[rax]
-	shl r10,3
-	imul r10,r10,3	; {r10} points to the x value of the second point
-	add r10,[r9+16]
-	
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,xmm6		
-	mulsd xmm1,xmm7
-	mulsd xmm2,xmm8
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Ux*zoom in {xmm0}
-
-	addsd xmm0,[.one]
-	mulsd xmm0,xmm9
-
-	cvtsd2si r13,xmm0	; {r13} contains pixel 1 x-coord
-
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,xmm3
-	mulsd xmm1,xmm4
-	mulsd xmm2,xmm5
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Uy*zoom in {xmm0}
-
-	mulsd xmm0,[.neg]
-	addsd xmm0,[.one]
-	mulsd xmm0,xmm10
-
-	cvtsd2si r14,xmm0	; {r14} contains pixel 2 y-coord
-
-	add rax,8
-
+	; actually draw the point
 	push rax
 	push r8
 	push r9
 	push r10
-	push r11
+	mov r10,[r9+24]
 	mov r8,r11
 	mov r9,r12
-	mov r10,r13
-	mov r11,r14
-	call set_line
-	pop r11
+	call set_circle
 	pop r10
 	pop r9
 	pop r8
 	pop rax
 
-
+	add rax,24
 	dec r15
-	jnz .loop_edges
+	jnz .loop_points
+
+.end:
 
 	movdqu xmm0,[rsp+0]
 	movdqu xmm2,[rsp+32]

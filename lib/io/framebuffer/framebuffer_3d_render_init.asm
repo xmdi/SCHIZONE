@@ -17,6 +17,10 @@
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
+%include "lib/io/bitmap/rasterize_pointcloud.asm"
+; void rasterize_pointcloud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+;		 struct* {r8}, struct* {r9});
+
 %include "lib/math/vector/normalize_3.asm"
 ; void normalize_3(double* {rdi});
 
@@ -137,6 +141,27 @@ framebuffer_3d_render_init:
 .loop:
 	; need to put some logic hear to accommodate things that aren't wireframes
 
+	cmp byte [r14+24],0b00000001
+	je .is_pointcloud
+
+	cmp byte [r14+24],0b00000010
+	je .is_wireframe
+
+	jmp .geometry_type_unsupported
+
+.is_pointcloud:
+	; project and rasterize the pointcloud
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,[r14+16]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,[framebuffer_3d_render_init.perspective_structure_address]
+	mov r9,[r14+8]
+	call rasterize_pointcloud	
+
+	jmp .geometry_type_unsupported
+
+.is_wireframe:
 	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[r14+16]
@@ -145,7 +170,9 @@ framebuffer_3d_render_init:
 	mov r8,[framebuffer_3d_render_init.perspective_structure_address]
 	mov r9,[r14+8]
 	call rasterize_edges	
-	
+
+.geometry_type_unsupported:
+
 	cmp qword [r14],0
 	je .done
 
