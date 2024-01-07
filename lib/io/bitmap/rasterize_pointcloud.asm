@@ -3,6 +3,7 @@
 
 ; dependency
 %include "lib/io/bitmap/set_circle.asm"
+%include "lib/io/bitmap/set_line.asm"
 
 rasterize_pointcloud:
 ; void rasterize_pointcloud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
@@ -177,6 +178,9 @@ rasterize_pointcloud:
 	mov rax,[r9+8]	; pointer to point array
 	;loop thru all points
 	
+	mov r13,[r9+24]	; point characteristic size, shrink by half
+	shr r13,1
+
 .loop_points:
 
 	mov r10,rax
@@ -221,13 +225,121 @@ rasterize_pointcloud:
 	mulsd xmm0,xmm10
 
 	cvtsd2si r12,xmm0	; {r12} contains pixel 1 y-coord
-	
+
 	; actually draw the point
+	
+	; handle different point types 
+
+	cmp qword [r9+16],1
+	je .circle_point
+	cmp qword [r9+16],2
+	je .x_point
+	cmp qword [r9+16],3
+	je .square_point
+	cmp qword [r9+16],4
+	je .triangle_point
+
+	jmp .go_next_point ; invalid point type specified, skip
+
+.triangle_point:	
 	push rax
 	push r8
 	push r9
 	push r10
-	mov r10,[r9+24]
+	push r11
+	mov r8,r11
+	mov r9,r12
+	mov r10,r11
+	mov r11,r12
+	sub r8,r13
+	add r9,r13
+	add r10,r13
+	add r11,r13
+	call set_line ; bottom side
+	add r8,r13
+	sub r9,r13
+	sub r9,r13
+	call set_line ; right side
+	sub r10,r13
+	sub r10,r13
+	call set_line ; left side
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rax
+	jmp .go_next_point
+
+.square_point:	
+	push rax
+	push r8
+	push r9
+	push r10
+	push r11
+	mov r8,r11
+	mov r9,r12
+	mov r10,r11
+	mov r11,r12
+	sub r8,r13
+	sub r9,r13
+	sub r10,r13
+	add r11,r13
+	call set_line ; left side
+	add r10,r13
+	add r10,r13
+	sub r11,r13
+	sub r11,r13
+	call set_line ; bottom side
+	add r8,r13
+	add r8,r13
+	add r9,r13
+	add r9,r13
+	call set_line ; right side
+	sub r10,r13
+	sub r10,r13
+	add r11,r13
+	add r11,r13
+	call set_line ; top side
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rax
+	jmp .go_next_point
+
+.x_point:	
+	push rax
+	push r8
+	push r9
+	push r10
+	push r11
+	mov r8,r11
+	mov r9,r12
+	mov r10,r11
+	mov r11,r12
+	sub r8,r13
+	sub r9,r13
+	add r10,r13
+	add r11,r13
+	call set_line ; one stroke
+	add r9,r13
+	add r9,r13
+	sub r11,r13
+	sub r11,r13
+	call set_line ; one stroke
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rax
+	jmp .go_next_point
+
+.circle_point:
+	push rax
+	push r8
+	push r9
+	push r10
+	mov r10,r13
 	mov r8,r11
 	mov r9,r12
 	call set_circle
@@ -236,6 +348,7 @@ rasterize_pointcloud:
 	pop r8
 	pop rax
 
+.go_next_point:
 	add rax,24
 	dec r15
 	jnz .loop_points
