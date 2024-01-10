@@ -1,6 +1,6 @@
-## 3D Graphics (cont.)
+## Rendering Text
 
 Note: need to run these examples as super user for permissions on the mouse device.
 
-In [ex023a](ex023a_points), we render a point datatype.
+In [ex024a](ex024a_sample_text), we render a some text to the framebuffer.
 
