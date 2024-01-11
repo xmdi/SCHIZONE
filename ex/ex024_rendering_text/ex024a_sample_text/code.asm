@@ -50,6 +50,19 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/mem/heap_init.asm"
+
+%include "lib/io/bitmap/set_pixel.asm"
+
+%include "lib/io/framebuffer/framebuffer_init.asm"
+; void framebuffer_init(void);
+
+%include "lib/io/framebuffer/framebuffer_clear.asm"
+; void framebuffer_clear(uint {rdi});
+
+%include "lib/io/framebuffer/framebuffer_flush.asm"
+; void framebuffer_flush(void);
+
 %include "lib/sys/exit.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,430 +108,504 @@ SCHIZOFONT:
 	db 0b00100100
 	db 0b00100100
 	db 0b00000000
-.space:
+.test:
+	db 0b11111111
+	db 0b11111111
+	db 0b11111111
+	db 0b11111111
+	db 0b11111111
+	db 0b11111111
+	db 0b11111111
+	db 0b11111111
+.2:
+	db 0b00111000
+	db 0b01000100
+	db 0b00000100
+	db 0b00111000
+	db 0b01000000
+	db 0b01000000
+	db 0b01111100
 	db 0b00000000
+.5:
+	db 0b01111100
+	db 0b01000000
+	db 0b01111000
+	db 0b00000100
+	db 0b00000100
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
+.6:
+	db 0b00011000
+	db 0b00100000
+	db 0b01000000
+	db 0b01111000
+	db 0b01000100
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
+.A:
+	db 0b00010000
+	db 0b00101000
+	db 0b01000100
+	db 0b01000100
+	db 0b01111100
+	db 0b01000100
+	db 0b01000100
 	db 0b00000000
+.B:
+	db 0b01111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01111000
 	db 0b00000000
+.C:
+	db 0b00111000
+	db 0b01000100
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
+.D:
+	db 0b01111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01111000
 	db 0b00000000
+.E:
+	db 0b01111100
+	db 0b01000000
+	db 0b01000000
+	db 0b01110000
+	db 0b01000000
+	db 0b01000000
+	db 0b01111100
 	db 0b00000000
-.space:
+.F:
+	db 0b01111100
+	db 0b01000000
+	db 0b01000000
+	db 0b01110000
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
 	db 0b00000000
+.G:
+	db 0b00111100
+	db 0b01000000
+	db 0b01000000
+	db 0b01001100
+	db 0b01000100
+	db 0b01000100
+	db 0b00111100
 	db 0b00000000
+.H:
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01111100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
 	db 0b00000000
+.I:
+	db 0b00111000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00111000
 	db 0b00000000
+.J:
+	db 0b00000100
+	db 0b00000100
+	db 0b00000100
+	db 0b00000100
+	db 0b00000100
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
+.K:
+	db 0b01000100
+	db 0b01001000
+	db 0b01010000
+	db 0b01100000
+	db 0b01010000
+	db 0b01001000
+	db 0b01000100
 	db 0b00000000
+.L:
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
+	db 0b01111100
 	db 0b00000000
+.M:
+	db 0b01000100
+	db 0b01101100
+	db 0b01010100
+	db 0b01010100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
 	db 0b00000000
-.space:
+.N:
+	db 0b01000100
+	db 0b01100100
+	db 0b01010100
+	db 0b01001100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
 	db 0b00000000
+.O:
+	db 0b00111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
+.P:
+	db 0b01111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01111000
+	db 0b01000000
+	db 0b01000000
+	db 0b01000000
 	db 0b00000000
+.Q:
+	db 0b00111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01010100
+	db 0b01001000
+	db 0b00110100
 	db 0b00000000
+.R:
+	db 0b01111000
+	db 0b01000100
+	db 0b01000100
+	db 0b01111000
+	db 0b01010000
+	db 0b01001000
+	db 0b01000100
 	db 0b00000000
+.S:
+	db 0b00111000
+	db 0b01000100
+	db 0b01000000
+	db 0b00111000
+	db 0b00000100
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
+.T:
+	db 0b01111100
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
 	db 0b00000000
+.U:
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b00111000
 	db 0b00000000
-.space:
+.V:
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b00101000
+	db 0b00101000
+	db 0b00010000
+	db 0b00010000
 	db 0b00000000
+.W:
+	db 0b01000100
+	db 0b01000100
+	db 0b01000100
+	db 0b01010100
+	db 0b01010100
+	db 0b01101100
+	db 0b01000100
 	db 0b00000000
+.X:
+	db 0b01000100
+	db 0b01000100
+	db 0b00101000
+	db 0b00010000
+	db 0b00101000
+	db 0b01000100
+	db 0b01000100
 	db 0b00000000
+.Y:
+	db 0b01000100
+	db 0b01000100
+	db 0b00101000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
+	db 0b00010000
 	db 0b00000000
+.Z:
+	db 0b01111100
+	db 0b00000100
+	db 0b00001000
+	db 0b00010000
+	db 0b00100000
+	db 0b01000000
+	db 0b01111100
 	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
+font_expandomatic:
+	; takes character address (64 bit character) from rax and expands each bit to a pixel, rendering it to the screen
+	; loop thru bytes (each row of character to output)
+		; loop thru the bits (low to high)
+	push r8
+	push r9
+	sub r9,8
+	mov r12,8
+.row_loop:
+	mov bl, byte [rax]
+	mov r14,8
+.col_loop:
+	mov r13b,bl
+	test r13b, byte 1
+	jz .no_pixel
+	
+	push r8
+	add r8d,r14d
+	call set_pixel
+	
+	; first pixel of row is at r8-8
+	; next pixel is att r8-7
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
+	pop r8	
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
+.no_pixel:
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
+	shr bl,1
+	dec r14
+	jnz .col_loop
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
+	inc rax
+	inc r9
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
+	dec r12
+	jnz .row_loop
 
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.space:
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-	db 0b00000000
-.
-
-
-
-
+	pop r9
+	pop r8
+	ret
 
 START:
 
+	call heap_init
+	call framebuffer_init
+
+	xor rdi,rdi	
+	call framebuffer_clear
+
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,0x1FFFFFFFF
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	
+	mov r8d,500
+	mov r9d,500
+	mov rax,SCHIZOFONT.M ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.R ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.I ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.W ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.T ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.H ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.R ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.space ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.R ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.M ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.A ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.R ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.K ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.exclamation_mark ; put address of foreground here
+	call font_expandomatic
+	
+
+	mov r8d,500
+	mov r9d,516
+	mov rax,SCHIZOFONT.C ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.O ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.M ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.M ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.O ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.D ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.O ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.R ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.2 ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.5 ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.6 ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.exclamation_mark ; put address of foreground here
+	call font_expandomatic
+	
+	mov r8d,500
+	mov r9d,532
+	mov rax,SCHIZOFONT.L ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.O ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.B ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.S ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.T ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.R ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.C ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.H ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.U ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.N ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.G ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.exclamation_mark ; put address of foreground here
+	call font_expandomatic
+	
+	mov r8d,500
+	mov r9d,548
+	mov rax,SCHIZOFONT.E ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.N ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.S ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.T ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.U ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.C ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.K ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.Y ; put address of foreground here
+	call font_expandomatic
+	add r8d,8
+	mov rax,SCHIZOFONT.exclamation_mark ; put address of foreground here
+	call font_expandomatic
+
+	call framebuffer_flush	; flush frame to framebuffer
+	
 	xor dil,dil
 	call exit
+	
 
 END:
 
