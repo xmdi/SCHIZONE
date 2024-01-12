@@ -938,45 +938,134 @@ SCHIZOFONT:
 	db 0b11101111
 	db 0b11111111
 
+font_scaler:
+	push r8
+	push r9
+	push r10 ; track the x
+	push r11 ; track the y
+	push r15
+	push rax
+	; r8 always stores the left x pixel
+	; r9 stores the current y pixel
+	sub r9,8 ; this needs to be scaled by the font size so 8*10
+	mov r12,8
+.row_loop:
+	mov r8,[rsp+40]
+	mov bl, byte [rax]
+	mov r14,8
+	mov r15,0
+.col_loop:
+	mov r13b,bl
+	test r13b, byte 1
+	jz .no_pixel
+
+
+;	push r8
+;	push r9
+	mov r11,10
+.scale_loop_x:
+	mov r10,10
+	push r9
+.scale_loop_y:
+	push r8
+	add r8d,r14d
+	call set_pixel
+	pop r8
+	inc r9
+	dec r10
+	jnz .scale_loop_y
+	pop r9
+	inc r8
+	dec r11
+	jnz .scale_loop_x
+
+	jmp .rendered_pixels
+
+;	pop r9
+;	pop r8
+
+.no_pixel:
+	add r8,10
+
+
+.rendered_pixels:
+	shr bl,1
+	dec r14
+	jnz .col_loop
+
+	inc rax
+	add r9,10 ; was inc r9
+	
+	dec r12
+	jnz .row_loop
+
+	pop rax
+	pop r15
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	ret
+
+
+
 font_expandomatic:
 	; takes character address (64 bit character) from rax and expands each bit to a pixel, rendering it to the screen
 	; loop thru bytes (each row of character to output)
 		; loop thru the bits (low to high)
 	push r8
 	push r9
+	push r10 ; track the x
+	push r11 ; track the y
+	push r15
 	push rax
 	sub r9,8
 	mov r12,8
 .row_loop:
 	mov bl, byte [rax]
 	mov r14,8
+	push r8
 .col_loop:
 	mov r13b,bl
 	test r13b, byte 1
 	jz .no_pixel
-	
+
+	push r8
+	mov r15,2
+.scaling_loop:
 	push r8
 	add r8d,r14d
 	call set_pixel
-	
-	; first pixel of row is at r8-8
-	; next pixel is att r8-7
+	pop r8
+	inc r8d
+	dec r15
+	jnz .scaling_loop	
 
 	pop r8	
+;	add r8,2
 
 .no_pixel:
 
+	
 	shr bl,1
 	dec r14
 	jnz .col_loop
+	pop r8
 
 	inc rax
 	inc r9
+	
+	jmp .exit
 
 	dec r12
 	jnz .row_loop
 
+
+.exit:
 	pop rax
+	pop r15
+	pop r11
+	pop r10
 	pop r9
 	pop r8
 	ret
@@ -994,10 +1083,14 @@ START:
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	
-	mov r8d,500
-	mov r9d,500
-	mov rax,SCHIZOFONT.M ; put address of foreground here
-	call font_expandomatic
+	mov r8d,100
+	mov r9d,100
+	mov rax,SCHIZOFONT.i ; put address of foreground here
+	;call font_expandomatic
+	call font_scaler
+
+	jmp .render
+
 	add r8d,8
 	mov rax,SCHIZOFONT.E ; put address of foreground here
 	call font_expandomatic
@@ -1216,7 +1309,7 @@ START:
 	jnz .test_loop
 
 
-	
+.render:
 	
 	call framebuffer_flush	; flush frame to framebuffer
 	
