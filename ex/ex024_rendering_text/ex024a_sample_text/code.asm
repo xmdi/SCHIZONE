@@ -938,43 +938,53 @@ SCHIZOFONT:
 	db 0b11101111
 	db 0b11111111
 
+
+
+
 font_scaler:
 
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push rbx
+	push rax
 	push r8
 	push r9
 	push r10 ; track the x
 	push r11 ; track the y
+	push r12 
+	push r13 
+	push r14 
 	push r15
-	push rax
 	; r8 always stores the left x pixel
 	; r9 stores the current y pixel
 	sub r9,8 ; this needs to be scaled by the font size so 8*10
 	mov r12,8
 .row_loop:
 	mov r8,[rsp+40]
-	mov bl, byte [rax]
+	mov bl, byte [r11]
 	mov r14,8
-	mov r15,0
 .col_loop:
 	mov r13b,bl
 	test r13b, byte 1
 	jz .no_pixel
 
-	mov r11,10
+	mov rax,10
 .scale_loop_x:
-	mov r10,10
+	mov r15,10
 	push r9
 .scale_loop_y:
 	push r8
-	add r8d,r14d
+;	add r8d,r14d
 	call set_pixel
 	pop r8
 	inc r9
-	dec r10
+	dec r15
 	jnz .scale_loop_y
 	pop r9
 	inc r8
-	dec r11
+	dec rax
 	jnz .scale_loop_x
 	jmp .rendered_pixels
 
@@ -987,18 +997,26 @@ font_scaler:
 	dec r14
 	jnz .col_loop
 
-	inc rax
+	inc r11
 	add r9,10 ; was inc r9
 	
 	dec r12
 	jnz .row_loop
 
-	pop rax
 	pop r15
+	pop r14
+	pop r13
+	pop r12
 	pop r11
 	pop r10
 	pop r9
 	pop r8
+	pop rax
+	pop rbx
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
 	ret
 
 START:
@@ -1008,7 +1026,7 @@ START:
 
 	xor rdi,rdi	
 	call framebuffer_clear
-
+	
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FFFFFFFF
 	mov edx,[framebuffer_init.framebuffer_width]
@@ -1016,7 +1034,7 @@ START:
 	mov r8d,100
 	mov r9d,100
 	mov r10,10
-	mov r11,.sample_text
+	mov r11,SCHIZOFONT.a
 	call font_scaler
 
 	call framebuffer_flush	; flush frame to framebuffer
