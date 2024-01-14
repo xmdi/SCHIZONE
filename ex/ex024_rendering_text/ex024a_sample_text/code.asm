@@ -943,6 +943,7 @@ SCHIZOFONT:
 
 font_scaler:
 
+	push rbp
 	push rdi
 	push rsi
 	push rdx
@@ -959,24 +960,38 @@ font_scaler:
 	push r15
 	; r8 always stores the left x pixel
 	; r9 stores the current y pixel
-	sub r9,8 ; this needs to be scaled by the font size so 8*10
+	
+
+.letter_loop:
+	xor rbp,rbp
+	mov bpl,byte [r11]
+	sub rbp,32
+	shl rbp,3
+	add rbp,SCHIZOFONT
+
 	mov r12,8
 .row_loop:
-	mov r8,[rsp+40]
-	mov bl, byte [r11]
+	mov r8,[rsp+56]
+	mov bl, byte [rbp]
 	mov r14,8
+;	imul r14,r10
 .col_loop:
 	mov r13b,bl
 	test r13b, byte 1
 	jz .no_pixel
 
-	mov rax,10
+	mov rax,r10
 .scale_loop_x:
-	mov r15,10
+	mov r15,r10
 	push r9
 .scale_loop_y:
 	push r8
-;	add r8d,r14d
+;	mov rbp,r14
+;	imul rbp,r10
+	add r8,r14
+
+
+
 	call set_pixel
 	pop r8
 	inc r9
@@ -989,19 +1004,28 @@ font_scaler:
 	jmp .rendered_pixels
 
 .no_pixel:
-	add r8,10
-
+	add r8,r10
 
 .rendered_pixels:
 	shr bl,1
 	dec r14
 	jnz .col_loop
 
-	inc r11
-	add r9,10 ; was inc r9
+	inc rbp
+	add r9,r10 ; was inc r9
 	
 	dec r12
 	jnz .row_loop
+
+	mov r9,[rsp+48]
+	mov r8,[rsp+56]
+	mov rbp,8
+	imul rbp,r10
+	add r8,rbp
+	mov [rsp+56],r8
+	inc r11
+	cmp byte [r11],0
+	jnz .letter_loop
 
 	pop r15
 	pop r14
@@ -1017,6 +1041,7 @@ font_scaler:
 	pop rdx
 	pop rsi
 	pop rdi
+	pop rbp
 	ret
 
 START:
@@ -1033,8 +1058,8 @@ START:
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8d,100
 	mov r9d,100
-	mov r10,10
-	mov r11,SCHIZOFONT.a
+	mov r10,4
+	mov r11,.sample_text
 	call font_scaler
 
 	call framebuffer_flush	; flush frame to framebuffer
