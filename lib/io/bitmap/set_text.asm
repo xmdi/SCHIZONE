@@ -13,6 +13,8 @@ set_text:
 ;	in {esi}. Font defined at {r12} and font scaling in {r10}.
 
 	push rbp
+	push r8
+	push r9
 	push rdi
 	push rsi
 	push rdx
@@ -104,6 +106,8 @@ set_text:
 	pop rdx
 	pop rsi
 	pop rdi
+	pop r9
+	pop r8
 	pop rbp
 	ret
 
