@@ -35,7 +35,15 @@ set_text:
 .letter_loop:
 	xor rbp,rbp
 	mov bpl,byte [r11]
+	cmp rbp,32
+	jl .unknown_char
+	cmp rbp,126
+	jg .unknown_char
 	sub rbp,32
+	jmp .adjust_char
+.unknown_char:
+	mov rbp,95
+.adjust_char:
 	shl rbp,3
 	add rbp,[rsp+24]
 
