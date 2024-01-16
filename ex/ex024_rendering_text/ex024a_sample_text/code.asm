@@ -90,109 +90,28 @@ START:
 	mov rsi,0x1FFFFFF00
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8d,100
-	mov r9d,100
-	mov r10,6
+	mov r8d,50
+	mov r9d,50
+	mov r10,5
 	mov r11,.sample_text0
 	mov r12,SCHIZOFONT
 	call set_text
-
-	mov r11,.sample_text1
-	mov r8d,100
-	mov r9d,180
-	call set_text
 	
-	mov r11,.sample_text2
-	mov r8d,100
-	mov r9d,260
-	call set_text
-	
-	mov r11,.sample_text3
-	mov r8d,100
-	mov r9d,340
-	call set_text
-		
-	mov r11,.sample_text4
-	mov r8d,100
-	mov r9d,420
-	call set_text
-		
-	mov r11,.sample_text5
-	mov r8d,100
-	mov r9d,500
-	call set_text
-		
-	mov r11,.sample_text6
-	mov r8d,100
-	mov r9d,580
-	call set_text
-		
-	mov r11,.sample_text7
-	mov r8d,100
-	mov r9d,660
-	call set_text
-	
-	mov r11,.sample_text8
-	mov r8d,100
-	mov r9d,740
-	call set_text
-		
-	mov r11,.sample_text9
-	mov r8d,100
-	mov r9d,820
-	call set_text
-	
-	mov r11,.sample_text10
-	mov r8d,100
-	mov r9d,900
-	call set_text
-
-	mov r11,.sample_text11
-	mov r8d,100
-	mov r9d,980
-	call set_text
-	
-
 	call framebuffer_flush	; flush frame to framebuffer
 	
 	xor dil,dil
 	call exit
 
 .sample_text0:
-	db `The Industrial Revolution and its`,0	
-
-.sample_text1:
-	db `consequences have been a disaster`,0	
-
-.sample_text2:
-	db `for the human race. They have greatly`,0	
-
-.sample_text3:
-	db `increased the life expectancy of`,0	
-
-.sample_text4:
-	db `those of us who live in "developed" `,0	
-
-.sample_text5:
-	db `countries, but they have destabilized`,0	
-
-.sample_text6:
-	db `society, have made life unfulfilling,`,0	
-
-.sample_text7:
-	db `have subjected human beings to`,0	
-
-.sample_text8:
-	db `indignities, have led to widespread`,0	
-
-.sample_text9:
-	db `psychological suffering and have`,0	
-
-.sample_text10:
-	db `inflicted severe damage on the`,0	
-
-.sample_text11:
-	db `natural world.`,0	
+	db `The Industrial Revolution and its consequences\n`
+	db `have been a disaster for the human race. They\n`
+	db `have greatly increased the life expectancy of\n`
+	db `those of us who live in "developed" countries,\n`	
+	db `but they have destabilized society, have made\n`	
+	db `life unfulfilling, have subjected human beings\n`
+	db `to indignities, have led to widespread\n`
+	db `psychological suffering and have inflicted\n`
+	db `severe damage on the natural world...`,0
 
 
 

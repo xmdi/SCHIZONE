@@ -35,12 +35,24 @@ set_text:
 .letter_loop:
 	xor rbp,rbp
 	mov bpl,byte [r11]
+	cmp rbp,10
+	je .newline
 	cmp rbp,32
 	jl .unknown_char
 	cmp rbp,126
 	jg .unknown_char
 	sub rbp,32
 	jmp .adjust_char
+.newline:
+	mov r8,[rsp+120]
+	mov [rsp+56],r8
+	mov r9,[rsp+48]
+	mov rbp,r10
+	shl rbp,4
+	add r9,rbp
+	mov [rsp+48],r9
+	jmp .next_letter
+
 .unknown_char:
 	mov rbp,95
 .adjust_char:
@@ -92,10 +104,11 @@ set_text:
 
 	mov r9,[rsp+48]
 	mov r8,[rsp+56]
-	mov rbp,8
-	imul rbp,r10
+	mov rbp,r10
+	shl rbp,3
 	add r8,rbp
 	mov [rsp+56],r8
+.next_letter:
 	inc r11
 	cmp byte [r11],0
 	jnz .letter_loop
