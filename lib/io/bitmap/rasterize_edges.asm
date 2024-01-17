@@ -301,6 +301,7 @@ rasterize_edges:
 	jnz .loop_edges
 
 	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
 	movdqu xmm2,[rsp+32]
 	movdqu xmm3,[rsp+48]
 	movdqu xmm4,[rsp+64]

@@ -26,6 +26,10 @@
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
+%include "lib/io/bitmap/rasterize_text.asm"
+; void rasterize_text(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+;		 struct* {r8}, struct* {r9});
+
 %include "lib/io/bitmap/rasterize_edges.asm"
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
@@ -360,10 +364,12 @@ framebuffer_3d_render_loop:
 	cmp byte [r13+24],0b00000010
 	je .is_wireframe
 
+	cmp byte [r13+24],0b00001000
+	je .is_text
+
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
-	; project and rasterize the pointcloud
 	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rsi,[r13+16]
 	mov edx,[framebuffer_init.framebuffer_width]
@@ -375,8 +381,6 @@ framebuffer_3d_render_loop:
 	jmp .geometry_type_unsupported
 
 .is_wireframe:
-	
-	; project & rasterize the cube onto the framebuffer
 	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
 	mov rsi,[r13+16]
 	mov edx,[framebuffer_init.framebuffer_width]
@@ -384,6 +388,17 @@ framebuffer_3d_render_loop:
 	mov r8,r15
 	mov r9,[r13+8]
 	call rasterize_edges	
+
+	jmp .geometry_type_unsupported
+
+.is_text:
+	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
+	mov rsi,[r13+16]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,r15
+	mov r9,[r13+8]
+	call rasterize_text
 
 .geometry_type_unsupported:
 

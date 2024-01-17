@@ -1,14 +1,13 @@
-%ifndef RASTERIZE_POINTCLOUD
-%define RASTERIZE_POINTCLOUD
+%ifndef RASTERIZE_TEXT
+%define RASTERIZE_TEXT
 
 ; dependency
-%include "lib/io/bitmap/set_circle.asm"
-%include "lib/io/bitmap/set_line.asm"
+%include "lib/io/bitmap/set_text.asm"
 
-rasterize_pointcloud:
-; void rasterize_pointcloud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+rasterize_text:
+; void rasterize_text(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
-;	Rasterizes a cloud of points described by the structure at {r9} from the
+;	Rasterizes the text described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
 ;	image using the color value in the low 32 bits of {rsi} to the bitmap
 ;	starting at address {rdi}. The 32nd bit of {rsi} indicates the stacking
@@ -29,20 +28,20 @@ rasterize_pointcloud:
 %endif
 
 %if 0
-.point_structure:
-	dq 24 ; number of points (N)
-	dq .points ; starting address of point array (3N elements)
-	dq 1 ; point render type (1=circle)
-	dq 5 ; characteristic size of each point
+.text_structure:
+	dq 0 ; address of 24-byte (x,y,z) position
+	dq 0 ; address of null-terminated string
+	dq 0 ; address of font definition
+	dq 0 ; font-size (scaling of 8px)
 %endif
 
-	push rax
+	push r8
+	push r9
 	push r10
 	push r11
 	push r12
 	push r13
 	push r14
-	push r15
 	sub rsp,144
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
@@ -174,16 +173,9 @@ rasterize_pointcloud:
 	shr rax,1
 	cvtsi2sd xmm10,rax
 
-	mov r15,[r9+0]	; number of points in r15
-	mov rax,[r9+8]	; pointer to point array
-	;loop thru all points
+	mov r10,[r9+0]	; pointer to point array
 	
-	mov r13,[r9+24]	; point characteristic size, shrink by half
-	shr r13,1
-
-.loop_points:
-
-	mov r10,rax
+; would loop here, but no loop for text
 
 	movsd xmm0,[r10]	; Pt_x
 	movsd xmm1,[r10+8]	; Pt_y
@@ -226,132 +218,16 @@ rasterize_pointcloud:
 
 	cvtsd2si r12,xmm0	; {r12} contains pixel 1 y-coord
 
-	; actually draw the point
-	
-	; handle different point types 
+	; actually draw the text
 
-	cmp qword [r9+16],1
-	je .circle_point
-	cmp qword [r9+16],2
-	je .x_point
-	cmp qword [r9+16],3
-	je .square_point
-	cmp qword [r9+16],4
-	je .triangle_point
-
-	jmp .go_next_point ; invalid point type specified, skip
-
-.triangle_point:	
-	push rax
-	push r8
-	push r9
-	push r10
-	push r11
 	mov r8,r11
-	mov r9,r12
-	mov r10,r11
-	mov r11,r12
-	sub r8,r13
-	add r9,r13
-	add r10,r13
-	add r11,r13
-	call set_line ; bottom side
-	add r8,r13
-	sub r9,r13
-	sub r9,r13
-	call set_line ; right side
-	sub r10,r13
-	sub r10,r13
-	call set_line ; left side
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rax
-	jmp .go_next_point
+	mov r13,r12
+	mov r12,[r9+16]	; font definition
+	mov r11,[r9+8]	; text
+	mov r10,[r9+24]	; font size
+	mov r9,r13
 
-.square_point:	
-	push rax
-	push r8
-	push r9
-	push r10
-	push r11
-	mov r8,r11
-	mov r9,r12
-	mov r10,r11
-	mov r11,r12
-	sub r8,r13
-	sub r9,r13
-	sub r10,r13
-	add r11,r13
-	call set_line ; left side
-	add r10,r13
-	add r10,r13
-	sub r11,r13
-	sub r11,r13
-	call set_line ; bottom side
-	add r8,r13
-	add r8,r13
-	add r9,r13
-	add r9,r13
-	call set_line ; right side
-	sub r10,r13
-	sub r10,r13
-	add r11,r13
-	add r11,r13
-	call set_line ; top side
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rax
-	jmp .go_next_point
-
-.x_point:	
-	push rax
-	push r8
-	push r9
-	push r10
-	push r11
-	mov r8,r11
-	mov r9,r12
-	mov r10,r11
-	mov r11,r12
-	sub r8,r13
-	sub r9,r13
-	add r10,r13
-	add r11,r13
-	call set_line ; one stroke
-	add r9,r13
-	add r9,r13
-	sub r11,r13
-	sub r11,r13
-	call set_line ; one stroke
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rax
-	jmp .go_next_point
-
-.circle_point:
-	push rax
-	push r8
-	push r9
-	push r10
-	mov r10,r13
-	mov r8,r11
-	mov r9,r12
-	call set_circle
-	pop r10
-	pop r9
-	pop r8
-	pop rax
-
-.go_next_point:
-	add rax,24
-	dec r15
-	jnz .loop_points
+	call set_text
 
 .end:
 
@@ -365,13 +241,13 @@ rasterize_pointcloud:
 	movdqu xmm7,[rsp+112]
 	movdqu xmm8,[rsp+128]
 	add rsp,144
-	pop r15
 	pop r14
 	pop r13
 	pop r12
 	pop r11
 	pop r10
-	pop rax
+	pop r9
+	pop r8
 
 	ret
 
