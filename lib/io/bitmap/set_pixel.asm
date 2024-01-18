@@ -25,7 +25,7 @@ set_pixel:
 	mov rax,rsi
 	shr rax,32
 	test rax,1
-	jne .framebuffer_stacking
+	jnz .framebuffer_stacking
 
 .bitmap_stacking:
 	sub rcx,r9
