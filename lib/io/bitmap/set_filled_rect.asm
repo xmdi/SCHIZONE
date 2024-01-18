@@ -18,6 +18,7 @@ set_filled_rect:
 	push rax
 
 	cmp r11,r9
+	je .ret
 	jg .top_down
 	mov rax,-1
 	jmp .start
