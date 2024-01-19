@@ -99,9 +99,6 @@ PROGRAM_HEADER:
 %include "lib/mem/memset.asm"
 ; void memset(void* {rdi}, char {sil}, ulong {rdx});
 
-%include "lib/io/print_chars.asm"
-; void print_chars(int {rdi}, char* {rsi}, int {rdx});
-
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
@@ -117,11 +114,11 @@ START:
 	call framebuffer_init
 	call framebuffer_mouse_init
 
-	; turn off cursor TODO: improve
+	; turn off cursor
 	mov rsi,.hide_cursor
 	mov rdx,6
-	call print_chars
-	call print_buffer_flush
+	mov rax,SYS_WRITE	; set {rax} to write syscall
+	syscall			; execute write syscall
 
 	; init blue screen
 	mov rdi,0x1FF3A6EA5
