@@ -76,7 +76,7 @@ PROGRAM_HEADER:
 ; signed long {rax} rand_int(signed long {rdi}, signed long {rsi});
 
 %include "lib/io/bitmap/set_filled_rect.asm"
-; void set_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+; void set_filled_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -157,7 +157,7 @@ START:
 	mov rsi,8
 	call rand_int	
 
-	; plot a random color random sized rectangle randomly on screen
+	; plot a random color random sized character
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[.random_colors+0]
 	or rsi,0x1FF000000
