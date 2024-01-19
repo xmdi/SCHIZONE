@@ -322,8 +322,8 @@ START:
 
 .not_shut_down_click:
 
-	xor al,al
-	mov byte [.start_menu_clicked],al
+;	xor al,al
+;	mov byte [.start_menu_clicked],al
 
 .didnt_click_after_start:
 		
@@ -335,10 +335,19 @@ START:
 	jl .not_start_click
 
 	; we are in the start box	
-	mov al,1
+	
+	; if it's already clicked, turn it off
+
+	xor al,al
+	mov bl,1
+	cmp byte [.start_menu_clicked],0
+	cmove rax,rbx
 	mov byte [.start_menu_clicked],al
+	jmp .no_drawing
 
 .not_start_click:
+	xor al,al
+	mov byte [.start_menu_clicked],al
 
 .no_drawing:
 
