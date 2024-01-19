@@ -11,7 +11,8 @@ set_rect:
 ;	Draws rectangle from ({r8d},{r9d}) to ({r10d},{r11d}) (from (0,0)
 ;	@ top-left) in ARGB data array starting at {rdi} for an 
 ;	{edx}x{ecx} (WxH) image with a border color in the low 32 bits of
-;	{rsi}, and a fill color in the high 32 bits of {rsi}.
+;	{rsi}
+; 	REMOVED: "and a fill color in the high 32 bits of {rsi}."
 
 	push r8
 	push r9
@@ -37,11 +38,12 @@ set_rect:
 	mov r9,[rsp+16]
 	call set_line
 
+%if 0	; REMOVED!
 	mov r10,[rsp+8]
 	dec r11
 
 	push rsi
-	shr rsi,32
+	shr rsi,33; skip the inversion bit on fill check
 	test rsi,rsi
 	jz .ret
 
@@ -56,9 +58,10 @@ set_rect:
 	jl .loop_cols
 	cmp r9,r11
 	jl .loop_rows
+%endif
 
 .ret:
-	pop rsi
+	; push rsi
 	pop r11
 	pop r10
 	pop r9

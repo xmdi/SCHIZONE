@@ -92,6 +92,10 @@ PROGRAM_HEADER:
 ; void set_filled_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
+%include "lib/io/bitmap/set_line.asm"
+; void set_line(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
+
 %include "lib/io/bitmap/set_foreground.asm"
 ; void set_foreground(void* {rdi}, void* {rsi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
@@ -204,8 +208,6 @@ START:
 	; start text
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FF000000
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8d,30
 	mov r9d,ecx
 	sub r9d,22
@@ -237,7 +239,7 @@ START:
 	sub r11d,31
 	call set_filled_rect
 	mov rsi,0x1FF000000
-	call set_rect; TODO
+	call set_rect
 
 	; shut down rectangle
 	mov rsi,0x1FF000000
@@ -247,7 +249,7 @@ START:
 	mov r10d,300
 	mov r11d,r9d
 	add r11d,60
-	call set_rect; TODO
+	call set_rect
 
 	; shut down red rectangle
 	mov rsi,0x1FFFF0000
@@ -261,8 +263,6 @@ START:
 
 	; shut down text
 	mov rsi,0x1FF000000
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]	
 	mov r8d,70
 	mov r9d,ecx
 	sub r9d,611
@@ -322,9 +322,6 @@ START:
 
 .not_shut_down_click:
 
-;	xor al,al
-;	mov byte [.start_menu_clicked],al
-
 .didnt_click_after_start:
 		
 	cmp dword [framebuffer_mouse_init.mouse_x],110
@@ -337,7 +334,7 @@ START:
 	; we are in the start box	
 	
 	; if it's already clicked, turn it off
-
+	; otherwise, turn it on
 	xor al,al
 	mov bl,1
 	cmp byte [.start_menu_clicked],0
@@ -357,14 +354,14 @@ START:
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
 
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	
 	cmp byte [.start_menu_clicked],1
 	jne .dont_render_start_menu
 
 	; copy start menu buffer to framebuffer
-	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,r14
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8d,edx
 	mov r9d,ecx
 	xor r10d,r10d
@@ -373,47 +370,34 @@ START:
 
 .dont_render_start_menu:
 
-	; then copy the cursor as foreground onto the framebuffer
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,.PEPE_BIG
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8d,26
-	mov r9d,14
-	mov r10d,[framebuffer_mouse_init.mouse_x]
-	mov r11d,[framebuffer_mouse_init.mouse_y]
-	call set_foreground
+	; line arrow cursor left side
+	mov rsi,0x1FFFFFFFF
+	mov r8d,[framebuffer_mouse_init.mouse_x]
+	mov r9d,[framebuffer_mouse_init.mouse_y]
+	mov r10d,r8d
+	mov r11d,r9d
+	add r11d,10
+	call set_line
+
+	; right side
+	add r10d,8
+	sub r11d,4
+	call set_line
+
+	; bottom side
+	add r9d,10
+	call set_line
+
+	; tail
+	add r8d,4
+	sub r9d,2
+	add r11d,8
+	call set_line
 
 	; flush output to the screen
 	call framebuffer_flush
 	
-jmp .loop
-
-%define G 0xFF2B7544
-%define W 0xFFFFFFFF
-%define B 0xFF000000
-%define T 0x00000000
-%define S 0xFF2945E3
-%define R 0xFF780016
-
-.PEPE_BIG: ; (26x14)
-	dd 0,0,0,0,0,0,G,G,G,G,0,0,G,G,G,G,0,0,0,0,0,0,0,0,0,0
-	dd 0,0,0,0,0,0,G,G,G,G,0,0,G,G,G,G,0,0,0,0,0,0,0,0,0,0
-	dd 0,0,0,0,G,G,G,G,G,G,G,G,G,G,G,G,G,G,0,0,0,0,0,0,0,0
-	dd 0,0,0,0,G,G,G,G,G,G,G,G,G,G,G,G,G,G,0,0,0,0,0,0,0,0
-	dd G,G,0,0,G,G,B,B,W,W,W,W,B,B,W,W,G,G,G,G,0,0,0,0,0,0
-	dd G,G,0,0,G,G,B,B,W,W,W,W,B,B,W,W,G,G,G,G,0,0,0,0,0,0
-	dd 0,0,G,G,0,0,G,G,G,G,G,G,G,G,G,G,G,G,G,G,0,0,0,0,G,G
-	dd 0,0,G,G,0,0,G,G,G,G,G,G,G,G,G,G,G,G,G,G,0,0,0,0,G,G
-	dd 0,0,0,0,G,G,R,R,R,R,R,R,R,R,G,G,G,G,G,G,G,G,0,0,G,G
-	dd 0,0,0,0,G,G,R,R,R,R,R,R,R,R,G,G,G,G,G,G,G,G,0,0,G,G
-	dd 0,0,0,0,0,0,S,S,G,G,G,G,G,G,G,G,G,G,G,G,G,G,0,0,G,G
-	dd 0,0,0,0,0,0,S,S,G,G,G,G,G,G,G,G,G,G,G,G,G,G,0,0,G,G
-	dd 0,0,0,0,0,0,0,0,S,S,S,S,S,S,S,S,S,S,S,S,S,S,S,S,0,0
-	dd 0,0,0,0,0,0,0,0,S,S,S,S,S,S,S,S,S,S,S,S,S,S,S,S,0,0
-
-.number_buffer:
-	db 0,0
+	jmp .loop
 
 .start_text:
 	db `Start`,0
