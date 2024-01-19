@@ -34,6 +34,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | DEC 01, 2023 | [Framebuffer](ex/ex020_framebuffer) | [EP. 020](https://youtu.be/PvXeZidA82I) |
 | DEC 08, 2023 | [Mouse Input](ex/ex021_mouse_input) | [EP. 021](https://youtu.be/M7ejglSgWtc) |
 | JAN 05, 2024 | [3D Graphics](ex/ex022_3d_graphics) | [EP. 022](https://youtu.be/lTigI6C11IM) |
+| JAN 19, 2024 | [Rendering Text](ex/ex023_rendering_text) | [EP. 023](https://youtu.be/aEcjIvD4hmU) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
