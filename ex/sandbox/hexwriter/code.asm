@@ -49,12 +49,6 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/file_open.asm"
-; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
-
-%include "lib/io/file_close.asm"
-; int {rax} file_close(int {rdi});
-
 %include "lib/io/read_chars.asm"
 ; int {rax} read_chars(int {rdi}, char* {rsi}, int {rdx});
 
@@ -68,41 +62,56 @@ PROGRAM_HEADER:
 START:
 
 	push SYS_ARGC_START_POINTER
-	
+
 	; open input file
 	mov rdi,[SYS_ARGC_START_POINTER+16] ; command line arg
-	mov rsi,SYS_READ_WRITE;+SYS_CREATE_FILE
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open
+	mov esi,SYS_READ_ONLY	; put READ_ONLY flags in {rsi}
+	mov edx,SYS_DEFAULT_PERMISSIONS	; default R/W flags in {rdx}
+	mov al,SYS_OPEN
+	syscall			; syscall to open file
 	mov r14,rax	
 
 	; open output file
 	pop rdi
 	mov rdi,[rdi+24] ; command line arg
-	mov rsi,SYS_READ_WRITE;+SYS_CREATE_FILE
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open
-	mov r15,rax
+	mov esi,SYS_CREATE_FILE
+	mov edx,SYS_DEFAULT_PERMISSIONS	; default R/W flags in {rdx}
+	mov al,SYS_OPEN
+	syscall			; syscall to open file
+	mov r15,rax	
 
 .loop:	; loop through input file
 
 	; read from input file to buffer
 	mov rdi,r14
-	mov rsi,.buffer
+	mov rsi,.READ_BUFFER
 	mov rdx,128
 	call read_chars
 
+	mov rdi,SYS_STDOUT
+	mov rsi,.READ_BUFFER
+	mov rdx,8
+	mov rax,SYS_WRITE
+	syscall
+
+	jmp .here
+
+	mov dil,al
+	call exit
+
 	mov rcx,rax
-	mov rbp,.buffer
+	mov rbp,.READ_BUFFER
+
+	xor r8,r8
 
 .byte_loop:	; loop through buffer converting bytes from ASCII to binary
 
 	cmp byte [rbp],32	; space
 	je .skip_char
-	cmp byte [rbp],44	; space
+	cmp byte [rbp],44	; comma
 	je .skip_char
 	cmp byte [rbp],59	; semicolon
-	je .toggle_comment_on
+	je .skip_char;.toggle_comment_on
 	cmp byte [rbp],48
 	jl .invalid_character	
 	cmp byte [rbp],58
@@ -112,10 +121,12 @@ START:
 	cmp byte [rbp],64
 	jg .alphabetic
 
+
 .invalid_character:
+
 	mov bl,byte [rbp]
 	mov byte [.error_text+10],bl
-
+.here:
 	mov rdi,SYS_STDOUT
 	mov rsi,.error_text
 	mov rdx,12
@@ -133,17 +144,33 @@ START:
 	mov bl,byte [rbp]
 	sub bl,65
 
-.write_char
+.write_char:
+	
+	test r8,1
+	jz .not_this_one
+	
+	add bl,r9b
+	mov [.WRITE_BUFFER],bl
+
+	mov rdi,r15
+	mov rsi,.WRITE_BUFFER
+	mov rdx,1
+	mov rax,SYS_WRITE
+	syscall
+
+	jmp .skip_char
+
+.not_this_one:
+	mov r9b,bl
+	shl r9b,4
 
 .skip_char:
+
+	inc r8
 
 	inc rbp
 	dec rcx
 	jnz .byte_loop
-
-
-	; write from buffer to output file
-
 
 	xor dil,dil
 	call exit
@@ -152,7 +179,7 @@ START:
 .READ_BUFFER:
 	times 128 db 0
 .WRITE_BUFFER:
-	times 128 db 0 
+	times 1 db 0 
 .error_text:
 	db `ERROR on:  \n`
 
