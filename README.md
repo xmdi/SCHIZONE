@@ -42,6 +42,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | :---: | :---: | :---: |
 | AUG 11, 2023 | [Cramer's Rule](lab/lab001_cramers_rule) | [LAB 001](https://youtu.be/JyIpF5iBGxU) |
 | OCT 27, 2023 | [Multiple Root Finding](lab/lab002_multiple_root_finding) | [LAB 002](https://youtu.be/KaKBrN7tHpA) |
+| JAN 26, 2024 | [Password Generation](lab/lab003_password_generator) | [LAB 003](https://youtu.be/JJ1dbJ4a09k) |
 
 ### NOTE 0: 
 As part of this project we created some DIY versions of common utilities (see [EP. 003](ex/ex003_command_line_args_and_code_golf)). Later examples use "SCHIZONE/bin/make_executable" in place of "chmod +x". You can generate these binaries by running "./make_bins.sh" in the root directory.
