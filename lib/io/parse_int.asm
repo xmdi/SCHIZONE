@@ -5,6 +5,9 @@ parse_int:
 ; int {rax} parse_int(char* {rdi});
 ; 	Returns in {rax} the value of null-terminated char array starting at 
 ;	{rdi}.
+; 	NOTE: Hex numbers must include the lower-case 
+;		alphabetic characters (0xabcdef)
+;	Beware: garbage in, garbage out
 
 	push rdi
 	push r8
