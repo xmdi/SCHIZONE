@@ -69,6 +69,8 @@ PROGRAM_HEADER:
 %include "lib/sys/exit.asm"
 ; void exit(char {rdi});
 
+%include "lib/io/print_float.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -81,18 +83,18 @@ START:
 	call framebuffer_init
 
 	xor rdi,rdi	
-	mov rdi,0x1FF0000FF
+	mov rdi,0x1FF000000
 	call framebuffer_clear
 	
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FFFFFF00
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8d,50
+	mov r8d,10
 	mov r9d,10
-	mov r10d,20
-	mov r11d,30
-	mov r12d,30
+	mov r10d,100
+	mov r11d,10
+	mov r12d,20
 	mov r13d,50
 	call set_triangle
 	
