@@ -79,25 +79,15 @@ set_triangle:
 	divsd xmm6,xmm7
 
 	;side2 inverse slope = (Cx-Ax)/(Cy-Ay)
-	movsd xmm8,xmm3
+	movsd xmm8,xmm5
 	subsd xmm8,xmm1
-	movsd xmm9,xmm2
+	movsd xmm9,xmm4
 	subsd xmm9,xmm0
 	divsd xmm8,xmm9
 
 	; side 1 x = side 2 x at the top
 	movsd xmm7,xmm1
 	movsd xmm9,xmm1
-
-	; looks like xmm6 and xmm8 might not be correct
-;	mov rdi,SYS_STDOUT
-;	movsd xmm0,xmm8
-;	mov rsi,6
-;	call print_float
-;	call print_buffer_flush
-;	call exit
-
-	; TODO slope on bottom half i believe is wrong
 
 .loop1:
 	
@@ -117,11 +107,15 @@ set_triangle:
 	pop r8
 
 	subsd xmm7,xmm6
-	addsd xmm9,xmm8
+	subsd xmm9,xmm8
+
+	; xmm6 is correct, xmm8 is not
 
 	dec r13
 	cmp r13,r11
 	jge .loop1
+
+	addsd xmm7,xmm6
 
 	;side1 inverse slope = (Cx-Bx)/(Cy-By)
 	movsd xmm6,xmm5
@@ -129,8 +123,6 @@ set_triangle:
 	movsd xmm10,xmm4
 	subsd xmm10,xmm2
 	divsd xmm6,xmm10
-
-	jmp .ret
 
 .loop2:
 	
@@ -149,7 +141,7 @@ set_triangle:
 	pop r8
 
 	subsd xmm7,xmm6
-	addsd xmm9,xmm8
+	subsd xmm9,xmm8
 
 	dec r13
 	cmp r13,r9

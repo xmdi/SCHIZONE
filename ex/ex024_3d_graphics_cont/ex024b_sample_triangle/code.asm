@@ -69,8 +69,6 @@ PROGRAM_HEADER:
 %include "lib/sys/exit.asm"
 ; void exit(char {rdi});
 
-%include "lib/io/print_float.asm"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -82,22 +80,49 @@ START:
 	call heap_init
 	call framebuffer_init
 
+	; black background
 	xor rdi,rdi	
 	mov rdi,0x1FF000000
 	call framebuffer_clear
-	
+
+	; red triangle	
 	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,0x1FFFFFF00
+	mov rsi,0x1FFFF0000
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8d,10
-	mov r9d,10
-	mov r10d,100
-	mov r11d,10
-	mov r12d,20
-	mov r13d,50
+	mov r8d,600
+	mov r9d,500
+	mov r10d,700
+	mov r11d,700
+	mov r12d,500
+	mov r13d,650
 	call set_triangle
-	
+
+	; white triangle vertices (just for checking our triangle position)
+	mov rsi,0x1FFFFFFFF
+	mov r8d,600
+	mov r9d,500
+	call set_pixel
+	mov r8d,700
+	mov r9d,700
+	call set_pixel
+	mov r8d,500
+	mov r9d,650
+	call set_pixel
+
+	; flat bottom blue triangle
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,0x1FF0000FF
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8d,200
+	mov r9d,200
+	mov r10d,300
+	mov r11d,300
+	mov r12d,100
+	mov r13d,301 ; TODO fix flat bottom triangle no work :(
+	call set_triangle
+
 	call framebuffer_flush	; flush frame to framebuffer
 	
 	xor dil,dil
