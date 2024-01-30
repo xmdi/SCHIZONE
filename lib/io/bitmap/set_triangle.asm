@@ -32,6 +32,10 @@ set_triangle:
 	movdqu [rsp+144],xmm9
 	movdqu [rsp+160],xmm10
 
+	; want r9<=r11
+	; want r11<=r13
+	; want r9<=r11
+
 	; need to sort the vertices top to bottom; TODO IMPROVE
 	cmp r9d,r11d
 	jle .dont_swap_first_two
@@ -59,10 +63,19 @@ set_triangle:
 	mov eax,r10d
 	mov r10d,r8d
 	mov r8d,eax
-
 .dont_swap_last_two:
 
-	; now do a flat-bottom triangle starting at the highest point
+
+; r8 is 200
+; r9 is 200 
+; r10 is 300 
+; r11 is 300 
+; r12 is 100 
+; r13 is 300
+
+; blue triangle bottom most point is acually 2 points, which is why it gets confused, need to rethink the logic there 
+
+	; now do a flat-top triangle starting at the lowest point
 
 	cvtsi2sd xmm0,r13; Ay
 	cvtsi2sd xmm1,r12; Ax
@@ -88,6 +101,9 @@ set_triangle:
 	; side 1 x = side 2 x at the top
 	movsd xmm7,xmm1
 	movsd xmm9,xmm1
+
+	cmp r13,r11
+	jle .end_loop1
 
 .loop1:
 	
@@ -117,12 +133,17 @@ set_triangle:
 
 	addsd xmm7,xmm6
 
+.end_loop1:
+
 	;side1 inverse slope = (Cx-Bx)/(Cy-By)
 	movsd xmm6,xmm5
 	subsd xmm6,xmm3
 	movsd xmm10,xmm4
 	subsd xmm10,xmm2
 	divsd xmm6,xmm10
+
+	cmp r13,r9
+	jle .ret
 
 .loop2:
 	
@@ -143,10 +164,11 @@ set_triangle:
 	subsd xmm7,xmm6
 	subsd xmm9,xmm8
 
+
 	dec r13
-	cmp r13,r9
+	cmp r13,297;r9
 	jge .loop2
-	
+
 .ret:
 
 	movdqu xmm0,[rsp+0]

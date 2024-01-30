@@ -73,8 +73,6 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; NOTE: NEED TO RUN THIS AS SUDO
-
 START:
 
 	call heap_init
@@ -84,6 +82,8 @@ START:
 	xor rdi,rdi	
 	mov rdi,0x1FF000000
 	call framebuffer_clear
+
+%if 0
 
 	; red triangle	
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -110,6 +110,8 @@ START:
 	mov r9d,650
 	call set_pixel
 
+%endif
+
 	; flat bottom blue triangle
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FF0000FF
@@ -120,8 +122,49 @@ START:
 	mov r10d,300
 	mov r11d,300
 	mov r12d,100
-	mov r13d,301 ; TODO fix flat bottom triangle no work :(
+	mov r13d,300 ; TODO fix flat bottom triangle no work :(
 	call set_triangle
+
+	; white triangle vertices (just for checking our triangle position)
+	mov rsi,0x1FFFFFFFF
+	mov r8d,200
+	mov r9d,200
+	call set_pixel
+	mov r8d,300
+	mov r9d,300
+	call set_pixel
+	mov r8d,100
+	mov r9d,300
+	call set_pixel
+
+
+%if 0
+	; flat top green triangle
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,0x1FF00FF00
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8d,500
+	mov r9d,400
+	mov r10d,600
+	mov r11d,300
+	mov r12d,400
+	mov r13d,300
+	call set_triangle
+
+	; white triangle vertices (just for checking our triangle position)
+	mov rsi,0x1FFFFFFFF
+	mov r8d,500
+	mov r9d,400
+	call set_pixel
+	mov r8d,600
+	mov r9d,300
+	call set_pixel
+	mov r8d,400
+	mov r9d,300
+	call set_pixel
+
+%endif
 
 	call framebuffer_flush	; flush frame to framebuffer
 	
