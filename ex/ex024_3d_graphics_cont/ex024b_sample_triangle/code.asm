@@ -83,8 +83,6 @@ START:
 	mov rdi,0x1FF000000
 	call framebuffer_clear
 
-%if 0
-
 	; red triangle	
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FFFF0000
@@ -110,8 +108,6 @@ START:
 	mov r9d,650
 	call set_pixel
 
-%endif
-
 	; flat bottom blue triangle
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FF0000FF
@@ -119,10 +115,11 @@ START:
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8d,200
 	mov r9d,200
-	mov r10d,300
+	mov r10d,100
 	mov r11d,300
-	mov r12d,100
-	mov r13d,300 ; TODO fix flat bottom triangle no work :(
+	mov r12d,300
+	mov r13d,300
+
 	call set_triangle
 
 	; white triangle vertices (just for checking our triangle position)
@@ -136,9 +133,7 @@ START:
 	mov r8d,100
 	mov r9d,300
 	call set_pixel
-
-
-%if 0
+	
 	; flat top green triangle
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,0x1FF00FF00
@@ -163,8 +158,6 @@ START:
 	mov r8d,400
 	mov r9d,300
 	call set_pixel
-
-%endif
 
 	call framebuffer_flush	; flush frame to framebuffer
 	
