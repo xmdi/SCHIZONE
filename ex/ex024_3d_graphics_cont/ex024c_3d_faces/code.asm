@@ -54,10 +54,6 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/framebuffer_3d_render_loop.asm"
 
-%include "lib/io/bitmap/set_line.asm"
-; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
-
 %include "lib/sys/exit.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
