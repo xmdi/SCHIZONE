@@ -194,6 +194,8 @@ framebuffer_3d_render_init:
 	mov r9,[r14+8]
 	call rasterize_faces
 
+	jmp .geometry_type_unsupported
+
 .is_text:
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[r14+16]

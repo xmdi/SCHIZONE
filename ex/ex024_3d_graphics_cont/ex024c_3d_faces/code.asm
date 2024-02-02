@@ -99,7 +99,7 @@ DRAW_CROSS_CURSOR:
 START:
 
 	mov rdi,.perspective_structure
-	mov rsi,.edges_geometry
+	mov rsi,.faces_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_init
 
@@ -129,7 +129,9 @@ START:
 	dq 24 ; number of points (N)
 	dq 36 ; number of faces (M)
 	dq .points ; starting address of point array (3N elements)
-	dq .faces ; starting address of edge array (2M elements)
+	dq .faces ; starting address of face array 
+		;	(3M elements if no colors)
+		;	(4M elements if colors)
 
 .points:
 	; base of vertical beam
@@ -178,14 +180,14 @@ START:
 	dq 7,20,21,0x1FFFF0000 ; bottom left
 	dq 7,21,6,0x1FFFF0000 ; bottom left
 
-	dq 12,13,14,0x1FFFF0000 ; top
-	dq 12,13,15,0x1FFFF0000 ; top
+	dq 12,13,14,0x1FF0000FF ; top
+	dq 12,14,15,0x1FF0000FF ; top
 
-	dq 8,19,18,0x1FFFF0000 ; top right
-	dq 8,18,9,0x1FFFF0000 ; top right
+	dq 8,19,18,0x1FF0000FF ; top right
+	dq 8,18,9,0x1FF0000FF ; top right
 
-	dq 11,10,22,0x1FFFF0000 ; top left
-	dq 11,22,23,0x1FFFF0000 ; top left
+	dq 11,10,22,0x1FF0000FF ; top left
+	dq 11,22,23,0x1FF0000FF ; top left
 
 	dq 0,12,15,0x1FFFF0000 ; front
 	dq 0,15,3,0x1FFFF0000 ; front
