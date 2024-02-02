@@ -118,7 +118,7 @@ START:
 	dq 0.3	; zoom
 
 .faces_geometry:
-	dq 0;.edges_geometry ; next geometry in linked list
+	dq 0 ; next geometry in linked list
 	dq .faces_structure ; address of point/edge/face structure
 	dq 0x100000000 ; color (0xARGB)
 	db 0b00000100 ; type of structure to render
@@ -130,18 +130,6 @@ START:
 	dq .faces ; starting address of face array 
 		;	(3M elements if no colors)
 		;	(4M elements if colors)
-
-.edges_geometry:
-	dq 0 ; next geometry in linked list
-	dq .edge_structure ; address of point/edge/face structure
-	dq 0x1FFFFA500 ; color (0xARGB)
-	db 0b00000010 ; type of structure to render
-
-.edge_structure:
-	dq 24 ; number of points (N)
-	dq 36 ; number of edges (M)
-	dq .points ; starting address of point array (3N elements)
-	dq .edges ; starting address of edge array (2M elements)
 
 .points:
 	; base of vertical beam
@@ -234,52 +222,6 @@ START:
 	
 	dq 2,5,6,0x1FFFFFF00 ; bottom right
 	dq 2,1,5,0x1FFFFFF00 ; bottom right
-	
-.edges:
-	dq 0,1
-	dq 1,2
-	dq 2,3
-	dq 3,0
-	
-	dq 12,13
-	dq 13,14
-	dq 14,15
-	dq 15,12
-
-	dq 16,17
-	dq 17,18
-	dq 18,19
-	dq 19,16
-	
-	dq 20,21
-	dq 21,22
-	dq 22,23
-	dq 23,20
-
-	dq 0,4
-	dq 1,5
-	dq 2,6
-	dq 3,7
-
-	dq 8,12
-	dq 9,13
-	dq 10,14
-	dq 11,15
-
-	dq 5,16
-	dq 6,17
-	dq 9,19
-	dq 10,18
-
-	dq 4,20
-	dq 7,21
-	dq 8,23
-	dq 11,22
-
-	dq 4,7
-	dq 5,6
-	dq 9,10
-	dq 8,11
 
 END:
 
