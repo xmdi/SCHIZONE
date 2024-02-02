@@ -26,6 +26,9 @@
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
+%include "lib/io/framebuffer/centroid_sort.asm"
+; void centroid_sort(struct* {rdi}, struct* {rsi});
+
 %include "lib/io/bitmap/rasterize_faces.asm"
 ; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
@@ -47,6 +50,9 @@
 
 %include "lib/math/vector/perpendicularize_3.asm"
 ; void perpendicularize_3(double* {rdi}, double* {rsi});
+
+%include "lib/math/vector/distance_3.asm"
+; double {xmm0} distance_3(double* {rdi}, double* {rsi});
 
 %include "lib/math/expressions/trig/sine.asm"
 ; double {xmm0} sine(double {xmm0}, double {xmm1});
@@ -275,14 +281,26 @@ framebuffer_3d_render_loop:
 	mov rdx,24
 	call memcopy
 
+	push rdi
+	push rsi
+	mov rdi,r15
+	mov rsi,r15
+	add rsi,24
+	call distance_3
+	pop rsi
+	pop rdi
+
 	; copy looking direction into structure
 	movsd xmm15,[framebuffer_3d_render_init.view_axes+48]
+	mulsd xmm15,xmm0
 	addsd xmm15,[r15+24]
 	movsd [r15+0],xmm15
 	movsd xmm15,[framebuffer_3d_render_init.view_axes+56]
+	mulsd xmm15,xmm0
 	addsd xmm15,[r15+32]
 	movsd [r15+8],xmm15
 	movsd xmm15,[framebuffer_3d_render_init.view_axes+64]
+	mulsd xmm15,xmm0
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
 
@@ -374,6 +392,9 @@ framebuffer_3d_render_loop:
 	cmp byte [r13+24],0b00000100
 	je .is_face
 
+	cmp byte [r13+24],0b00000101
+	je .is_shell_list
+
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
@@ -406,6 +427,66 @@ framebuffer_3d_render_loop:
 	mov r8,r15
 	mov r9,[r13+8]
 	call rasterize_faces
+
+	jmp .geometry_type_unsupported
+
+.is_shell_list:
+
+	mov rdi,[r13+8]
+	mov rsi,[framebuffer_3d_render_init.perspective_structure_address]
+	call centroid_sort ; sort all shell bodies by distance from viewer
+
+
+	mov rcx,[r13+8]
+	mov rdx,rcx
+	add rdx,8
+	mov rcx,[rcx]
+	cmp rcx,0	
+	jbe .geometry_type_unsupported
+
+;	push rdi
+;	push rsi
+;	push rdx
+;	push rcx
+;	push r8
+;	push r9
+;	push r10
+;	mov rdi,SYS_STDOUT
+;	mov rsi,rdx
+;	mov rdx,4
+;	mov rcx,4
+;	mov r8,0
+;	mov r9,print_float
+;	mov r10,5
+;	call print_array_float
+;	call print_buffer_flush	
+;	pop r10
+;	pop r9
+;	pop r8
+;	pop rcx
+;	pop rdx
+;	pop rsi
+;	pop rdi
+;	call exit
+
+
+.shell_body_loop:
+
+	push rdx
+	push rcx
+	mov rdi,[framebuffer_3d_render_init.intermediate_buffer_address]
+	mov rsi,[r13+16]
+	mov r9,[rdx]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,r15
+	call rasterize_faces
+	pop rcx
+	pop rdx
+
+	add rdx,32
+	dec rcx
+	jnz .shell_body_loop
 
 	jmp .geometry_type_unsupported
 

@@ -54,6 +54,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/framebuffer_3d_render_loop.asm"
 
+%include "lib/sys/exit.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,9 +108,9 @@ START:
 	jmp .loop
 
 .perspective_structure:
-	dq 1.00 ; lookFrom_x	
+	dq 3.00 ; lookFrom_x	
 	dq 2.00 ; lookFrom_y	
-	dq 5.00 ; lookFrom_z	
+	dq 2.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 2.00 ; lookAt_z	
@@ -118,30 +120,53 @@ START:
 	dq 0.3	; zoom
 
 .faces_geometry:
-	dq 0;.edges_geometry ; next geometry in linked list
-	dq .faces_structure ; address of point/edge/face structure
+	dq 0 ; next geometry in linked list
+	dq .shell_list_structure ; address of point/edge/face structure
 	dq 0x100000000 ; color (0xARGB)
-	db 0b00000100 ; type of structure to render
+	db 0b00000101 ; type of structure to render
 
-.faces_structure:
+.shell_list_structure:
+	dq 4 ; number of structures
+	dq .faces_top_structure ; address of shell body structure
+	dq 0.0, 0.0, 3.5 ; centroid of shell body structure
+	dq .faces_bottom_structure ; address of shell body structure
+	dq 0.0, 0.0, 1.0 ; centroid of shell body structure
+	dq .faces_right_structure ; address of shell body structure
+	dq -1.0, 0.0, 2.5 ; centroid of shell body structure
+	dq .faces_left_structure ; address of shell body structure
+	dq 1.0, 0.0, 2.5 ; centroid of shell body structure
+
+.faces_top_structure:
 	dq 24 ; number of points (N)
-	dq 36 ; number of faces (M)
+	dq 10 ; number of faces (M)
 	dq .points ; starting address of point array (3N elements)
-	dq .faces ; starting address of face array 
+	dq .faces_top ; starting address of face array 
 		;	(3M elements if no colors)
 		;	(4M elements if colors)
 
-.edges_geometry:
-	dq 0 ; next geometry in linked list
-	dq .edge_structure ; address of point/edge/face structure
-	dq 0x1FFFFA500 ; color (0xARGB)
-	db 0b00000010 ; type of structure to render
-
-.edge_structure:
+.faces_bottom_structure:
 	dq 24 ; number of points (N)
-	dq 36 ; number of edges (M)
+	dq 10 ; number of faces (M)
 	dq .points ; starting address of point array (3N elements)
-	dq .edges ; starting address of edge array (2M elements)
+	dq .faces_bottom ; starting address of face array 
+		;	(3M elements if no colors)
+		;	(4M elements if colors)
+
+.faces_right_structure:
+	dq 24 ; number of points (N)
+	dq 10 ; number of faces (M)
+	dq .points ; starting address of point array (3N elements)
+	dq .faces_right ; starting address of face array 
+		;	(3M elements if no colors)
+		;	(4M elements if colors)
+
+.faces_left_structure:
+	dq 24 ; number of points (N)
+	dq 10 ; number of faces (M)
+	dq .points ; starting address of point array (3N elements)
+	dq .faces_left ; starting address of face array 
+		;	(3M elements if no colors)
+		;	(4M elements if colors)
 
 .points:
 	; base of vertical beam
@@ -168,118 +193,86 @@ START:
 	dq -0.5,-0.5,4.0
 	dq 0.5,-0.5,4.0
 
-	; right side of cross beam
+	; left side of cross beam
 	dq 1.5,0.5,2.0
 	dq 1.5,-0.5,2.0
 	dq 1.5,-0.5,3.0
 	dq 1.5,0.5,3.0
 
-	; left side of cross beam
+	; right side of cross beam
 	dq -1.5,0.5,2.0
 	dq -1.5,-0.5,2.0
 	dq -1.5,-0.5,3.0
 	dq -1.5,0.5,3.0
 
-.faces:
-	dq 0,1,2,0x1FFFF0000 ; bottom
-	dq 0,2,3,0x1FFFF0000 ; bottom
-
-	dq 17,16,7,0x1FFFF0000 ; bottom right
-	dq 16,4,7,0x1FFFF0000 ; bottom right
-
-	dq 5,20,21,0x1FFFF0000 ; bottom left
-	dq 5,21,6,0x1FFFF0000 ; bottom left
+.faces_top:
 	
 	dq 13,12,14,0x1FF0000FF ; top
 	dq 14,12,15,0x1FF0000FF ; top
 
-	dq 11,19,18,0x1FF0000FF ; top right
-	dq 11,8,19,0x1FF0000FF ; top right
-
-	dq 9,22,23,0x1FF0000FF ; top left
-	dq 9,10,22,0x1FF0000FF ; top left
-
-	dq 0,12,13,0x1FF00FF00 ; front
-	dq 0,13,1,0x1FF00FF00 ; front
-
-	dq 5,9,23,0x1FF00FF00 ; front right	
-	dq 5,23,20,0x1FF00FF00 ; front right	
-
-	dq 4,19,8,0x1FF00FF00 ; front left	
-	dq 4,16,19,0x1FF00FF00 ; front left	
-	
-	dq 3,2,14,0x1FFFFFFFF ; back
-	dq 3,14,15,0x1FFFFFFFF ; back
-
-	dq 7,11,18,0x1FFFFFFFF ; back left
-	dq 7,18,17,0x1FFFFFFFF ; back left
-	
-	dq 6,21,22,0x1FFFFFFFF ; back right
-	dq 6,22,10,0x1FFFFFFFF ; back right
-	
-	dq 16,17,18,0x1FFFF00FF ; left
-	dq 16,18,19,0x1FFFF00FF ; left
-	
 	dq 8,15,12,0x1FFFF00FF ; top left
 	dq 8,11,15,0x1FFFF00FF ; top left
-	
-	dq 0,3,7,0x1FFFF00FF ; bottom left
-	dq 0,7,4,0x1FFFF00FF ; bottom left
-	
-	dq 20,23,22,0x1FFFFFF00 ; right
-	dq 20,22,21,0x1FFFFFF00 ; right
 	
 	dq 9,13,14,0x1FFFFFF00 ; top right
 	dq 9,14,10,0x1FFFFFF00 ; top right
 	
+	dq 9,8,12,0x1FF00FF00 ; top front
+	dq 9,12,13,0x1FF00FF00 ; top front
+
+	dq 11,10,15,0x1FFFFFFFF ; top back
+	dq 10,14,15,0x1FFFFFFFF ; top back
+
+.faces_bottom:
+
+	dq 0,1,2,0x1FFFF0000 ; bottom
+	dq 0,2,3,0x1FFFF0000 ; bottom
+
+	dq 0,3,7,0x1FFFF00FF ; bottom left
+	dq 0,7,4,0x1FFFF00FF ; bottom left
+	
 	dq 2,5,6,0x1FFFFFF00 ; bottom right
 	dq 2,1,5,0x1FFFFFF00 ; bottom right
+
+	dq 0,8,9,0x1FF00FF00 ; top front
+	dq 0,9,1,0x1FF00FF00 ; top front
+
+	dq 3,2,10,0x1FFFFFFFF ; top back
+	dq 3,10,11,0x1FFFFFFFF ; top back
+
+.faces_right:
+
+	dq 5,20,21,0x1FFFF0000 ; bottom left
+	dq 5,21,6,0x1FFFF0000 ; bottom left
 	
-.edges:
-	dq 0,1
-	dq 1,2
-	dq 2,3
-	dq 3,0
+	dq 9,22,23,0x1FF0000FF ; top left
+	dq 9,10,22,0x1FF0000FF ; top left
+
+	dq 5,9,23,0x1FF00FF00 ; front right	
+	dq 5,23,20,0x1FF00FF00 ; front right	
+
+	dq 6,21,22,0x1FFFFFFFF ; back right
+	dq 6,22,10,0x1FFFFFFFF ; back right
+
+	dq 20,23,22,0x1FFFFFF00 ; right
+	dq 20,22,21,0x1FFFFFF00 ; right
+
+
+.faces_left:
+
+	dq 17,16,7,0x1FFFF0000 ; bottom right
+	dq 16,4,7,0x1FFFF0000 ; bottom right
+
+	dq 11,19,18,0x1FF0000FF ; top right
+	dq 11,8,19,0x1FF0000FF ; top right
+
+	dq 4,19,8,0x1FF00FF00 ; front left	
+	dq 4,16,19,0x1FF00FF00 ; front left	
 	
-	dq 12,13
-	dq 13,14
-	dq 14,15
-	dq 15,12
-
-	dq 16,17
-	dq 17,18
-	dq 18,19
-	dq 19,16
+	dq 7,11,18,0x1FFFFFFFF ; back left
+	dq 7,18,17,0x1FFFFFFFF ; back left
 	
-	dq 20,21
-	dq 21,22
-	dq 22,23
-	dq 23,20
-
-	dq 0,4
-	dq 1,5
-	dq 2,6
-	dq 3,7
-
-	dq 8,12
-	dq 9,13
-	dq 10,14
-	dq 11,15
-
-	dq 5,16
-	dq 6,17
-	dq 9,19
-	dq 10,18
-
-	dq 4,20
-	dq 7,21
-	dq 8,23
-	dq 11,22
-
-	dq 4,7
-	dq 5,6
-	dq 9,10
-	dq 8,11
+	dq 16,17,18,0x1FFFF00FF ; left
+	dq 16,18,19,0x1FFFF00FF ; left
 
 END:
 

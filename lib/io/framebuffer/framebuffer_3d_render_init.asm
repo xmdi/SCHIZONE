@@ -13,6 +13,9 @@
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
+%include "lib/io/framebuffer/centroid_sort.asm"
+; void centroid_sort(struct* {rdi}, struct* {rsi});
+
 %include "lib/io/bitmap/rasterize_faces.asm"
 ; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
@@ -161,6 +164,9 @@ framebuffer_3d_render_init:
 	cmp byte [r14+24],0b00000100
 	je .is_face
 
+	cmp byte [r14+24],0b00000101
+	je .is_shell_list
+
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
@@ -193,6 +199,39 @@ framebuffer_3d_render_init:
 	mov r8,[framebuffer_3d_render_init.perspective_structure_address]
 	mov r9,[r14+8]
 	call rasterize_faces
+
+	jmp .geometry_type_unsupported
+
+.is_shell_list:
+
+	mov rdi,[r14+8]
+	mov rsi,[framebuffer_3d_render_init.perspective_structure_address]
+	call centroid_sort ; sort all shell bodies by distance from viewer
+
+	mov rcx,[r14+8]
+	mov rdx,rcx
+	add rdx,8
+	mov rcx,[rcx]
+	cmp rcx,0	
+	jbe .geometry_type_unsupported
+
+.shell_body_loop:
+
+	push rdx
+	push rcx
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,[r14+16]
+	mov r9,[rdx]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,[framebuffer_3d_render_init.perspective_structure_address]
+	call rasterize_faces
+	pop rcx
+	pop rdx
+
+	add rdx,32
+	dec rcx
+	jnz .shell_body_loop
 
 	jmp .geometry_type_unsupported
 
