@@ -1,8 +1,10 @@
 %ifndef RASTERIZE_FACES
 %define RASTERIZE_FACES
 
-; dependency
+; dependencies
 %include "lib/io/bitmap/set_triangle.asm"
+%include "lib/math/vector/triangle_normal.asm"
+%include "lib/math/vector/dot_product_3.asm"
 
 rasterize_faces:
 ; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
@@ -96,6 +98,10 @@ rasterize_faces:
 	movsd xmm8,[r8+16]
 	subsd xmm8,[r8+40]
 
+	movsd [.look_vector],xmm6
+	movsd [.look_vector+8],xmm7
+	movsd [.look_vector+16],xmm8
+
 	; normalize lookFrom-lookAt
 
 	movsd xmm0,xmm6
@@ -184,6 +190,62 @@ rasterize_faces:
 
 .loop_faces:
 
+	; first check if normal is pointing opposite the view direction
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	; normal buffer
+	mov rdi,.triangle_normal
+	; vertex A	
+	mov rsi,[rax]
+	shl rsi,3
+	imul rsi,rsi,3
+	add rsi,[r9+16]
+	; vertex B
+	mov rdx,[rax+8]
+	shl rdx,3
+	imul rdx,rdx,3
+	add rdx,[r9+16]
+	; vertex C
+	mov rcx,[rax+16]
+	shl rcx,3
+	imul rcx,rcx,3
+	add rcx,[r9+16]
+	call triangle_normal
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+
+	push rdi
+	push rsi
+	mov rdi,.look_vector
+	mov rsi,.triangle_normal
+	call dot_product_3
+	pop rsi
+	pop rdi
+
+;	mov rdi,r15
+;	call exit
+%if 0
+	mov rdi,SYS_STDOUT
+	mov rsi,.triangle_normal
+	;mov rsi,.look_vector
+	mov rdx,3
+	mov rcx,1
+	xor r8,r8
+	mov r9,print_float
+	mov r10,8
+	call print_array_float
+	call print_buffer_flush
+	call exit
+%endif
+
+	pxor xmm1,xmm1
+	comisd xmm0,xmm1
+	jae .skip
+	
 	; grab first point
 	
 	mov r10,[rax]
@@ -220,8 +282,6 @@ rasterize_faces:
 	subsd xmm0,[r8+24]
 	subsd xmm1,[r8+32]
 	subsd xmm2,[r8+40]
-
-
 
 	mulsd xmm0,xmm3
 	mulsd xmm1,xmm4
@@ -346,8 +406,6 @@ rasterize_faces:
 	mov r13,rbp
 	mov rsi,[rax]
 	call set_triangle
-;	mov rdi,r15
-;	call exit
 	pop r11
 	pop r10
 	pop r9
@@ -356,6 +414,7 @@ rasterize_faces:
 
 	add rax,8
 
+.continue:
 	dec r15
 	jnz .loop_faces
 
@@ -381,10 +440,22 @@ rasterize_faces:
 
 	ret
 
+.skip:
+	add rax,32
+	jmp .continue
+
 .one:
 	dq 1.0
 
 .neg:
 	dq -1.0
+align 16
+	dq 0
+.triangle_normal:
+	times 3 dq 0
+align 16
+	dq 0
+.look_vector:
+	times 3 dq 0
 
 %endif

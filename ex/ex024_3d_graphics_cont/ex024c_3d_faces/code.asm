@@ -56,6 +56,10 @@ PROGRAM_HEADER:
 
 %include "lib/sys/exit.asm"
 
+%include "lib/io/print_float.asm"
+
+%include "lib/io/print_array_float.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,7 +114,7 @@ START:
 .perspective_structure:
 	dq 1.00 ; lookFrom_x	
 	dq 2.00 ; lookFrom_y	
-	dq 2.00 ; lookFrom_z	
+	dq 5.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 2.00 ; lookAt_z	
@@ -120,7 +124,7 @@ START:
 	dq 0.3	; zoom
 
 .faces_geometry:
-	dq .edges_geometry ; next geometry in linked list
+	dq 0;.edges_geometry ; next geometry in linked list
 	dq .faces_structure ; address of point/edge/face structure
 	dq 0x100000000 ; color (0xARGB)
 	db 0b00000100 ; type of structure to render
@@ -183,23 +187,23 @@ START:
 	dq -1.5,0.5,3.0
 
 .faces:
-	dq 0,2,1,0x1FFFF0000 ; bottom
-	dq 0,3,2,0x1FFFF0000 ; bottom
+	dq 0,1,2,0x1FFFF0000 ; bottom
+	dq 0,2,3,0x1FFFF0000 ; bottom
 
-	dq 16,17,7,0x1FFFF0000 ; bottom right
-	dq 16,7,4,0x1FFFF0000 ; bottom right
+	dq 17,16,7,0x1FFFF0000 ; bottom right
+	dq 16,4,7,0x1FFFF0000 ; bottom right
 
 	dq 5,20,21,0x1FFFF0000 ; bottom left
 	dq 5,21,6,0x1FFFF0000 ; bottom left
 	
-	dq 12,13,14,0x1FF0000FF ; top
-	dq 12,14,15,0x1FF0000FF ; top
+	dq 13,12,14,0x1FF0000FF ; top
+	dq 14,12,15,0x1FF0000FF ; top
 
-	dq 11,18,19,0x1FF0000FF ; top right
-	dq 11,19,8,0x1FF0000FF ; top right
+	dq 11,19,18,0x1FF0000FF ; top right
+	dq 11,8,19,0x1FF0000FF ; top right
 
 	dq 9,22,23,0x1FF0000FF ; top left
-	dq 9,22,10,0x1FF0000FF ; top left
+	dq 9,10,22,0x1FF0000FF ; top left
 
 	dq 0,12,13,0x1FF00FF00 ; front
 	dq 0,13,1,0x1FF00FF00 ; front
@@ -207,8 +211,8 @@ START:
 	dq 5,9,23,0x1FF00FF00 ; front right	
 	dq 5,23,20,0x1FF00FF00 ; front right	
 
-	dq 4,8,19,0x1FF00FF00 ; front left	
-	dq 4,19,16,0x1FF00FF00 ; front left	
+	dq 4,19,8,0x1FF00FF00 ; front left	
+	dq 4,16,19,0x1FF00FF00 ; front left	
 	
 	dq 3,2,14,0x1FFFFFFFF ; back
 	dq 3,14,15,0x1FFFFFFFF ; back
