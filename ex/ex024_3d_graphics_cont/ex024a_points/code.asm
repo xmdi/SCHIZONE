@@ -144,7 +144,7 @@ START:
 .point_structure:
 	dq 24 ; number of points (N)
 	dq .points ; starting address of point array (3N elements)
-	dq 4 ; point render type (1=O,2=X,3=[],4=tri)
+	dq 1 ; point render type (1=O,2=X,3=[],4=tri)
 	dq 15 ; characteristic size of each point
 
 .points:

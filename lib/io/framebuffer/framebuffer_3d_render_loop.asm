@@ -436,39 +436,12 @@ framebuffer_3d_render_loop:
 	mov rsi,[framebuffer_3d_render_init.perspective_structure_address]
 	call centroid_sort ; sort all shell bodies by distance from viewer
 
-
 	mov rcx,[r13+8]
 	mov rdx,rcx
 	add rdx,8
 	mov rcx,[rcx]
 	cmp rcx,0	
 	jbe .geometry_type_unsupported
-
-;	push rdi
-;	push rsi
-;	push rdx
-;	push rcx
-;	push r8
-;	push r9
-;	push r10
-;	mov rdi,SYS_STDOUT
-;	mov rsi,rdx
-;	mov rdx,4
-;	mov rcx,4
-;	mov r8,0
-;	mov r9,print_float
-;	mov r10,5
-;	call print_array_float
-;	call print_buffer_flush	
-;	pop r10
-;	pop r9
-;	pop r8
-;	pop rcx
-;	pop rdx
-;	pop rsi
-;	pop rdi
-;	call exit
-
 
 .shell_body_loop:
 
