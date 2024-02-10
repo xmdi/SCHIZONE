@@ -11,7 +11,7 @@ export_stl:
 ;	Face structure contains colors if {rdx} high, otherwise is does not.
 ;	Note: Clears the PRINT_BUFFER (does not flush) at routine start.
 
-%ifdef 0 ; sample face structure
+%if 0 ; sample face structure
 
 .faces_top_structure:
 	dq 99 ; number of points (N)
@@ -146,6 +146,8 @@ export_stl:
 
 .ret:
 
+	call print_buffer_flush
+
 	movdqu xmm0,[rsp+0]
 	add rsp,16
 	pop r11
@@ -160,7 +162,7 @@ export_stl:
 
 .stl_header:
 	db `I formally dedicate this STL file, along with all my productive `
-	db `work, to Christ.	
+	db `work, to Christ.`	
 
 .triangle_count:
 	dd 0

@@ -5,7 +5,6 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 0x2000000 ; ~32 MB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,7 +40,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,102 +49,45 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/framebuffer/framebuffer_3d_render_init.asm"
+%include "lib/engr/stl/export_stl.asm"
+; void export_stl(uint {rdi}, struct* {rsi}, bool {rdx});
 
-%include "lib/io/framebuffer/framebuffer_3d_render_loop.asm"
-
-%include "lib/io/bitmap/set_line.asm"
-; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
+%include "lib/io/file_open.asm"
+; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
 
 %include "lib/sys/exit.asm"
+; void exit(char {dil});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; NOTE: NEED TO RUN THIS AS SUDO
-
-DRAW_CROSS_CURSOR:
-;	inputs:
-; 	{rdi}=framebuffer_address
-;	{rsi}=color
-	mov rsi,0x1FFFFFF00
-;	{edx}=framebuffer_width
-;	{ecx}=framebuffer_height
-;	{r8d}=mouse_x
-;	{r9d}=mouse_y
-	
-	push r8
-	push r9
-	push r10
-	push r11
-
-	mov r10,r8
-	sub r8,7
-	add r10,7
-	mov r11,r9
-	call set_line
-	
-	mov r8,[rsp+24]
-	mov r10,r8
-	mov r11,r9
-	add r9,14
-	sub r11,7
-	call set_line
-
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	ret
-
 START:
 
-	mov rdi,.perspective_structure
-	mov rsi,.edges_geometry
-	mov rdx,DRAW_CROSS_CURSOR
-	call framebuffer_3d_render_init
+	; open/create the output file
+	mov rdi,.FILENAME 		; filename in {rdi}
+	mov rsi,SYS_READ_WRITE+SYS_CREATE_FILE	; put R/W/CREATE flags in {rsi}
+	mov rdx,SYS_DEFAULT_PERMISSIONS	; default permissions in {rdx}
+	call file_open			; call function to open file
+	; {rax} contains new file descriptor
 
-.loop:
-	call framebuffer_3d_render_loop
-	jmp .loop
+	; generate the stl
+	mov rdi,rax
+	mov rsi,.faces_structure
+	mov rdx,1
+	call export_stl
 
-.perspective_structure:
-	dq 1.00 ; lookFrom_x	
-	dq 2.00 ; lookFrom_y	
-	dq 2.00 ; lookFrom_z	
-	dq 0.00 ; lookAt_x	
-	dq 0.00 ; lookAt_y	
-	dq 2.00 ; lookAt_z	
-	dq 0.0 ; upDir_x	
-	dq 0.0 ; upDir_y	
-	dq 1.0 ; upDir_z	
-	dq 0.3	; zoom
+	; exit
+	xor dil,dil
+	call exit
 
-.edges_geometry:
-	dq .points_geometry ; next geometry in linked list
-	dq .edge_structure ; address of point/edge/face structure
-	dq 0x1FFFFA500 ; color (0xARGB)
-	db 0b00000010 ; type of structure to render
-
-.points_geometry:
-	dq 0 ; next geometry in linked list
-	dq .point_structure ; address of point/edge/face structure
-	dq 0x1FF00FFFF ; color (0xARGB)
-	db 0b00000001 ; type of structure to render
-
-.edge_structure:
+.faces_structure:
 	dq 24 ; number of points (N)
-	dq 36 ; number of edges (M)
+	dq 36 ; number of faces (M)
 	dq .points ; starting address of point array (3N elements)
-	dq .edges ; starting address of edge array (2M elements)
-
-.point_structure:
-	dq 24 ; number of points (N)
-	dq .points ; starting address of point array (3N elements)
-	dq 1 ; point render type (1=O,2=X,3=[],4=tri)
-	dq 15 ; characteristic size of each point
+	dq .faces ; starting address of face array 
+		;	(3M elements if no colors)
+		;	(4M elements if colors)
 
 .points:
 	; base of vertical beam
@@ -184,51 +126,63 @@ START:
 	dq -1.5,-0.5,3.0
 	dq -1.5,0.5,3.0
 
-.edges:
-	dq 0,1
-	dq 1,2
-	dq 2,3
-	dq 3,0
+.faces:
+	dq 0,1,2,0x1FFFF0000 ; bottom
+	dq 0,2,3,0x1FFFF0000 ; bottom
+
+	dq 17,16,7,0x1FFFF0000 ; bottom right
+	dq 16,4,7,0x1FFFF0000 ; bottom right
+
+	dq 5,20,21,0x1FFFF0000 ; bottom left
+	dq 5,21,6,0x1FFFF0000 ; bottom left
 	
-	dq 12,13
-	dq 13,14
-	dq 14,15
-	dq 15,12
+	dq 13,12,14,0x1FF0000FF ; top
+	dq 14,12,15,0x1FF0000FF ; top
 
-	dq 16,17
-	dq 17,18
-	dq 18,19
-	dq 19,16
+	dq 11,19,18,0x1FF0000FF ; top right
+	dq 11,8,19,0x1FF0000FF ; top right
+
+	dq 9,22,23,0x1FF0000FF ; top left
+	dq 9,10,22,0x1FF0000FF ; top left
+
+	dq 0,12,13,0x1FF00FF00 ; front
+	dq 0,13,1,0x1FF00FF00 ; front
+
+	dq 5,9,23,0x1FF00FF00 ; front right	
+	dq 5,23,20,0x1FF00FF00 ; front right	
+
+	dq 4,19,8,0x1FF00FF00 ; front left	
+	dq 4,16,19,0x1FF00FF00 ; front left	
 	
-	dq 20,21
-	dq 21,22
-	dq 22,23
-	dq 23,20
+	dq 3,2,14,0x1FFFFFFFF ; back
+	dq 3,14,15,0x1FFFFFFFF ; back
 
-	dq 0,4
-	dq 1,5
-	dq 2,6
-	dq 3,7
+	dq 7,11,18,0x1FFFFFFFF ; back left
+	dq 7,18,17,0x1FFFFFFFF ; back left
+	
+	dq 6,21,22,0x1FFFFFFFF ; back right
+	dq 6,22,10,0x1FFFFFFFF ; back right
+	
+	dq 16,17,18,0x1FFFF00FF ; left
+	dq 16,18,19,0x1FFFF00FF ; left
+	
+	dq 8,15,12,0x1FFFF00FF ; top left
+	dq 8,11,15,0x1FFFF00FF ; top left
+	
+	dq 0,3,7,0x1FFFF00FF ; bottom left
+	dq 0,7,4,0x1FFFF00FF ; bottom left
+	
+	dq 20,23,22,0x1FFFFFF00 ; right
+	dq 20,22,21,0x1FFFFFF00 ; right
+	
+	dq 9,13,14,0x1FFFFFF00 ; top right
+	dq 9,14,10,0x1FFFFFF00 ; top right
+	
+	dq 2,5,6,0x1FFFFFF00 ; bottom right
+	dq 2,1,5,0x1FFFFFF00 ; bottom right
 
-	dq 8,12
-	dq 9,13
-	dq 10,14
-	dq 11,15
-
-	dq 5,16
-	dq 6,17
-	dq 9,19
-	dq 10,18
-
-	dq 4,20
-	dq 7,21
-	dq 8,23
-	dq 11,22
-
-	dq 4,7
-	dq 5,6
-	dq 9,10
-	dq 8,11
+.FILENAME:
+	db `cross.stl`,0
 
 END:
 

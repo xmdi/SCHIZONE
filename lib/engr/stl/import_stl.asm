@@ -12,7 +12,7 @@ import_stl:
 ;	at {rdi}.
 ;	Face structure contains colors if {rdx} high, otherwise is does not.
 
-%ifdef 0 ; sample face structure
+%if 0 ; sample face structure
 
 .faces_top_structure:
 	dq 99 ; number of points (N)
