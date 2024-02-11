@@ -169,59 +169,59 @@ START:
 	dq -1.5,0.5,3.0
 
 .faces:
-	dq 0,1,2,0x1FFFF0000 ; bottom
-	dq 0,2,3,0x1FFFF0000 ; bottom
+	dq 0,2,1,0x1FFFF0000 ; bottom
+	dq 0,3,2,0x1FFFF0000 ; bottom
 
-	dq 17,16,7,0x1FFFF0000 ; bottom right
-	dq 16,4,7,0x1FFFF0000 ; bottom right
+	dq 17,7,16,0x1FFFF0000 ; bottom right
+	dq 16,7,4,0x1FFFF0000 ; bottom right
 
-	dq 5,20,21,0x1FFFF0000 ; bottom left
-	dq 5,21,6,0x1FFFF0000 ; bottom left
+	dq 5,21,20,0x1FFFF0000 ; bottom left
+	dq 5,6,21,0x1FFFF0000 ; bottom left
 	
-	dq 13,12,14,0x1FF0000FF ; top
-	dq 14,12,15,0x1FF0000FF ; top
+	dq 13,14,12,0x1FF0000FF ; top
+	dq 14,15,12,0x1FF0000FF ; top
 
-	dq 11,19,18,0x1FF0000FF ; top right
-	dq 11,8,19,0x1FF0000FF ; top right
+	dq 11,18,19,0x1FF0000FF ; top right
+	dq 11,19,8,0x1FF0000FF ; top right
 
-	dq 9,22,23,0x1FF0000FF ; top left
-	dq 9,10,22,0x1FF0000FF ; top left
+	dq 9,23,22,0x1FF0000FF ; top left
+	dq 9,22,10,0x1FF0000FF ; top left
 
-	dq 0,12,13,0x1FF00FF00 ; front
-	dq 0,13,1,0x1FF00FF00 ; front
+	dq 0,13,12,0x1FF00FF00 ; front
+	dq 0,1,13,0x1FF00FF00 ; front
 
-	dq 5,9,23,0x1FF00FF00 ; front right	
-	dq 5,23,20,0x1FF00FF00 ; front right	
+	dq 5,23,9,0x1FF00FF00 ; front right	
+	dq 5,20,23,0x1FF00FF00 ; front right	
 
-	dq 4,19,8,0x1FF00FF00 ; front left	
-	dq 4,16,19,0x1FF00FF00 ; front left	
+	dq 4,8,19,0x1FF00FF00 ; front left	
+	dq 4,19,16,0x1FF00FF00 ; front left	
 	
-	dq 3,2,14,0x1FFFFFFFF ; back
-	dq 3,14,15,0x1FFFFFFFF ; back
+	dq 3,14,2,0x1FFFFFFFF ; back
+	dq 3,15,14,0x1FFFFFFFF ; back
 
-	dq 7,11,18,0x1FFFFFFFF ; back left
-	dq 7,18,17,0x1FFFFFFFF ; back left
+	dq 7,18,11,0x1FFFFFFFF ; back left
+	dq 7,17,18,0x1FFFFFFFF ; back left
 	
-	dq 6,21,22,0x1FFFFFFFF ; back right
-	dq 6,22,10,0x1FFFFFFFF ; back right
+	dq 6,22,21,0x1FFFFFFFF ; back right
+	dq 6,10,22,0x1FFFFFFFF ; back right
 	
-	dq 16,17,18,0x1FFFF00FF ; left
-	dq 16,18,19,0x1FFFF00FF ; left
+	dq 16,18,17,0x1FFFF00FF ; left
+	dq 16,19,18,0x1FFFF00FF ; left
 	
-	dq 8,15,12,0x1FFFF00FF ; top left
-	dq 8,11,15,0x1FFFF00FF ; top left
+	dq 8,12,15,0x1FFFF00FF ; top left
+	dq 8,15,11,0x1FFFF00FF ; top left
 	
-	dq 0,3,7,0x1FFFF00FF ; bottom left
-	dq 0,7,4,0x1FFFF00FF ; bottom left
+	dq 0,7,3,0x1FFFF00FF ; bottom left
+	dq 0,4,7,0x1FFFF00FF ; bottom left
 	
-	dq 20,23,22,0x1FFFFFF00 ; right
-	dq 20,22,21,0x1FFFFFF00 ; right
+	dq 20,22,23,0x1FFFFFF00 ; right
+	dq 20,21,22,0x1FFFFFF00 ; right
 	
-	dq 9,13,14,0x1FFFFFF00 ; top right
-	dq 9,14,10,0x1FFFFFF00 ; top right
+	dq 9,14,13,0x1FFFFFF00 ; top right
+	dq 9,10,14,0x1FFFFFF00 ; top right
 	
-	dq 2,5,6,0x1FFFFFF00 ; bottom right
-	dq 2,1,5,0x1FFFFFF00 ; bottom right
+	dq 2,6,5,0x1FFFFFF00 ; bottom right
+	dq 2,5,1,0x1FFFFFF00 ; bottom right
 
 END:
 

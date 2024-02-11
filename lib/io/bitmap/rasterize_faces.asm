@@ -226,25 +226,10 @@ rasterize_faces:
 	pop rsi
 	pop rdi
 
-;	mov rdi,r15
-;	call exit
-%if 0
-	mov rdi,SYS_STDOUT
-	mov rsi,.triangle_normal
-	;mov rsi,.look_vector
-	mov rdx,3
-	mov rcx,1
-	xor r8,r8
-	mov r9,print_float
-	mov r10,8
-	call print_array_float
-	call print_buffer_flush
-	call exit
-%endif
-
 	pxor xmm1,xmm1
 	comisd xmm0,xmm1
-	jae .skip
+	;jae .skip
+	jb .skip
 	
 	; grab first point
 	
