@@ -48,9 +48,11 @@ import_stl:
 
 	; skip useless STL header
 	SYS_PUSH_SYSCALL_CLOBBERED_REGISTERS
+	push rdi
 	push rsi
 	push rdx
 	push rax
+	mov rdi,rsi
 	mov rsi,80
 	mov rdx,SYS_SEEK_SET
 	mov rax,SYS_LSEEK
@@ -58,6 +60,7 @@ import_stl:
 	pop rax
 	pop rdx
 	pop rsi
+	pop rdi
 	SYS_POP_SYSCALL_CLOBBERED_REGISTERS
 
 	; grab 4-byte triangle count
@@ -81,7 +84,7 @@ import_stl:
 	imul edi,edx
 	call heap_alloc	; allocate 24 or 32 bytes per num_triangles
 	mov rbx,rax	; {rbx} is pointer to face structure
-	
+
 	mov edi,ecx
 	imul edi,edi,72
 	call heap_alloc	; allocate 72 bytes per num_triangles 
@@ -117,9 +120,11 @@ import_stl:
 	mov r8,9
 	xor rax,rax
 .vertex_loop:
+
 	movd xmm0,[.triangle_buffer+rax]
 	cvtss2sd xmm0,xmm0
 	movq [rbp],xmm0
+
 	add rbp,8
 	add rax,4
 	dec r8
@@ -133,11 +138,13 @@ import_stl:
 	mov [rbx+16],r9
 	inc r9
 
+	
 	add rbx,rdx
 	dec ecx
 	jnz .loop
 
 .ret:
+
 
 	movdqu xmm0,[rsp+0]
 	add rsp,16
