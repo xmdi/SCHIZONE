@@ -66,6 +66,8 @@ PROGRAM_HEADER:
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
+%include "lib/io/print_array_int.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -121,18 +123,36 @@ START:
 	mov rdi,.faces_structure
 	mov rsi,rax
 	mov rdx,1
-	call import_stl	
+	call import_stl
 
+	; color the entire face structure randomly
+	mov rax,[.faces_structure+24]
+	mov rcx,[.faces_structure+8]
+	add rax,24
+.coloring_loop:
+	mov rbx,0x1FFFFFFFF
+	mov [rax],rbx
+	add rax,32
+	dec rcx
+	jnz .coloring_loop
+%if 0
+	mov rdi,SYS_STDOUT
+	mov rsi,[.faces_structure+24]
+	mov rdx,[.faces_structure+8]
+	mov rcx,4
+	xor r8,r8
+	mov r9,print_int_d
+	call print_array_int
+	call print_buffer_flush	
+	call exit
+%endif
+	; initial rendering		
 	mov rdi,.perspective_structure
 	mov rsi,.faces_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_init
 
-	mov rdi,6
-	call exit
-
-
-.loop:
+.loop:	; rendering loop
 	call framebuffer_3d_render_loop
 	jmp .loop
 

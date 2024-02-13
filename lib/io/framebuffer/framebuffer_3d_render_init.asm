@@ -78,9 +78,9 @@ framebuffer_3d_render_init:
 	mov r15,rdi
 
 	call heap_init
-
-	call framebuffer_init
 	
+	call framebuffer_init
+
 	call framebuffer_mouse_init
 
 	mov rdi,[framebuffer_init.framebuffer_size]
@@ -102,7 +102,7 @@ framebuffer_3d_render_init:
 	movsd xmm15,[r15+16]
 	subsd xmm15,[r15+40]
 	movsd [.view_axes_old+64],xmm15
-	
+
 	; perpendicularize the Up-direction vector
 	mov rdi,r15
 	add rdi,48

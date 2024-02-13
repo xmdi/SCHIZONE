@@ -377,7 +377,7 @@ rasterize_faces:
 	cvtsd2si rbp,xmm0	; {rbp} contains vertex 3 y-coord
 
 	add rax,8
-	
+
 	push rax
 	push r8
 	push r9
