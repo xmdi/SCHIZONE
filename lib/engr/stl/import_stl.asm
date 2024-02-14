@@ -94,7 +94,7 @@ import_stl:
 
 	; populates the "output" structure
 	mov eax,ecx
-	imul eax,eax,9
+	imul eax,eax,3
 	mov [rdi+0],rax
 	mov [rdi+8],rcx
 	mov [rdi+16],rbp
@@ -118,7 +118,7 @@ import_stl:
 
 	; populates the vertices
 	mov r8,9
-	xor rax,rax
+	mov rax,12
 .vertex_loop:
 
 	movd xmm0,[.triangle_buffer+rax]

@@ -63,10 +63,11 @@ PROGRAM_HEADER:
 %include "lib/io/file_open.asm"
 ; int {rax} file_open(char* {rdi}, int {rsi}, int {rdx});
 
+%include "lib/math/rand/rand_int.asm"
+; signed long {rax} rand_int(signed long {rdi}, signed long {rsi});
+
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
-
-%include "lib/io/print_array_int.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,26 +127,19 @@ START:
 	call import_stl
 
 	; color the entire face structure randomly
-	mov rax,[.faces_structure+24]
+	mov rbx,[.faces_structure+24]
 	mov rcx,[.faces_structure+8]
-	add rax,24
+	add rbx,24
+	xor rdi,rdi
+	mov rsi,0xFFFFFF
 .coloring_loop:
-	mov rbx,0x1FFFFFFFF
-	mov [rax],rbx
-	add rax,32
+	call rand_int
+	or rax,0x1FF000000	
+	mov [rbx],rax
+	add rbx,32
 	dec rcx
 	jnz .coloring_loop
-%if 0
-	mov rdi,SYS_STDOUT
-	mov rsi,[.faces_structure+24]
-	mov rdx,[.faces_structure+8]
-	mov rcx,4
-	xor r8,r8
-	mov r9,print_int_d
-	call print_array_int
-	call print_buffer_flush	
-	call exit
-%endif
+
 	; initial rendering		
 	mov rdi,.perspective_structure
 	mov rsi,.faces_geometry
