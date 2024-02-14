@@ -138,13 +138,14 @@ import_stl:
 	mov [rbx+16],r9
 	inc r9
 
+	; here we go thru the vertex array counting unique vertices
+.unique_vertex_count_loop:
 	
 	add rbx,rdx
 	dec ecx
 	jnz .loop
 
 .ret:
-
 
 	movdqu xmm0,[rsp+0]
 	add rsp,16
