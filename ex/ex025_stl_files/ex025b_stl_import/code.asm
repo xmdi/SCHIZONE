@@ -132,9 +132,10 @@ START:
 	add rbx,24
 	xor rdi,rdi
 	mov rsi,0xFFFFFF
+	mov r8,0x1FF000000
 .coloring_loop:
 	call rand_int
-	or rax,0x1FF000000	
+	or rax,r8
 	mov [rbx],rax
 	add rbx,32
 	dec rcx

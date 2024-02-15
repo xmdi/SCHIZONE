@@ -6,6 +6,10 @@
 %include "lib/io/read_chars.asm"
 %include "lib/mem/heap_alloc.asm"
 
+%include "lib/io/print_array_int.asm"
+%include "lib/io/print_array_float.asm"
+
+
 import_stl:
 ; void import_stl(struct* {rdi}, uint {rsi}, bool {rdx});
 ; 	Imports the STL model at file descriptor at {rsi} into face structure 
@@ -40,8 +44,14 @@ import_stl:
 	push rbp
 	push r8
 	push r9
-	sub rsp,16
+	push r10
+	push r11
+	push r12
+	push r13
+	sub rsp,48
 	movdqu [rsp+0],xmm0
+	movdqu [rsp+8],xmm1
+	movdqu [rsp+16],xmm2
 
 	; TODO: FIX
 	; assume all vertices are NOT reused. 3 unique vertices per triangle
@@ -82,6 +92,7 @@ import_stl:
 	shl edx,3
 	add edx,24
 	imul edi,edx
+	mov [.saved_value],rdi
 	call heap_alloc	; allocate 24 or 32 bytes per num_triangles
 	mov rbx,rax	; {rbx} is pointer to face structure
 
@@ -138,17 +149,194 @@ import_stl:
 	mov [rbx+16],r9
 	inc r9
 
-	; here we go thru the vertex array counting unique vertices
-.unique_vertex_count_loop:
-	
 	add rbx,rdx
 	dec ecx
 	jnz .loop
 
+	; here we go thru the vertex array counting unique vertices
+
+	mov rax,[rdi+16]	; point array start
+	mov rdx,rax
+	add rdx,24		; start at second vertex
+	mov rcx,1		; unique point counter
+	mov r8,1		; outer loop counter
+	
+.unique_vertex_count_outer_loop:
+	movsd xmm0,[rdx+0]	; x	
+	movsd xmm1,[rdx+8]	; y
+	movsd xmm2,[rdx+16]	; z
+
+	xor r9,r9		; inner loop counter
+	mov rbx,rax
+.unique_vertex_count_inner_loop:
+	comisd xmm0,[rbx+0]
+	jne .no_match
+	comisd xmm1,[rbx+8]
+	jne .no_match
+	comisd xmm2,[rbx+16]
+	jne .no_match
+	; match found, do not repeat this vertex
+	jmp .match_found_stop_checking
+	
+.no_match:
+	add rbx,24
+	inc r9
+	cmp r9,r8
+	jl .unique_vertex_count_inner_loop
+	inc rcx	; unique vertex found, increment counter
+		
+.match_found_stop_checking:
+	inc r8
+	add rdx,24
+	cmp r8,[rdi+0]
+	jl .unique_vertex_count_outer_loop
+
+	; {rcx} contains number of unique vertices
+
+	push rdi
+
+	mov rdi,rcx
+	imul rdi,rdi,24
+	call heap_alloc	; allocate 24 bytes per vertex 
+	mov rbp,rax	; {rbp} is pointer to reduced point structure
+
+	mov rdi,[.saved_value]
+	call heap_alloc	; allocate 24 or 32 bytes per num_triangles
+	mov r15,rax	; {r15} is pointer to new face structure
+
+	pop rdi	
+
+;	now loop for the actual new point array
+	mov rax,[rdi+16]	; original point array start
+	mov r10,rbp		; reduced point array start
+	mov rdx,rax
+	add rdx,24		; start at second vertex
+	mov r8,1		; outer loop counter
+	mov r11,1
+	mov r12,[rdi+24]
+	add r12,8		; pointer into element of face array
+	mov r14,r15		; pointer into element of new face array
+	mov r13,1		; track vertex number within face
+
+	; get first vertex
+	comisd xmm0,[rax+0]
+	comisd xmm1,[rax+8]
+	comisd xmm2,[rax+16]
+	movsd [r10+0],xmm0
+	movsd [r10+8],xmm1
+	movsd [r10+16],xmm2
+	add r10,24
+
+.unique_vertex_count_outer_loop2:
+	movsd xmm0,[rdx+0]	; x	
+	movsd xmm1,[rdx+8]	; y
+	movsd xmm2,[rdx+16]	; z
+
+	xor r9,r9		; inner loop counter
+	mov rbx,rax
+.unique_vertex_count_inner_loop2:
+	comisd xmm0,[rbx+0]
+	jne .no_match2
+	comisd xmm1,[rbx+8]
+	jne .no_match2
+	comisd xmm2,[rbx+16]
+	jne .no_match2
+	; match found, do not repeat this vertex
+
+	; correct the face array to the reduced vertex number
+	; correct vertex number in r9, old vertex number in r8
+	push rax
+	push rcx
+	push rdx	
+	xor rdx,rdx
+	mov rax,r8
+	mov rcx,3
+	div rcx
+	; remainder in {rdx}, quotient in {rax}
+	shl rax,5
+	shl rdx,3
+	add rax,rdx
+	add rax,[rdi+24] ; {rax} now points to the target address in face array
+	mov [rax],r9
+	pop rdx
+	pop rcx
+	pop rax
+	
+	inc r13
+	cmp r13,3
+	jl .dont_wrap
+	add r14,8
+	xor r13,r13
+.dont_wrap:
+	add r14,8
+
+	jmp .match_found_stop_checking2
+	
+.no_match2:
+	add rbx,24
+	inc r9
+	cmp r9,r8
+	jl .unique_vertex_count_inner_loop2
+
+	; unique vertex identified at {rdx}. put it in new array
+	movsd [r10+0],xmm0
+	movsd [r10+8],xmm1
+	movsd [r10+16],xmm2
+	add r10,24
+
+	mov [r14],r11	
+	inc r13
+	cmp r13,3
+	jl .dont_wrap2
+	add r14,8
+	xor r13,r13
+.dont_wrap2:
+	add r14,8
+	inc r11
+
+.match_found_stop_checking2:
+
+	inc r8
+	add rdx,24
+	cmp r8,[rdi+0]
+	jl .unique_vertex_count_outer_loop2
+
+	; populate the data structure	
+	mov [rdi+0],rcx
+	mov [rdi+16],rbp
+
+%if 1
+	push rdi
+	mov rsi,[rdi+24]
+	mov rdi,SYS_STDOUT
+	mov rdx,36
+	mov rcx,4
+	xor r8,r8
+	mov r9,print_int_d
+	call print_array_int
+	pop rdi
+	mov rsi,[rdi+16]
+	mov rdi,SYS_STDOUT
+	mov rdx,24
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	call print_buffer_flush
+	call exit
+%endif
+
 .ret:
 
 	movdqu xmm0,[rsp+0]
-	add rsp,16
+	movdqu xmm1,[rsp+8]
+	movdqu xmm2,[rsp+16]
+	add rsp,48
+	pop r13
+	pop r12
+	pop r11
+	pop r10
 	pop r9
 	pop r8
 	pop rbp
@@ -164,5 +352,8 @@ import_stl:
 
 .triangle_buffer:
 	times 50 db 0
+
+.saved_value:
+	dq 0
 
 %endif
