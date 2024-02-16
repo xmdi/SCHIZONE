@@ -2,7 +2,6 @@
 %define IMPORT_STL
 
 ; dependencies
-%include "lib/math/vector/triangle_normal.asm"
 %include "lib/io/read_chars.asm"
 %include "lib/mem/heap_alloc.asm"
 %include "lib/mem/heap_free.asm"
