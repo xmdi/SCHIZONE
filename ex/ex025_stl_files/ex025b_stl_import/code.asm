@@ -66,9 +66,6 @@ PROGRAM_HEADER:
 %include "lib/math/rand/rand_int.asm"
 ; signed long {rax} rand_int(signed long {rdi}, signed long {rsi});
 
-%include "lib/sys/exit.asm"
-; void exit(char {dil});
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

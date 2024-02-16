@@ -5,10 +5,7 @@
 %include "lib/math/vector/triangle_normal.asm"
 %include "lib/io/read_chars.asm"
 %include "lib/mem/heap_alloc.asm"
-
-%include "lib/io/print_array_int.asm"
-%include "lib/io/print_array_float.asm"
-
+%include "lib/mem/heap_free.asm"
 
 import_stl:
 ; void import_stl(struct* {rdi}, uint {rsi}, bool {rdx});
@@ -46,8 +43,9 @@ import_stl:
 	push r9
 	push r10
 	push r11
-	push r12
 	push r13
+	push r14
+	push r15
 	sub rsp,48
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+8],xmm1
@@ -213,15 +211,14 @@ import_stl:
 	add rdx,24		; start at second vertex
 	mov r8,1		; outer loop counter
 	mov r11,1
-	mov r12,[rdi+24]
-	add r12,8		; pointer into element of face array
 	mov r14,r15		; pointer into element of new face array
+	add r14,8
 	mov r13,1		; track vertex number within face
 
 	; get first vertex
-	comisd xmm0,[rax+0]
-	comisd xmm1,[rax+8]
-	comisd xmm2,[rax+16]
+	movsd xmm0,[rax+0]
+	movsd xmm1,[rax+8]
+	movsd xmm2,[rax+16]
 	movsd [r10+0],xmm0
 	movsd [r10+8],xmm1
 	movsd [r10+16],xmm2
@@ -244,10 +241,14 @@ import_stl:
 	; match found, do not repeat this vertex
 
 	; correct the face array to the reduced vertex number
-	; correct vertex number in r9, old vertex number in r8
+	; correct vertex number is at element # r9 (not value in r9), 
+	; old vertex number in r8
 	push rax
 	push rcx
-	push rdx	
+	push rdx
+	push r10
+	push r11
+
 	xor rdx,rdx
 	mov rax,r8
 	mov rcx,3
@@ -256,8 +257,24 @@ import_stl:
 	shl rax,5
 	shl rdx,3
 	add rax,rdx
-	add rax,[rdi+24] ; {rax} now points to the target address in face array
-	mov [rax],r9
+	add rax,r15;[rdi+24] ; {rax} now points to the target address in face array
+	mov r10,rax
+
+	xor rdx,rdx
+	mov rax,r9
+	mov r11,3
+	div r11
+	; remainder in {rdx}, quotient in {rax}
+	shl rax,5
+	shl rdx,3
+	add rax,rdx
+	add rax,r15;[rdi+24] ; {rax} now points to the target address in face array for correct vtx
+
+	mov rax,[rax]
+	mov [r10],rax
+
+	pop r11
+	pop r10
 	pop rdx
 	pop rcx
 	pop rax
@@ -269,7 +286,6 @@ import_stl:
 	xor r13,r13
 .dont_wrap:
 	add r14,8
-
 	jmp .match_found_stop_checking2
 	
 .no_match2:
@@ -301,31 +317,19 @@ import_stl:
 	cmp r8,[rdi+0]
 	jl .unique_vertex_count_outer_loop2
 
-	; populate the data structure	
+	; free unused data structures	
+	push rdi
+	mov rdi,[rdi+16]
+	call heap_free
+	mov rdi,[rsp+0]
+	mov rdi,[rdi+24]
+	call heap_free
+	pop rdi
+	
+	; populate the data structure
 	mov [rdi+0],rcx
 	mov [rdi+16],rbp
-
-%if 1
-	push rdi
-	mov rsi,[rdi+24]
-	mov rdi,SYS_STDOUT
-	mov rdx,36
-	mov rcx,4
-	xor r8,r8
-	mov r9,print_int_d
-	call print_array_int
-	pop rdi
-	mov rsi,[rdi+16]
-	mov rdi,SYS_STDOUT
-	mov rdx,24
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush
-	call exit
-%endif
+	mov [rdi+24],r15
 
 .ret:
 
@@ -333,8 +337,9 @@ import_stl:
 	movdqu xmm1,[rsp+8]
 	movdqu xmm2,[rsp+16]
 	add rsp,48
+	pop r15
+	pop r14
 	pop r13
-	pop r12
 	pop r11
 	pop r10
 	pop r9
