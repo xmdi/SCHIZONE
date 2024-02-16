@@ -36,6 +36,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | JAN 05, 2024 | [3D Graphics](ex/ex022_3d_graphics) | [EP. 022](https://youtu.be/lTigI6C11IM) |
 | JAN 19, 2024 | [Rendering Text](ex/ex023_rendering_text) | [EP. 023](https://youtu.be/aEcjIvD4hmU) |
 | FEB 02, 2024 | [3D Graphics (cont)](ex/ex024_3d_graphics_cont) | [EP. 024](https://youtu.be/iXqQWcw6noQ) |
+| FEB 16, 2024 | [STL Files](ex/ex025_stl_files) | [EP. 025](https://youtu.be/) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
