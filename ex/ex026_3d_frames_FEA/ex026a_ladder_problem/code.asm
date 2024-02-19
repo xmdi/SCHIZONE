@@ -94,6 +94,8 @@ GENERATE_LADDER_SYSTEM:
 			; each row: (double) x,y,z
 		dq 0 ; pointer to element array 
 			; each row: (long) nodeID_A,nodeID_B,elementType
+		dq 0 ; pointer to element type matrix
+			; each row (double) E,G,A,Iy,Iz,J,Vx,Vy,Vz
 		dq 0 ; pointer to stiffness matrix (K)
 		dq 0 ; pointer to known forcing array (F)
 	%endif
@@ -152,20 +154,72 @@ GENERATE_LADDER_SYSTEM:
 	call heap_alloc
 	mov [r15+24],rax
 	
+	; allocate space for element type matrix
+	mov rdi,144
+	call heap_alloc
+	mov [r15+32],rax
+
 	; allocate space for stiffness matrix (K)
 	mov rdi,[rax+0]
 	imul rdi,rdi
 	imul rdi,rdi,288
 	call heap_alloc
-	mov [r15+32],rax
+	mov [r15+40],rax
 
 	; allocate space for known forcing matrix (F)
 	mov rdi,[rax+0]
 	imul rdi,rdi,48
 	call heap_alloc
-	mov [r15+40],rax
+	mov [r15+48],rax
 	mov rax,r15
 	pop rdi
+
+	; populate element type matrix
+	mov r15,[rax+32]
+	mov [r15+0],r12 ; E
+	mov [r15+72],r12
+	mov [r15+8],r13 ; G
+	mov [r15+80],r13
+	mov r12,[.zero]
+	mov r13,[.one]
+	mov [r15+48],r12 ; Vx
+	mov [r15+56],r13 ; Vy
+	mov [r15+64],r12 ; Vz
+	mov [r15+120],r12 ; Vx
+	mov [r15+128],r13 ; Vy
+	mov [r15+136],r12 ; Vz
+	movq xmm0,r9
+	mulsd xmm0,[.half]
+	mulsd xmm0,xmm0
+	mulsd xmm0,[.pi]
+	movq [r15+16],xmm0 ; A
+	movq xmm0,r9
+	mulsd xmm0,xmm0
+	mulsd xmm0,xmm0
+	mulsd xmm0,[.sixtyfourth]
+	mulsd xmm0,[.pi]
+	movq [r15+24],xmm0 ; Iy
+	movq [r15+32],xmm0 ; Iz
+	addsd xmm0,xmm0
+	movq [r15+40],xmm0 ; J
+	movq xmm0,r10
+	movq xmm1,r11
+	mulsd xmm0,xmm1
+	movq [r15+88],xmm0 ; A
+	mulsd xmm0,xmm1
+	mulsd xmm0,xmm1
+	mulsd xmm0,[.twelfth]
+	movq [r15+96],xmm0 ; Iy
+	movq xmm0,r10
+	movsd xmm2,xmm0
+	mulsd xmm0,xmm2
+	mulsd xmm0,xmm2
+	mulsd xmm0,xmm1
+	mulsd xmm0,[.twelfth]
+	movq [r15+104],xmm0 ; Iz 
+	movq xmm1,[r15+96]
+	addsd xmm0,xmm1
+	movq [r15+112],xmm0 ; J
 
 	; populate the node coordinate array
 
@@ -177,8 +231,21 @@ GENERATE_LADDER_SYSTEM:
 
 	ret
 
+.zero:
+	dq 0.0
+.half:
+	dq 0.5
+.sixtyfourth:
+	dq 0.015625
+.one:
+	dq 1.0
+.pi:
+	dq 3.14159265359
+.twelfth:
+	dq 0.08333333333
 .convert_deg_to_radians:
 	dq 0.01745329251
+
 
 START:
 	; generate ladder system (nodes and elements)
