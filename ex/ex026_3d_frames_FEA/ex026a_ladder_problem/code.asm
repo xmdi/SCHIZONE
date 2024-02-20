@@ -83,7 +83,7 @@ GENERATE_LADDER_SYSTEM:
 	; {r11} = (double) side rail cross-sectional height
 	; {r12} = {double} elastic modulus E
 	; {r13} = {double} shear modulus G
-	; {r14} = {double} ladder angle (degrees)
+	; {r14} = {double} ladder angle against wall (degrees)
 
 	; 3D frame FEA system has this form:
 	%if 0
@@ -222,6 +222,27 @@ GENERATE_LADDER_SYSTEM:
 	movq [r15+112],xmm0 ; J
 
 	; populate the node coordinate array
+		; right rail
+	mov r15,[rax+16]
+	push rcx
+	cvtsi2sd xmm2,rcx
+	mulsd xmm2,[.half]
+	movq xmm0,r8 ; L
+	mov rcx,rdi
+	inc rcx
+	imul rcx,rdx
+	cvtsi2sd xmm1,rcx ; # nodes on rail (-1)
+	cvtsi2sd
+.loop_right_rail_nodes:
+		
+
+	dec rcx
+	jns .loop_right_rail_nodes	
+			
+
+	pop rcx
+
+
 
 
 	; populate the element array
@@ -245,7 +266,8 @@ GENERATE_LADDER_SYSTEM:
 	dq 0.08333333333
 .convert_deg_to_radians:
 	dq 0.01745329251
-
+.tolerance:
+	dq 0.000001
 
 START:
 	; generate ladder system (nodes and elements)
