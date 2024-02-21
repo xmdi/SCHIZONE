@@ -224,21 +224,56 @@ GENERATE_LADDER_SYSTEM:
 	; populate the node coordinate array
 		; right rail
 	mov r15,[rax+16]
+	movq xmm2,r8 ; L
+	movq xmm0,r14
+	mulsd xmm0,[.convert_deg_to_radians]
+	movq xmm1,[.tolerance]
+	call sine
+	mulsd xmm0,xmm2
+	movsd xmm3,xmm0 ; Lsin(theta)
+	movq xmm0,r14
+	mulsd xmm0,[.convert_deg_to_radians]
+	movq xmm1,[.tolerance]
+	call cosine
+	mulsd xmm0,xmm2
+	movsd xmm4,xmm0 ; Lcos(theta)
+
 	push rcx
-	cvtsi2sd xmm2,rcx
-	mulsd xmm2,[.half]
-	movq xmm0,r8 ; L
+	cvtsi2sd xmm5,rcx
+	mulsd xmm5,[.half] ; +x dimension for side rails
+	movsd xmm6,xmm5
+	mulsd xmm6,[.neg_one] ; -x dimension for side rails
 	mov rcx,rdi
 	inc rcx
 	imul rcx,rdx
-	cvtsi2sd xmm1,rcx ; # nodes on rail (-1)
-	cvtsi2sd
+	cvtsi2sd xmm2,rcx ; # nodes on rail (-1)
+	movsd xmm7,xmm4
+	divsd xmm7,xmm2	; Lcos(theta)/N
+	
+	movsd xmm8,xmm3
+	divsd xmm8,xmm2 ; Lsin(theta)/N
+
+	pxor xmm9,xmm9
+
 .loop_right_rail_nodes:
-		
+	; Z starts at zero (xmm9) an increases by xmm8
+	; Y starts at Lcos(theta) (xmm4) and decreases by xmm7
+	; X is xmm5 for the positive rail and xmm6 for the negative rail
+
+	movq [r15+0],xmm5
+	movq [r15+8],xmm4
+	movq [r15+16],xmm9
+	movq [r15+24],xmm6
+	movq [r15+32],xmm4
+	movq [r15+40],xmm9
+
+	addsd xmm9,xmm8
+	subsd xmm4,xmm7
+	add r15,48
 
 	dec rcx
-	jns .loop_right_rail_nodes	
-			
+	jnz .loop_right_rail_nodes	
+	; jns ?		
 
 	pop rcx
 
@@ -252,6 +287,8 @@ GENERATE_LADDER_SYSTEM:
 
 	ret
 
+.neg_one:
+	dq -1.0
 .zero:
 	dq 0.0
 .half:
