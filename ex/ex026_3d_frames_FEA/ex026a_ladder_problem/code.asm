@@ -5,6 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
+%define HEAP_SIZE 0x2000000
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,6 +64,9 @@ PROGRAM_HEADER:
 
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
+
+%include "lib/io/print_array_float.asm"
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -277,7 +281,16 @@ GENERATE_LADDER_SYSTEM:
 
 	pop rcx
 
-
+	mov rdi,SYS_STDOUT
+	mov rsi,[r15]
+	mov rdx,10
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	call print_buffer_flush
+	call exit
 
 
 	; populate the element array
@@ -308,7 +321,18 @@ GENERATE_LADDER_SYSTEM:
 
 START:
 	; generate ladder system (nodes and elements)
-	mov rdi,
+	mov rdi,[.number_rungs]
+	mov rsi,[.number_elements_per_rung]
+	mov rdx,[.number_side_rail_elements_between_rungs]
+	mov rcx,[.rung_length]
+	mov r8,[.side_rail_length]
+	mov r9,[.rung_diameter]
+	mov r10,[.side_rail_cross_sectional_width]
+	mov r11,[.side_rail_cross_sectional_height]
+	mov r12,[.E]
+	mov r13,[.G]
+	mov r14,[.ladder_angle_deg]
+	call GENERATE_LADDER_SYSTEM
 
 	; exit
 	xor dil,dil
@@ -326,14 +350,16 @@ START:
 	dq 10.0
 .rung_diameter:
 	dq 1.0
-.side_rail_cross-sectional_width:
+.side_rail_cross_sectional_width:
 	dq 1.0
-.side_rail_cross-sectional_height:
+.side_rail_cross_sectional_height:
 	dq 2.0
 .E:
 	dq 1000000.0
 .G:
 	dq 1000000.0
+.ladder_angle_deg:
+	dq 30.0
 
 END:
 
