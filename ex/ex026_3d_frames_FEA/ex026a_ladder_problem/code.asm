@@ -178,6 +178,8 @@ GENERATE_LADDER_SYSTEM:
 	mov rax,r15
 	pop rdi
 
+	jmp .jmp
+
 	; populate element type matrix
 	mov r15,[rax+32]
 	mov [r15+0],r12 ; E
@@ -280,7 +282,7 @@ GENERATE_LADDER_SYSTEM:
 	; jns ?		
 
 	pop rcx
-
+.jmp:
 	mov rdi,SYS_STDOUT
 	mov rsi,[r15]
 	mov rdx,10
