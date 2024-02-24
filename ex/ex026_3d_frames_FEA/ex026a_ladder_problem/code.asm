@@ -5,7 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 0x2000000
+%define HEAP_SIZE 0x4000000
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,12 +65,29 @@ PROGRAM_HEADER:
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
-%include "lib/io/print_array_float.asm"
+%include "lib/io/framebuffer/framebuffer_3d_render_init.asm"
+
+%include "lib/io/framebuffer/framebuffer_3d_render_loop.asm"
+
+%include "lib/io/bitmap/set_line.asm"
+; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
+;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
+
+%include "lib/math/lin_alg/plu_solve.asm"
+; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
+;						uint* {r8});
+
+
+;%include "lib/mem/heap_eval.asm"
+;%include "lib/io/print_array_float.asm"
+;%include "lib/io/print_array_int.asm"
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; NOTE: NEED TO RUN THIS AS SUDO
 
 GENERATE_LADDER_SYSTEM:
 	; returns a pointer to 3D frame FEA structure in {rax} for a ladder with
@@ -104,7 +121,6 @@ GENERATE_LADDER_SYSTEM:
 		dq 0 ; pointer to known forcing array (F)
 	%endif
 
-
 	; initialize heap if not already
 	call heap_init
 	
@@ -113,37 +129,39 @@ GENERATE_LADDER_SYSTEM:
 	mov rdi,48
 	call heap_alloc ; 3D frame system at {rax}
 	pop rdi
-
+	
 	; compute number of nodes
 	mov r15,rdi
 	push rsi
-	inc rsi
+	dec rsi
 	imul r15,rsi
 	test rsi,1
-	jz .even_rung_elements
+	jnz .even_rung_elements
 	inc r15
 .even_rung_elements:
 	push rdi
 	push rdx
 	inc rdi
-	dec rdx
 	imul rdi,rdx
+	inc rdi
 	shl rdi,1
 	add r15,rdi
 	pop rdx
 	pop rdi	
 	pop rsi
 	mov [rax+0],r15
-
+	
 	; compute number of elements
 	push rdi
+	push rsi
 	push rdx
+	imul rsi,rdi
 	inc rdi
-	shl rdx,1
-	add rdx,rsi
 	imul rdi,rdx
-	sub rdi,rsi
+	shl rdi,1
+	add rdi,rsi
 	mov [rax+8],rdi
+	pop rsi
 	pop rdx
 
 	; allocate space for node array
@@ -154,26 +172,26 @@ GENERATE_LADDER_SYSTEM:
 	mov [r15+16],rax
 
 	; allocate space for element array
-	mov rdi,[rax+8]
-	imul rdi,rdi,24
+	mov rdi,[r15+8]
+	imul rdi,24
 	call heap_alloc
 	mov [r15+24],rax
-	
+
 	; allocate space for element type matrix
 	mov rdi,144
 	call heap_alloc
 	mov [r15+32],rax
 
 	; allocate space for stiffness matrix (K)
-	mov rdi,[rax+0]
+	mov rdi,[r15+0]
 	imul rdi,rdi
 	imul rdi,rdi,288
 	call heap_alloc
 	mov [r15+40],rax
 
 	; allocate space for known forcing matrix (F)
-	mov rdi,[rax+0]
-	imul rdi,rdi,48
+	mov rdi,[r15+0]
+	imul rdi,48
 	call heap_alloc
 	mov [r15+48],rax
 	mov rax,r15
@@ -277,27 +295,166 @@ GENERATE_LADDER_SYSTEM:
 	add r15,48
 
 	dec rcx
-	jnz .loop_right_rail_nodes	
-	; jns ?		
+	jns .loop_right_rail_nodes	
+
+	; rung nodes
+	mov rcx,rdi
+
+	movq xmm2,r8 ; L
+	movq xmm0,r14
+	mulsd xmm0,[.convert_deg_to_radians]
+	movq xmm1,[.tolerance]
+	call sine
+	mulsd xmm0,xmm2
+	movsd xmm3,xmm0 ; Lsin(theta)
+	movq xmm0,r14
+	mulsd xmm0,[.convert_deg_to_radians]
+	movq xmm1,[.tolerance]
+	call cosine
+	mulsd xmm0,xmm2
+	movsd xmm4,xmm0 ; Lcos(theta)
+
+	inc rcx
+	cvtsi2sd xmm2,rcx ; # segments
+	movsd xmm7,xmm4
+	divsd xmm7,xmm2	; Lcos(theta)/N
+	
+	movsd xmm8,xmm3
+	divsd xmm8,xmm2 ; Lsin(theta)/N
+
+	pxor xmm9,xmm9 
+	pxor xmm0,xmm0 ; temporary x value, TODO: change with more elements per rung
+
+	dec rcx
+	addsd xmm9,xmm8
+	subsd xmm4,xmm7
+	
+.loop_rungs:
+
+	; eventually add logic to handle ~=2 elements per rung	
+
+.loop_rung_elements: ; unused for now
+
+	movq [r15+0],xmm0
+	movq [r15+8],xmm4
+	movq [r15+16],xmm9
+
+	addsd xmm9,xmm8
+	subsd xmm4,xmm7
+	add r15,24
+
+	dec rcx
+	jnz .loop_rungs	
 
 	pop rcx
+
+	push rcx
+	push rdx
+	push r8
+
+	mov rcx,rdi
+	inc rcx
+	imul rcx,rdx
+	mov r15,[rax+24]
+	xor rdx,rdx
+	mov r8,1
+
+.right_rail_elements:
+	
+	mov [r15+0],rdx
+	add rdx,2
+	mov [r15+8],rdx
+	mov [r15+16],r8 ; element type for side rails
+	add r15,24
+	
+	dec rcx
+	jnz .right_rail_elements
+
+	mov rcx,rdi
+	inc rcx
+	mov rdx,[rsp+8]
+	imul rcx,rdx
+	mov rdx,1
+
+.left_rail_elements:
+	
+	mov [r15+0],rdx
+	add rdx,2
+	mov [r15+8],rdx
+	mov [r15+16],r8 ; element type for side rails
+	add r15,24
+	
+	dec rcx
+	jnz .left_rail_elements
+
+	inc rdx
+	mov r10,rdx ; r10 is first rung "middle" element
+
+	pop r8
+	pop rdx
+	pop rcx
+
+	; now we do elements along rungs from top to bottom
+
+	push rcx
+	push r8
+	push r9
+	push r11
+
+	; r10 is first rung "middle" element	
+	mov rcx,rdi ; rung count
+	mov r8,rdx 
+	shl r8,1 ; r8 tracks starting right right node #
+	mov r9,r8 ; r9 tracks distance between rung start nodes (right)
+	dec r9
+	xor r11,r11 ; rung element type
+
+	; update this later to support >2 els/rung (TODO)
+
+.rung_loop:
+	
+	mov [r15+0],r8
+	mov [r15+8],r10
+	mov [r15+16],r11 ; element type for rungs
+
+	mov [r15+24],r10
+	inc r8
+	mov [r15+32],r8
+	mov [r15+40],r11 ; element type for rungs
+
+	inc r10
+	add r8,r9
+	add r15,48
+
+	dec rcx
+	jnz .rung_loop
+
+	pop r11
+	pop r9
+	pop r8
+	pop rcx
+
+%if 0
 .jmp:
 	mov rdi,SYS_STDOUT
 	mov rsi,[rax+16]
-	mov rdx,10
+	mov rdx,[rax+0]
 	mov rcx,3
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
 	call print_array_float
 	call print_buffer_flush
+	mov rsi,[rax+24]
+	mov rdx,[rax+8]
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_int_d
+	call print_array_int
+	call print_buffer_flush
+	mov rdi,[rax+0]
 	call exit
-
-
-	; populate the element array
-
-
-
+%endif
 
 	ret
 
@@ -320,7 +477,44 @@ GENERATE_LADDER_SYSTEM:
 .tolerance:
 	dq 0.000001
 
+DRAW_CROSS_CURSOR:
+;	inputs:
+; 	{rdi}=framebuffer_address
+;	{rsi}=color
+	mov rsi,0x1FFFFFF00
+;	{edx}=framebuffer_width
+;	{ecx}=framebuffer_height
+;	{r8d}=mouse_x
+;	{r9d}=mouse_y
+	
+	push r8
+	push r9
+	push r10
+	push r11
+
+	mov r10,r8
+	sub r8,7
+	add r10,7
+	mov r11,r9
+	call set_line
+	
+	mov r8,[rsp+24]
+	mov r10,r8
+	mov r11,r9
+	add r9,14
+	sub r11,7
+	call set_line
+
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	ret
+
 START:
+	
+	call heap_init
+	
 	; generate ladder system (nodes and elements)
 	mov rdi,[.number_rungs]
 	mov rsi,[.number_elements_per_rung]
@@ -335,9 +529,48 @@ START:
 	mov r14,[.ladder_angle_deg]
 	call GENERATE_LADDER_SYSTEM
 
-	; exit
-	xor dil,dil
-	call exit
+	; populate the rendering items
+	mov rbx,[rax+0]	
+	mov [.edge_structure+0],rbx
+	mov rbx,[rax+8]	
+	mov [.edge_structure+8],rbx
+	mov rbx,[rax+16]	
+	mov [.edge_structure+16],rbx
+
+	push rax
+	mov rdi,[rax+8]
+	shl rdi,4
+	call heap_alloc
+	mov r8,rax ; r8 points to start of new edge list
+	mov [.edge_structure+24],rax
+	pop rax
+
+	mov r9,[rax+24] ; r9 points to start of element node list
+	mov rcx,[rax+8] ; element counter
+
+.element_population_loop:
+	mov r10,[r9]
+	mov [r8],r10
+	mov r10,[r9+8]
+	mov [r8+8],r10
+
+	add r8,16
+	add r9,24
+
+	dec rcx
+	jnz .element_population_loop
+
+	mov rdi,.perspective_structure
+	mov rsi,.geometry_linked_list
+	mov rdx,DRAW_CROSS_CURSOR
+	call framebuffer_3d_render_init
+
+.loop:
+	call framebuffer_3d_render_loop
+	jmp .loop
+
+
+align 16
 
 .number_rungs:
 	dq 8
@@ -361,6 +594,30 @@ START:
 	dq 1000000.0
 .ladder_angle_deg:
 	dq 30.0
+
+.perspective_structure:
+	dq 0.00 ; lookFrom_x	
+	dq 4.00 ; lookFrom_y	
+	dq 5.00 ; lookFrom_z	
+	dq 0.00 ; lookAt_x	
+	dq 4.00 ; lookAt_y	
+	dq 0.00 ; lookAt_z	
+	dq 0.0 ; upDir_x	
+	dq 1.0 ; upDir_y	
+	dq 0.0 ; upDir_z	
+	dq 0.1	; zoom
+
+.edge_structure:
+	dq 0 ; number of points (N)
+	dq 0 ; number of edges (M)
+	dq 0 ; starting address of point array (3N elements)
+	dq 0 ; starting address of edge array (2M elements)
+
+.geometry_linked_list:
+	dq 0 ; next geometry in linked list
+	dq .edge_structure ; address of point/edge/face structure
+	dq 0x1FFFFA500 ; color (0xARGB)
+	db 0b00000010 ; type of structure to render
 
 END:
 

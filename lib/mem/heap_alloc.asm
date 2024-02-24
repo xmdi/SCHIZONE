@@ -79,6 +79,7 @@ heap_alloc:
 	jz .next_block	; otherwise go to the next chunk
 
 	xor rax,rax
+
 .done:
 	pop r8
 	pop rsi
