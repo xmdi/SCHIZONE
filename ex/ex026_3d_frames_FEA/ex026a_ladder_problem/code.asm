@@ -41,7 +41,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+HEAP_SIZE ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,9 +104,10 @@ GENERATE_LADDER_SYSTEM:
 		dq 0 ; pointer to known forcing array (F)
 	%endif
 
+
 	; initialize heap if not already
 	call heap_init
-
+	
 	; allocate space for 3D frame system
 	push rdi
 	mov rdi,48
@@ -178,8 +179,6 @@ GENERATE_LADDER_SYSTEM:
 	mov rax,r15
 	pop rdi
 
-	jmp .jmp
-
 	; populate element type matrix
 	mov r15,[rax+32]
 	mov [r15+0],r12 ; E
@@ -243,9 +242,9 @@ GENERATE_LADDER_SYSTEM:
 	call cosine
 	mulsd xmm0,xmm2
 	movsd xmm4,xmm0 ; Lcos(theta)
-
+	
 	push rcx
-	cvtsi2sd xmm5,rcx
+	movq xmm5,rcx
 	mulsd xmm5,[.half] ; +x dimension for side rails
 	movsd xmm6,xmm5
 	mulsd xmm6,[.neg_one] ; -x dimension for side rails
@@ -284,7 +283,7 @@ GENERATE_LADDER_SYSTEM:
 	pop rcx
 .jmp:
 	mov rdi,SYS_STDOUT
-	mov rsi,[r15]
+	mov rsi,[rax+16]
 	mov rdx,10
 	mov rcx,3
 	xor r8,r8
