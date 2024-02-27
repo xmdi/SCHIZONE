@@ -531,18 +531,21 @@ START:
 
 	; populate the rendering items
 	mov rbx,[rax+0]	
-	mov [.edge_structure+0],rbx
+	mov [.undeformed_element_structure+0],rbx
+	mov [.undeformed_node_structure+0],rbx
 	mov rbx,[rax+8]	
-	mov [.edge_structure+8],rbx
+	mov [.undeformed_element_structure+8],rbx
 	mov rbx,[rax+16]	
-	mov [.edge_structure+16],rbx
+	mov [.undeformed_element_structure+16],rbx
+	mov [.undeformed_node_structure+8],rbx
+
 
 	push rax
 	mov rdi,[rax+8]
 	shl rdi,4
 	call heap_alloc
 	mov r8,rax ; r8 points to start of new edge list
-	mov [.edge_structure+24],rax
+	mov [.undeformed_element_structure+24],rax
 	pop rax
 
 	mov r9,[rax+24] ; r9 points to start of element node list
@@ -561,7 +564,7 @@ START:
 	jnz .element_population_loop
 
 	mov rdi,.perspective_structure
-	mov rsi,.geometry_linked_list
+	mov rsi,.undeformed_element_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_init
 
@@ -595,6 +598,8 @@ align 16
 .ladder_angle_deg:
 	dq 30.0
 
+align 16
+
 .perspective_structure:
 	dq 0.00 ; lookFrom_x	
 	dq 4.00 ; lookFrom_y	
@@ -607,17 +612,38 @@ align 16
 	dq 0.0 ; upDir_z	
 	dq 0.1	; zoom
 
-.edge_structure:
+align 16
+
+.undeformed_element_geometry:
+	dq .undeformed_nodes_geometry ; next geometry in linked list
+	dq .undeformed_element_structure ; address of point/edge/face structure
+	dq 0x1FF00FF00 ; color (0xARGB)
+	db 0b00000010 ; type of structure to render
+
+align 16
+
+.undeformed_nodes_geometry:
+	dq 0 ; next geometry in linked list
+	dq .undeformed_node_structure ; address of point/edge/face structure
+	dq 0x1FF00FF00 ; color (0xARGB)
+	db 0b00000001 ; type of structure to render
+
+align 16
+
+.undeformed_element_structure:
 	dq 0 ; number of points (N)
 	dq 0 ; number of edges (M)
 	dq 0 ; starting address of point array (3N elements)
 	dq 0 ; starting address of edge array (2M elements)
 
-.geometry_linked_list:
-	dq 0 ; next geometry in linked list
-	dq .edge_structure ; address of point/edge/face structure
-	dq 0x1FFFFA500 ; color (0xARGB)
-	db 0b00000010 ; type of structure to render
+align 16
+
+.undeformed_node_structure:
+	dq 0 ; number of points (N)
+	dq 0 ; starting address of point array (3N elements)
+	dq 1 ; point render type (1=O,2=X,3=[],4=tri)
+	dq 15 ; characteristic size of each point
+
 
 END:
 
