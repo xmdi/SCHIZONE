@@ -111,6 +111,7 @@ GENERATE_LADDER_SYSTEM:
 	.3D_FRAME:
 		dq 0 ; number of nodes (6 DOF per node)
 		dq 0 ; number of elements
+		dq 0 ; number of element types
 		dq 0 ; pointer to node coordinate array
 			; each row: (double) x,y,z
 		dq 0 ; pointer to element array 
@@ -126,7 +127,7 @@ GENERATE_LADDER_SYSTEM:
 	
 	; allocate space for 3D frame system
 	push rdi
-	mov rdi,48
+	mov rdi,64
 	call heap_alloc ; 3D frame system at {rax}
 	pop rdi
 	
@@ -164,41 +165,45 @@ GENERATE_LADDER_SYSTEM:
 	pop rsi
 	pop rdx
 
+	; store number of element types
+	mov r15,2
+	mov [rax+16],r15
+
 	; allocate space for node array
 	mov r15,rax
 	mov rdi,[rax+0]
 	imul rdi,rdi,24
 	call heap_alloc
-	mov [r15+16],rax
+	mov [r15+24],rax
 
 	; allocate space for element array
 	mov rdi,[r15+8]
 	imul rdi,24
 	call heap_alloc
-	mov [r15+24],rax
+	mov [r15+32],rax
 
 	; allocate space for element type matrix
 	mov rdi,144
 	call heap_alloc
-	mov [r15+32],rax
+	mov [r15+40],rax
 
 	; allocate space for stiffness matrix (K)
 	mov rdi,[r15+0]
 	imul rdi,rdi
 	imul rdi,rdi,288
 	call heap_alloc
-	mov [r15+40],rax
+	mov [r15+48],rax
 
 	; allocate space for known forcing matrix (F)
 	mov rdi,[r15+0]
 	imul rdi,48
 	call heap_alloc
-	mov [r15+48],rax
+	mov [r15+56],rax
 	mov rax,r15
 	pop rdi
 
 	; populate element type matrix
-	mov r15,[rax+32]
+	mov r15,[rax+40]
 	mov [r15+0],r12 ; E
 	mov [r15+72],r12
 	mov [r15+8],r13 ; G
@@ -246,7 +251,7 @@ GENERATE_LADDER_SYSTEM:
 
 	; populate the node coordinate array
 		; right rail
-	mov r15,[rax+16]
+	mov r15,[rax+24]
 	movq xmm2,r8 ; L
 	movq xmm0,r14
 	mulsd xmm0,[.convert_deg_to_radians]
@@ -260,7 +265,7 @@ GENERATE_LADDER_SYSTEM:
 	call cosine
 	mulsd xmm0,xmm2
 	movsd xmm4,xmm0 ; Lcos(theta)
-	
+
 	push rcx
 	movq xmm5,rcx
 	mulsd xmm5,[.half] ; +x dimension for side rails
@@ -355,7 +360,7 @@ GENERATE_LADDER_SYSTEM:
 	mov rcx,rdi
 	inc rcx
 	imul rcx,rdx
-	mov r15,[rax+24]
+	mov r15,[rax+32]
 	xor rdx,rdx
 	mov r8,1
 
@@ -433,28 +438,6 @@ GENERATE_LADDER_SYSTEM:
 	pop r9
 	pop r8
 	pop rcx
-
-%if 0
-.jmp:
-	mov rdi,SYS_STDOUT
-	mov rsi,[rax+16]
-	mov rdx,[rax+0]
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush
-	mov rsi,[rax+24]
-	mov rdx,[rax+8]
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_int_d
-	call print_array_int
-	call print_buffer_flush
-	mov rdi,[rax+0]
-	call exit
-%endif
 
 	ret
 
@@ -535,7 +518,7 @@ START:
 	mov [.undeformed_node_structure+0],rbx
 	mov rbx,[rax+8]	
 	mov [.undeformed_element_structure+8],rbx
-	mov rbx,[rax+16]	
+	mov rbx,[rax+24]	
 	mov [.undeformed_element_structure+16],rbx
 	mov [.undeformed_node_structure+8],rbx
 
@@ -548,7 +531,7 @@ START:
 	mov [.undeformed_element_structure+24],rax
 	pop rax
 
-	mov r9,[rax+24] ; r9 points to start of element node list
+	mov r9,[rax+32] ; r9 points to start of element node list
 	mov rcx,[rax+8] ; element counter
 
 .element_population_loop:
