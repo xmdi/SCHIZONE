@@ -2,6 +2,7 @@
 %define ASSEMBLE_FRAME_ELEMENTS
 
 ; dependencies
+%include "lib/math/vector/distance_3.asm"
 
 assemble_frame_elements:
 ; void assemble_frame_elements(struct* {rdi});
@@ -41,44 +42,169 @@ assemble_frame_elements:
 ;	[ 0 0 -C6 0 C10 0 0 0 C6 0 C9 0 ]
 ;	[ 0 C3 0 0 0 C8 0 -C3 0 0 0 C7 ]
 	
-; 	loop thru element types
-;		construct baseline elemental stiffness matrix per above
-;		loop thru elements
-;			if they match type
-;				transform elemental stiffness matrix
-;				populate global stiffness matrix
+;	loop thru elements
+;		generate local elemental stiffness matrix
+;		transform elemental stiffness matrix
+;		populate global stiffness matrix
+
+
 
 
 	mov rsi,[rdi+40] ; element type array
-
-	mov rcx,[rdi+16]
-	cmp rcx,0
-	jle .ret
-
-.element_type_loop:
-	;;;;;;; each row (double) E,G,A,Iy,Iz,J,Vx,Vy,Vz
-	movsd xmm0,[rsi+0]
-
 	
 
 	mov rdx,[rdi+8]
 	cmp rdx,0
 	jle .no_els
 
-.element_loop:
+	mov r8,[rdi+32]	; start of element array in {r8}
 
+.element_loop:
+	mov r9,[r8+0]	; nodeA
+	mov r10,[r8+8]	; nodeB
+	mov r11,[r8+16] ; element type
+	imul r9,r9,24
+	imul r10,r10,24
+	imul r11,r11,72
+	add r11,rsi
+
+	push rdi
+	push rsi
+	mov rsi,[rdi+24]
+	mov rdi,rsi
+	add rdi,r9
+	add rsi,r10
+	call distance_3
+	movsd xmm15,[.one]
+	divsd xmm15,xmm0 ; 1/L in {xmm15}
+	pop rsi
+	pop rdi	
+	movsd xmm14,xmm15
+	mulsd xmm14,xmm15 ; 1/L^2 in {xmm14}
+	movsd xmm13,xmm14 
+	mulsd xmm13,xmm15 ; 1/L^3 in {xmm13}
+
+	; C1
+	movsd xmm1,[r11+0]
+	mulsd xmm1,[r11+16]
+	mulsd xmm1,xmm15
+
+	; C2
+	movsd xmm2,[.twelve]
+	mulsd xmm2,[r11+0]
+	mulsd xmm2,[r11+32]
+	mulsd xmm2,xmm13
+
+	; C3
+	movsd xmm3,[.six]
+	mulsd xmm3,[r11+0]
+	mulsd xmm3,[r11+32]
+	mulsd xmm3,xmm14
+
+	; C4
+	movsd xmm4,[r11+8]
+	mulsd xmm4,[r11+40]
+	mulsd xmm4,xmm15
+
+	; C5
+	movsd xmm5,[.twelve]
+	mulsd xmm5,[r11+0]
+	mulsd xmm5,[r11+24]
+	mulsd xmm5,xmm13
+
+	; C6
+	movsd xmm6,[.six]
+	mulsd xmm6,[r11+0]
+	mulsd xmm6,[r11+24]
+	mulsd xmm6,xmm14
+
+	; C7
+	movsd xmm7,[.four]
+	mulsd xmm7,[r11+0]
+	mulsd xmm7,[r11+32]
+	mulsd xmm7,xmm15
+
+	; C8
+	movsd xmm8,[.two]
+	mulsd xmm8,[r11+0]
+	mulsd xmm8,[r11+32]
+	mulsd xmm8,xmm15
+
+	; C9
+	movsd xmm9,[.four]
+	mulsd xmm9,[r11+0]
+	mulsd xmm9,[r11+24]
+	mulsd xmm9,xmm15
+
+	; C10
+	movsd xmm10,[.two]
+	mulsd xmm10,[r11+0]
+	mulsd xmm10,[r11+24]
+	mulsd xmm10,xmm15
+
+	; TODO maybe init entire Kel to zeros
+
+	movq [.Kel+0],xmm1
+	movq [.Kel+624],xmm1
+	mulsd xmm1,[.neg]
+	movq [.Kel+48],xmm1
+	movq [.Kel+576],xmm1
+
+	movq [.Kel+104],xmm2
+	movq [.Kel+728],xmm2
+	mulsd xmm2,[.neg]
+	movq [.Kel+152],xmm2
+	movq [.Kel+680],xmm2
+
+	movq [.Kel+136],xmm3
+	movq [.Kel+184],xmm3
+	movq [.Kel+488],xmm3
+	movq [.Kel+1064],xmm3
+	mulsd xmm3,[.neg]
+	movq [.Kel+536],xmm3
+	movq [.Kel+712],xmm3
+	movq [.Kel+760],xmm3
+	movq [.Kel+1112],xmm3
+	
+
+;  K=	[ C1 0 0 0 0 0 -C1 0 0 0 0 0 ]
+;	[ 0 C2 0 0 0 C3 0 -C2 0 0 0 C3 ]
+;	[ 0 0 C5 0 -C6 0 0 0 -C5 0 -C6 0 ]
+;	[ 0 0 0 C4 0 0 0 0 0 -C4 0 0 ]
+;	[ 0 0 -C6 0 C9 0 0 0 C6 0 C10 0 ]
+;	[ 0 C3 0 0 0 C7 0 -C3 0 0 0 C7 ]
+;	[ -C1 0 0 0 0 0 C1 0 0 0 0 0 ]
+;	[ 0 -C2 0 0 0 -C3 0 C2 0 0 0 -C3 ]
+;	[ 0 0 -C5 0 C6 0 0 0 C5 0 C6 0 ]
+;	[ 0 0 0 -C4 0 0 0 0 0 C4 0 0 ]
+;	[ 0 0 -C6 0 C10 0 0 0 C6 0 C9 0 ]
+;	[ 0 C3 0 0 0 C8 0 -C3 0 0 0 C7 ]
+	
+
+	add r8,24
 	dec rdx
 	jnz .element_loop
 
 .no_els:
-	dec rcx
-	jnz .element_type_loop
+
+
 
 
 .ret:
 
-	ret			; return
-
+	ret		; return
+.neg:
+	dq -1.0
+.one:
+	dq 1.0
+.two:
+	dq 2.0
+.four:
+	dq 4.0
+.six:
+	dq 6.0
+.twelve:
+	dq 12.0
 .Kel:
 	times 1152 db 0	; initialize 12x12 matrix of 0.0
 
