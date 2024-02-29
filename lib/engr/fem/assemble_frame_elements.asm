@@ -3,6 +3,11 @@
 
 ; dependencies
 %include "lib/math/vector/distance_3.asm"
+%include "lib/math/vector/cross_product_3.asm"
+%include "lib/math/vector/normalize_3.asm"
+%include "lib/math/matrix/matrix_multiply.asm"
+%include "lib/math/matrix/matrix_transpose.asm"
+%include "lib/mem/memcopy.asm"
 
 assemble_frame_elements:
 ; void assemble_frame_elements(struct* {rdi});
@@ -47,19 +52,44 @@ assemble_frame_elements:
 ;		transform elemental stiffness matrix
 ;		populate global stiffness matrix
 
-
-
-
-	mov rsi,[rdi+40] ; element type array
-	
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+	push r11
+	push r13
+	push r14
+	push r15
+	sub rsp,224
+	movdqu [rsp+0],xmm0
+	movdqu [rsp+16],xmm1
+	movdqu [rsp+32],xmm2
+	movdqu [rsp+48],xmm3
+	movdqu [rsp+64],xmm4
+	movdqu [rsp+80],xmm5
+	movdqu [rsp+96],xmm6
+	movdqu [rsp+112],xmm7
+	movdqu [rsp+128],xmm8
+	movdqu [rsp+144],xmm9
+	movdqu [rsp+160],xmm10
+	movdqu [rsp+176],xmm13
+	movdqu [rsp+192],xmm14
+	movdqu [rsp+208],xmm15
+	push rdi
 
 	mov rdx,[rdi+8]
 	cmp rdx,0
-	jle .no_els
+	jle .ret
 
 	mov r8,[rdi+32]	; start of element array in {r8}
 
 .element_loop:
+	mov rdi,[rsp+0]
+	mov rsi,[rdi+40] ; element type array
+		
+	push rdx
 	mov r9,[r8+0]	; nodeA
 	mov r10,[r8+8]	; nodeB
 	mov r11,[r8+16] ; element type
@@ -68,13 +98,37 @@ assemble_frame_elements:
 	imul r11,r11,72
 	add r11,rsi
 
+	; compute L
 	push rdi
 	push rsi
 	mov rsi,[rdi+24]
 	mov rdi,rsi
 	add rdi,r9
 	add rsi,r10
+	; save element vector while we have it
+	movsd xmm0,[rsi+0]
+	subsd xmm0,[rdi+0]
+	movq [.element_unit_vector+0],xmm0
+	movsd xmm0,[rsi+8]
+	subsd xmm0,[rdi+8]
+	movq [.element_unit_vector+8],xmm0
+	movsd xmm0,[rsi+16]
+	subsd xmm0,[rdi+16]
+	movq [.element_unit_vector+16],xmm0
+
 	call distance_3
+
+	; unit vector
+	movsd xmm1,[.element_unit_vector+0]
+	divsd xmm1,xmm0
+	movq [.element_unit_vector+0],xmm1
+	movsd xmm1,[.element_unit_vector+8]
+	divsd xmm1,xmm0
+	movq [.element_unit_vector+8],xmm1
+	movsd xmm1,[.element_unit_vector+16]
+	divsd xmm1,xmm0
+	movq [.element_unit_vector+16],xmm1
+
 	movsd xmm15,[.one]
 	divsd xmm15,xmm0 ; 1/L in {xmm15}
 	pop rsi
@@ -200,18 +254,210 @@ assemble_frame_elements:
 	movq [.Kel+464],xmm10
 	movq [.Kel+992],xmm10
 
+	mov rdi,.Uz
+	mov rsi,.element_unit_vector
+	mov rdx,r11
+	add rdx,48
+	call cross_product_3
+	call normalize_3
 	
+	mov rdi,.Uy
+	mov rsi,.Uz
+	mov rdx,.element_unit_vector
+	call cross_product_3
+	call normalize_3
+
+	
+	; transformation matrix
+	; top left 3x3
+	mov rdi,.trans+0
+	mov rsi,.element_unit_vector
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+96
+	mov rsi,.Uy
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+192
+	mov rsi,.Uz
+	mov rdx,24
+	call memcopy		
+	; second 3x3
+	mov rdi,.trans+312
+	mov rsi,.element_unit_vector
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+408
+	mov rsi,.Uy
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+504
+	mov rsi,.Uz
+	mov rdx,24
+	call memcopy		
+	; third 3x3
+	mov rdi,.trans+624
+	mov rsi,.element_unit_vector
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+720
+	mov rsi,.Uy
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+816
+	mov rsi,.Uz
+	mov rdx,24
+	call memcopy		
+	; bot right 3x3
+	mov rdi,.trans+936
+	mov rsi,.element_unit_vector
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+1032
+	mov rsi,.Uy
+	mov rdx,24
+	call memcopy	
+	mov rdi,.trans+1128
+	mov rsi,.Uz
+	mov rdx,24
+	call memcopy		
+
+	; transformation matrix transpose
+	mov rdi,.trans_trans
+	mov rsi,.trans
+	mov rdx,12
+	mov rcx,12
+	call matrix_transpose
+
+	; transform local element matrix
+	push r8
+	mov rdi,.working
+	mov rsi,.trans_trans
+	mov rdx,.Kel
+	mov rcx,12
+	mov r8,12
+	mov r9,12 
+	call matrix_multiply
+	mov rdi,.Kel_trans
+	mov rsi,.working
+	mov rdx,.trans
+	call matrix_multiply
+	pop r8
+
+
+	; distribute local element matrix into global system
+	mov rdi,[rsp+8]
+	mov r13,[rdi]
+	mov r14,[rdi+48] ; {r14} is start of global stiffness matrix
+	imul r13,r13,48 ; {r13} is width of global stiffness system	
+
+	; nodeA-nodeA DOF relation	
+	mov r9,[r8+0]	; nodeA
+	mov r15,r13
+	add r15,8
+	imul r15,r15,6
+	imul r9,r15
+	mov rdi,r9
+	add rdi,r14
+	mov rsi,.Kel
+	mov rdx,48
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	
+	; nodeB-nodeB DOF relation	
+	mov r9,[r8+8]	; nodeB
+	mov r15,r13
+	add r15,8
+	imul r15,r15,6
+	imul r9,r15
+	mov rdi,r9
+	add rdi,r14
+	mov rsi,.Kel+528
+	mov rdx,48
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	
+	; nodeA-nodeB DOF relation	
+	mov r9,[r8+0]	; nodeA
+	mov r10,[r8+8]	; nodeB
+	imul r9,r13
+	imul r9,r9,6
+	imul r10,r10,48
+	add r9,r10
+	mov rdi,r9
+	add rdi,r14
+	mov rsi,.Kel+48
+	mov rdx,48
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	
+	; nodeB-nodeA DOF relation	
+	mov r9,[r8+8]	; nodeB
+	mov r10,[r8+0]	; nodeA
+	imul r9,r13
+	imul r9,r9,6
+	imul r10,r10,48
+	add r9,r10
+	mov rdi,r9
+	add rdi,r14
+	mov rsi,.Kel+480
+	mov rdx,48
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+
+	pop rdx
 
 	add r8,24
 	dec rdx
 	jnz .element_loop
 
-.no_els:
-
-
-
-
 .ret:
+	pop rdi
+	movdqu xmm0,[rsp+0]
+	movdqu xmm1,[rsp+16]
+	movdqu xmm2,[rsp+32]
+	movdqu xmm3,[rsp+48]
+	movdqu xmm4,[rsp+64]
+	movdqu xmm5,[rsp+80]
+	movdqu xmm6,[rsp+96]
+	movdqu xmm7,[rsp+112]
+	movdqu xmm8,[rsp+128]
+	movdqu xmm9,[rsp+144]
+	movdqu xmm10,[rsp+160]
+	movdqu xmm13,[rsp+176]
+	movdqu xmm14,[rsp+192]
+	movdqu xmm15,[rsp+208]
+	add rsp,224
+	pop r15
+	pop r14
+	pop r13
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
 
 	ret		; return
 .neg:
@@ -226,10 +472,29 @@ assemble_frame_elements:
 	dq 6.0
 .twelve:
 	dq 12.0
+
+.element_unit_vector: ; Ux
+	times 3 dq 0.0
+
+.Uy:
+	times 3 dq 0.0
+
+.Uz:
+	times 3 dq 0.0
+
 .Kel:
 	times 1152 db 0	; initialize 12x12 matrix of 0.0
 
+.trans:
+	times 1152 db 0	; initialize 12x12 matrix of 0.0
+
+.trans_trans:
+	times 1152 db 0	; initialize 12x12 matrix of 0.0
+
 .Kel_trans:
+	times 1152 db 0	; initialize 12x12 matrix of 0.0
+
+.working:
 	times 1152 db 0	; initialize 12x12 matrix of 0.0
 
 %endif

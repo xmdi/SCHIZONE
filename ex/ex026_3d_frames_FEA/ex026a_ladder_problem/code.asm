@@ -82,6 +82,8 @@ PROGRAM_HEADER:
 ;%include "lib/io/print_array_float.asm"
 ;%include "lib/io/print_array_int.asm"
 
+%include "lib/engr/fem/assemble_frame_elements.asm"
+; void assemble_frame_elements(struct* {rdi});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -433,6 +435,11 @@ GENERATE_LADDER_SYSTEM:
 
 	dec rcx
 	jnz .rung_loop
+
+	push rax
+	mov rdi,rax
+	call assemble_frame_elements
+	pop rax
 
 	pop r11
 	pop r9
