@@ -34,7 +34,7 @@ assemble_frame_elements:
 ;	[ 0 0 C5 0 -C6 0 0 0 -C5 0 -C6 0 ]
 ;	[ 0 0 0 C4 0 0 0 0 0 -C4 0 0 ]
 ;	[ 0 0 -C6 0 C9 0 0 0 C6 0 C10 0 ]
-;	[ 0 C3 0 0 0 C7 0 -C3 0 0 0 C7 ]
+;	[ 0 C3 0 0 0 C7 0 -C3 0 0 0 C8 ]
 ;	[ -C1 0 0 0 0 0 C1 0 0 0 0 0 ]
 ;	[ 0 -C2 0 0 0 -C3 0 C2 0 0 0 -C3 ]
 ;	[ 0 0 -C5 0 C6 0 0 0 C5 0 C6 0 ]
@@ -166,19 +166,40 @@ assemble_frame_elements:
 	movq [.Kel+760],xmm3
 	movq [.Kel+1112],xmm3
 	
+	movq [.Kel+312],xmm4
+	movq [.Kel+936],xmm4
+	mulsd xmm4,[.neg]
+	movq [.Kel+360],xmm4
+	movq [.Kel+888],xmm4
 
-;  K=	[ C1 0 0 0 0 0 -C1 0 0 0 0 0 ]
-;	[ 0 C2 0 0 0 C3 0 -C2 0 0 0 C3 ]
-;	[ 0 0 C5 0 -C6 0 0 0 -C5 0 -C6 0 ]
-;	[ 0 0 0 C4 0 0 0 0 0 -C4 0 0 ]
-;	[ 0 0 -C6 0 C9 0 0 0 C6 0 C10 0 ]
-;	[ 0 C3 0 0 0 C7 0 -C3 0 0 0 C7 ]
-;	[ -C1 0 0 0 0 0 C1 0 0 0 0 0 ]
-;	[ 0 -C2 0 0 0 -C3 0 C2 0 0 0 -C3 ]
-;	[ 0 0 -C5 0 C6 0 0 0 C5 0 C6 0 ]
-;	[ 0 0 0 -C4 0 0 0 0 0 C4 0 0 ]
-;	[ 0 0 -C6 0 C10 0 0 0 C6 0 C9 0 ]
-;	[ 0 C3 0 0 0 C8 0 -C3 0 0 0 C7 ]
+	movq [.Kel+208],xmm5
+	movq [.Kel+256],xmm5
+	mulsd xmm5,[.neg]
+	movq [.Kel+784],xmm5
+	movq [.Kel+832],xmm5
+
+	movq [.Kel+448],xmm6
+	movq [.Kel+800],xmm6
+	movq [.Kel+848],xmm6
+	movq [.Kel+1024],xmm6
+	mulsd xmm6,[.neg]
+	movq [.Kel+224],xmm6
+	movq [.Kel+272],xmm6
+	movq [.Kel+400],xmm6
+	movq [.Kel+976],xmm6
+	
+	movq [.Kel+520],xmm7
+	movq [.Kel+1144],xmm7
+
+	movq [.Kel+568],xmm8
+	movq [.Kel+1096],xmm8
+
+	movq [.Kel+416],xmm9
+	movq [.Kel+1040],xmm9
+
+	movq [.Kel+464],xmm10
+	movq [.Kel+992],xmm10
+
 	
 
 	add r8,24
