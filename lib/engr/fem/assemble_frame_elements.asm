@@ -228,10 +228,10 @@ assemble_frame_elements:
 	movq [.Kel+888],xmm4
 
 	movq [.Kel+208],xmm5
-	movq [.Kel+256],xmm5
-	mulsd xmm5,[.neg]
-	movq [.Kel+784],xmm5
 	movq [.Kel+832],xmm5
+	mulsd xmm5,[.neg]
+	movq [.Kel+256],xmm5
+	movq [.Kel+784],xmm5
 
 	movq [.Kel+448],xmm6
 	movq [.Kel+800],xmm6
