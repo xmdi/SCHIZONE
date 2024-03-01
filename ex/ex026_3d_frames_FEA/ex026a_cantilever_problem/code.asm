@@ -132,7 +132,7 @@ START:
 	; generate stiffness matrix without boundary conditions
 	mov rdi,.3D_FRAME
 	call assemble_frame_elements
-	
+%if 0	
 	; apply boundary conditions for node 0 (DOFs 0-5)
 	movsd xmm0,[.zero]
 	movsd xmm1,[.one]
@@ -162,7 +162,7 @@ START:
 	movq [rdi+456],xmm1
 	movq [rdi+608],xmm1
 	movq [rdi+760],xmm1
-
+%endif
 ;	mov rdi,[.3D_FRAME+0]
 ;	imul rdi,rdi,48
 ;	call heap_alloc

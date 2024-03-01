@@ -360,7 +360,7 @@ assemble_frame_elements:
 	imul r9,r15
 	mov rdi,r9
 	add rdi,r14
-	mov rsi,.Kel
+	mov rsi,.Kel_trans
 	movdqu xmm0,[rdi]
 	addpd xmm0,[rsi]
 	movdqu [rdi],xmm0
@@ -434,7 +434,7 @@ assemble_frame_elements:
 	imul r9,r15
 	mov rdi,r9
 	add rdi,r14
-	mov rsi,.Kel+624
+	mov rsi,.Kel_trans+624
 	;mov rdx,48
 	movdqu xmm0,[rdi]
 	addpd xmm0,[rsi]
@@ -516,7 +516,7 @@ assemble_frame_elements:
 	add r9,r10
 	mov rdi,r9
 	add rdi,r14
-	mov rsi,.Kel+48
+	mov rsi,.Kel_trans+48
 	;mov rdx,48
 	movdqu xmm0,[rdi]
 	addpd xmm0,[rsi]
@@ -598,7 +598,7 @@ assemble_frame_elements:
 	add r9,r10
 	mov rdi,r9
 	add rdi,r14
-	mov rsi,.Kel+576
+	mov rsi,.Kel_trans+576
 ;	mov rdx,48
 	movdqu xmm0,[rdi]
 	addpd xmm0,[rsi]
