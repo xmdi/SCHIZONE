@@ -59,6 +59,9 @@ PROGRAM_HEADER:
 %include "lib/mem/heap_alloc.asm"
 ; void* {rax} heap_alloc(long {rdi});
 
+%include "lib/mem/heap_free.asm"
+; void heap_free(void* {rdi});
+
 %include "lib/math/expressions/trig/sine.asm"
 ; double {xmm0} sine(double {xmm0}, double {xmm1});
 
@@ -76,7 +79,7 @@ PROGRAM_HEADER:
 ; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
-%include "lib/math/lin_alg/lu_solve.asm"
+%include "lib/math/lin_alg/plu_solve.asm"
 ; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
 ;						uint* {r8});
 
@@ -132,7 +135,7 @@ START:
 	; generate stiffness matrix without boundary conditions
 	mov rdi,.3D_FRAME
 	call assemble_frame_elements
-%if 0	
+%if 1	
 	; apply boundary conditions for node 0 (DOFs 0-5)
 	movsd xmm0,[.zero]
 	movsd xmm1,[.one]
@@ -163,11 +166,10 @@ START:
 	movq [rdi+608],xmm1
 	movq [rdi+760],xmm1
 %endif
-;	mov rdi,[.3D_FRAME+0]
-;	imul rdi,rdi,48
-;	call heap_alloc
-;	mov r8,rax	; pivoting vector
-;	mov rax,[rsp+0]
+	mov rdi,[.3D_FRAME+0]
+	imul rdi,rdi,48
+	call heap_alloc
+	mov r8,rax	; pivoting vector
 
 	; solve the linear system
 	mov rdi,[.3D_FRAME+64]
@@ -176,44 +178,50 @@ START:
 	mov rcx,[.3D_FRAME+0]
 	imul rcx,rcx,6
 	; pivot vector space at {r8}
-;	call lu_solve
+	call plu_solve
 
+	mov rdi,r8
+	call heap_free
+
+%if 0
 	mov rdi,SYS_STDOUT
-;	mov rsi,[.3D_FRAME+64]
-	mov rsi,[.3D_FRAME+48]
+	mov rsi,[.3D_FRAME+64]
+;	mov rsi,[.3D_FRAME+48]
 	mov rdx,[.3D_FRAME+0]
-	imul rdx,rdx,6
-	mov rcx,rdx
-;	mov rcx,6
+;	imul rdx,rdx,6
+;	mov rcx,rdx
+	mov rcx,6
 	xor r8,r8
 	mov r9,print_float
-	mov r10,5
+	mov r10,8
 	call print_array_float
 	call print_buffer_flush
 	call exit
-
+%endif
 
 	; populate the rendering items
-	mov rbx,[rax+0]	
+	mov rbx,[.3D_FRAME+0]	
 	mov [.undeformed_element_structure+0],rbx
+	mov [.deformed_element_structure+0],rbx
 	mov [.undeformed_node_structure+0],rbx
-	mov rbx,[rax+8]	
+	mov [.deformed_node_structure+0],rbx
+	mov rbx,[.3D_FRAME+8]	
 	mov [.undeformed_element_structure+8],rbx
-	mov rbx,[rax+24]	
+	mov [.deformed_element_structure+8],rbx
+	mov rbx,[.3D_FRAME+24]	
 	mov [.undeformed_element_structure+16],rbx
 	mov [.undeformed_node_structure+8],rbx
 
 
-	push rax
-	mov rdi,[rax+8]
+	mov rdi,[.3D_FRAME+8]
 	shl rdi,4
 	call heap_alloc
 	mov r8,rax ; r8 points to start of new edge list
 	mov [.undeformed_element_structure+24],rax
-	pop rax
+	mov [.deformed_element_structure+24],rax
 
-	mov r9,[rax+32] ; r9 points to start of element node list
-	mov rcx,[rax+8] ; element counter
+	mov r9,[.3D_FRAME+32] ; r9 points to start of element node list
+	mov rcx,[.3D_FRAME+8] ; element counter
 
 .element_population_loop:
 	mov r10,[r9]
@@ -226,7 +234,36 @@ START:
 
 	dec rcx
 	jnz .element_population_loop
+	
+	; populate deformed node positions for render
+	mov rdi,[.3D_FRAME+0]
+	imul rdi,rdi,24
+	call heap_alloc
+	mov r8,rax ; r8 points to start of new node array
+	mov [.deformed_element_structure+16],rax
+	mov [.deformed_node_structure+8],rax
+	mov rsi,[.3D_FRAME+24]
+	mov rdx,[.3D_FRAME+64]
 
+	mov rdi,[.3D_FRAME+0]
+.deformed_node_position_loop:
+	movq xmm0,[rsi+0]
+	addsd xmm0,[rdx+0]
+	movq [r8+0],xmm0
+	movq xmm0,[rsi+8]
+	addsd xmm0,[rdx+8]
+	movq [r8+8],xmm0
+	movq xmm0,[rsi+16]
+	addsd xmm0,[rdx+16]
+	movq [r8+16],xmm0
+
+
+	add r8,24
+	add rsi,24
+	add rdx,48
+	dec rdi
+	jnz .deformed_node_position_loop	
+	
 	mov rdi,.perspective_structure
 	mov rsi,.undeformed_element_geometry
 	mov rdx,DRAW_CROSS_CURSOR
@@ -263,7 +300,7 @@ START:
 	dq 1,2,0
 .element_type_matrix:
 	dq 1000000.0 ; E
-	dq 1000000.0 ; G
+	dq 100000.0 ; G
 	dq 1.0 ; A
 	dq 0.0833333 ; Iy
 	dq 0.0833333 ; Iz
@@ -275,37 +312,24 @@ START:
 	times 18*18 dq 0.0
 .forcing_matrix:
 	times 13 dq 0.0
-	dq -100.0
+	dq -50000.0
 	times 4 dq 0.0
 .unknown_matrix:
 	times 18 dq 0.0
 
 align 16
 
-.cross_sectional_width:
-	dq 1.0
-.cross_sectional_height:
-	dq 2.0
-.E:
-	dq 1000000.0
-.G:
-	dq 1000000.0
-.ladder_angle_deg:
-	dq 30.0
-
-align 16
-
 .perspective_structure:
-	dq 0.00 ; lookFrom_x	
-	dq 4.00 ; lookFrom_y	
+	dq 0.50 ; lookFrom_x	
+	dq 0.00 ; lookFrom_y	
 	dq 5.00 ; lookFrom_z	
-	dq 0.00 ; lookAt_x	
-	dq 4.00 ; lookAt_y	
+	dq 0.50 ; lookAt_x	
+	dq 0.00 ; lookAt_y	
 	dq 0.00 ; lookAt_z	
 	dq 0.0 ; upDir_x	
 	dq 1.0 ; upDir_y	
 	dq 0.0 ; upDir_z	
-	dq 0.1	; zoom
+	dq 0.7	; zoom
 
 align 16
 
@@ -318,7 +342,7 @@ align 16
 align 16
 
 .undeformed_nodes_geometry:
-	dq .deformed_element_structure ; next geometry in linked list
+	dq .deformed_element_geometry ; next geometry in linked list
 	dq .undeformed_node_structure ; address of point/edge/face structure
 	dq 0x1FF00FF00 ; color (0xARGB)
 	db 0b00000001 ; type of structure to render
