@@ -80,10 +80,7 @@ PROGRAM_HEADER:
 ; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
 ;						uint* {r8});
 
-
-;%include "lib/mem/heap_eval.asm"
 %include "lib/io/print_array_float.asm"
-;%include "lib/io/print_array_int.asm"
 
 %include "lib/engr/fem/assemble_frame_elements.asm"
 ; void assemble_frame_elements(struct* {rdi});
@@ -93,462 +90,6 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; NOTE: NEED TO RUN THIS AS SUDO
-
-GENERATE_LADDER_SYSTEM:
-	; returns a pointer to 3D frame FEA structure in {rax} for a ladder with
-	;	a 200-lb person standing on the top rung (top rung will always
-	;	have an even number of elements >= {rsi}).
-
-	; {rdi} = # rungs
-	; {rsi} = # elements/rung
-	; {rdx} = # side rail elements between rungs
-	; {rcx} = (double) length of rungs
-	; {r8}  = (double) length of each side rails
-	; {r9}  = (double) rung diameter
-	; {r10} = (double) side rail cross-sectional width
-	; {r11} = (double) side rail cross-sectional height
-	; {r12} = {double} elastic modulus E
-	; {r13} = {double} shear modulus G
-	; {r14} = {double} ladder angle against wall (degrees)
-
-	; 3D frame FEA system has this form:
-	%if 0
-	.3D_FRAME:
-		dq 0 ; number of nodes (6 DOF per node)
-		dq 0 ; number of elements
-		dq 0 ; number of element types
-		dq 0 ; pointer to node coordinate array
-			; each row: (double) x,y,z
-		dq 0 ; pointer to element array 
-			; each row: (long) nodeID_A,nodeID_B,elementType
-		dq 0 ; pointer to element type matrix
-			; each row (double) E,G,A,Iy,Iz,J,Vx,Vy,Vz
-		dq 0 ; pointer to stiffness matrix (K)
-		dq 0 ; pointer to known forcing array (F)
-		dq 0 ; pointer to unknown DoF array (U)
-	%endif
-
-	; initialize heap if not already
-	call heap_init
-	
-	; allocate space for 3D frame system
-	push rdi
-	mov rdi,72
-	call heap_alloc ; 3D frame system at {rax}
-	pop rdi
-	
-	; compute number of nodes
-	mov r15,rdi
-	push rsi
-	dec rsi
-	imul r15,rsi
-	test rsi,1
-	jnz .even_rung_elements
-	inc r15
-.even_rung_elements:
-	push rdi
-	push rdx
-	inc rdi
-	imul rdi,rdx
-	inc rdi
-	shl rdi,1
-	add r15,rdi
-	pop rdx
-	pop rdi	
-	pop rsi
-	mov [rax+0],r15
-	
-	; compute number of elements
-	push rdi
-	push rsi
-	push rdx
-	imul rsi,rdi
-	inc rdi
-	imul rdi,rdx
-	shl rdi,1
-	add rdi,rsi
-	mov [rax+8],rdi
-	pop rsi
-	pop rdx
-
-	; store number of element types
-	mov r15,2
-	mov [rax+16],r15
-
-	; allocate space for node array
-	mov r15,rax
-	mov rdi,[rax+0]
-	imul rdi,rdi,24
-	call heap_alloc
-	mov [r15+24],rax
-
-	; allocate space for element array
-	mov rdi,[r15+8]
-	imul rdi,24
-	call heap_alloc
-	mov [r15+32],rax
-
-	; allocate space for element type matrix
-	mov rdi,144
-	call heap_alloc
-	mov [r15+40],rax
-
-	; allocate space for stiffness matrix (K)
-	mov rdi,[r15+0]
-	imul rdi,rdi
-	imul rdi,rdi,288
-	call heap_alloc
-	mov [r15+48],rax
-
-	; allocate space for known forcing matrix (F)
-	mov rdi,[r15+0]
-	imul rdi,48
-	call heap_alloc
-	mov [r15+56],rax
-
-	; allocate space for unknown DoF matrix (U)
-	call heap_alloc
-	mov [r15+64],rax
-	mov rax,r15
-	pop rdi
-
-	; populate element type matrix
-	mov r15,[rax+40]
-	mov [r15+0],r12 ; E
-	mov [r15+72],r12
-	mov [r15+8],r13 ; G
-	mov [r15+80],r13
-	mov r12,[.zero]
-	mov r13,[.one]
-	mov [r15+48],r12 ; Vx
-	mov [r15+56],r13 ; Vy
-	mov [r15+64],r12 ; Vz
-	mov [r15+120],r12 ; Vx
-	mov [r15+128],r13 ; Vy
-	mov [r15+136],r12 ; Vz
-	movq xmm0,r9
-	mulsd xmm0,[.half]
-	mulsd xmm0,xmm0
-	mulsd xmm0,[.pi]
-	movq [r15+16],xmm0 ; A
-	movq xmm0,r9
-	mulsd xmm0,xmm0
-	mulsd xmm0,xmm0
-	mulsd xmm0,[.sixtyfourth]
-	mulsd xmm0,[.pi]
-	movq [r15+24],xmm0 ; Iy
-	movq [r15+32],xmm0 ; Iz
-	addsd xmm0,xmm0
-	movq [r15+40],xmm0 ; J
-	movq xmm0,r10
-	movq xmm1,r11
-	mulsd xmm0,xmm1
-	movq [r15+88],xmm0 ; A
-	mulsd xmm0,xmm1
-	mulsd xmm0,xmm1
-	mulsd xmm0,[.twelfth]
-	movq [r15+96],xmm0 ; Iy
-	movq xmm0,r10
-	movsd xmm2,xmm0
-	mulsd xmm0,xmm2
-	mulsd xmm0,xmm2
-	mulsd xmm0,xmm1
-	mulsd xmm0,[.twelfth]
-	movq [r15+104],xmm0 ; Iz 
-	movq xmm1,[r15+96]
-	addsd xmm0,xmm1
-	movq [r15+112],xmm0 ; J
-
-	; populate the node coordinate array
-		; right rail
-	mov r15,[rax+24]
-	movq xmm2,r8 ; L
-	movq xmm0,r14
-	mulsd xmm0,[.convert_deg_to_radians]
-	movq xmm1,[.tolerance]
-	call sine
-	mulsd xmm0,xmm2
-	movsd xmm3,xmm0 ; Lsin(theta)
-	movq xmm0,r14
-	mulsd xmm0,[.convert_deg_to_radians]
-	movq xmm1,[.tolerance]
-	call cosine
-	mulsd xmm0,xmm2
-	movsd xmm4,xmm0 ; Lcos(theta)
-
-	push rcx
-	movq xmm5,rcx
-	mulsd xmm5,[.half] ; +x dimension for side rails
-	movsd xmm6,xmm5
-	mulsd xmm6,[.neg_one] ; -x dimension for side rails
-	mov rcx,rdi
-	inc rcx
-	imul rcx,rdx
-	cvtsi2sd xmm2,rcx ; # nodes on rail (-1)
-	movsd xmm7,xmm4
-	divsd xmm7,xmm2	; Lcos(theta)/N
-	
-	movsd xmm8,xmm3
-	divsd xmm8,xmm2 ; Lsin(theta)/N
-
-	pxor xmm9,xmm9
-
-.loop_right_rail_nodes:
-	; Z starts at zero (xmm9) an increases by xmm8
-	; Y starts at Lcos(theta) (xmm4) and decreases by xmm7
-	; X is xmm5 for the positive rail and xmm6 for the negative rail
-
-	movq [r15+0],xmm5
-	movq [r15+8],xmm4
-	movq [r15+16],xmm9
-	movq [r15+24],xmm6
-	movq [r15+32],xmm4
-	movq [r15+40],xmm9
-
-	addsd xmm9,xmm8
-	subsd xmm4,xmm7
-	add r15,48
-
-	dec rcx
-	jns .loop_right_rail_nodes	
-
-	; rung nodes
-	mov rcx,rdi
-
-	movq xmm2,r8 ; L
-	movq xmm0,r14
-	mulsd xmm0,[.convert_deg_to_radians]
-	movq xmm1,[.tolerance]
-	call sine
-	mulsd xmm0,xmm2
-	movsd xmm3,xmm0 ; Lsin(theta)
-	movq xmm0,r14
-	mulsd xmm0,[.convert_deg_to_radians]
-	movq xmm1,[.tolerance]
-	call cosine
-	mulsd xmm0,xmm2
-	movsd xmm4,xmm0 ; Lcos(theta)
-
-	inc rcx
-	cvtsi2sd xmm2,rcx ; # segments
-	movsd xmm7,xmm4
-	divsd xmm7,xmm2	; Lcos(theta)/N
-	
-	movsd xmm8,xmm3
-	divsd xmm8,xmm2 ; Lsin(theta)/N
-
-	pxor xmm9,xmm9 
-	pxor xmm0,xmm0 ; temporary x value, TODO: change with more elements per rung
-
-	dec rcx
-	addsd xmm9,xmm8
-	subsd xmm4,xmm7
-	
-.loop_rungs:
-
-	; eventually add logic to handle ~=2 elements per rung	
-
-.loop_rung_elements: ; unused for now
-
-	movq [r15+0],xmm0
-	movq [r15+8],xmm4
-	movq [r15+16],xmm9
-
-	addsd xmm9,xmm8
-	subsd xmm4,xmm7
-	add r15,24
-
-	dec rcx
-	jnz .loop_rungs	
-
-	pop rcx
-
-	push rcx
-	push rdx
-	push r8
-
-	mov rcx,rdi
-	inc rcx
-	imul rcx,rdx
-	mov r15,[rax+32]
-	xor rdx,rdx
-	mov r8,1
-
-.right_rail_elements:
-	
-	mov [r15+0],rdx
-	add rdx,2
-	mov [r15+8],rdx
-	mov [r15+16],r8 ; element type for side rails
-	add r15,24
-	
-	dec rcx
-	jnz .right_rail_elements
-
-	mov rcx,rdi
-	inc rcx
-	mov rdx,[rsp+8]
-	imul rcx,rdx
-	mov rdx,1
-
-.left_rail_elements:
-	
-	mov [r15+0],rdx
-	add rdx,2
-	mov [r15+8],rdx
-	mov [r15+16],r8 ; element type for side rails
-	add r15,24
-	
-	dec rcx
-	jnz .left_rail_elements
-
-	inc rdx
-	mov r10,rdx ; r10 is first rung "middle" element
-
-	pop r8
-	pop rdx
-	pop rcx
-
-	; now we do elements along rungs from top to bottom
-
-	push rcx
-	push r8
-	push r9
-	push r11
-
-	; r10 is first rung "middle" element	
-	mov rcx,rdi ; rung count
-	mov r8,rdx 
-	shl r8,1 ; r8 tracks starting right right node #
-	mov r9,r8 ; r9 tracks distance between rung start nodes (right)
-	dec r9
-	xor r11,r11 ; rung element type
-
-	; update this later to support >2 els/rung (TODO)
-
-.rung_loop:
-	
-	mov [r15+0],r8
-	mov [r15+8],r10
-	mov [r15+16],r11 ; element type for rungs
-
-	mov [r15+24],r10
-	inc r8
-	mov [r15+32],r8
-	mov [r15+40],r11 ; element type for rungs
-
-	inc r10
-	add r8,r9
-	add r15,48
-
-	dec rcx
-	jnz .rung_loop
-
-	; generate stiffness matrix without boundary conditions
-	push rax
-	push rdi
-	mov rdi,rax
-	call assemble_frame_elements
-	pop rdi
-	pop rax
-
-	; impose boundary conditions
-	mov rcx,rdi
-	inc rcx
-	imul rcx,rdx
-	imul rcx,rcx,12 ; need to zero 12 DOFs starting at DOF {rcx}
-
-	mov r8,[rax+0]
-	imul r8,r8,6	; # DOFs
-	mov r9,[rax+48] ; K 
-	mov r11,r8
-	shl r11,3	; width of K matrix
-	mov r12,r11
-	imul r12,rcx
-	add r9,r12	; start of row for first DOF to set
-	
-	mov r13,12
-	movsd xmm0,[.one]
-	xor r15,r15
-	
-	push rdi
-	push rsi
-	push rdx
-	mov rdx,r11
-
-.set_dofs_loop:
-
-	; set column loop
-	mov r14,r8	
-	mov rdi,rcx
-	shl rdi,3
-	add rdi,[rax+48]
-.set_dofs_column:
-	mov [rdi],r15
-	add rdi,r11
-	dec r14
-	jnz .set_dofs_column
-
-	mov rdi,r9
-	xor sil,sil
-	call memset
-
-	mov rsi,rcx
-	shl rsi,3
-	add rdi,rsi
-	movq [rdi],xmm0
-
-	add r9,r11
-	inc rcx
-	dec r13
-	jnz .set_dofs_loop
-
-	pop rdx
-	pop rsi
-	pop rdi
-
-	; impose force
-	mov rcx,rdi
-	inc rcx
-	imul rcx,rdx
-	shl rcx,1
-	inc rcx
-	imul rcx,rcx,12 
-	inc rcx ; Y-force to set at DOF {rcx}
-	shl rcx,3
-
-	mov r9,[rax+56] ; F 
-	add r9,rcx	; address of DOF to set
-	movsd xmm0,[.weight]
-	movq [r9],xmm0
-
-	pop r11
-	pop r9
-	pop r8
-	pop rcx
-
-	ret
-
-.neg_one:
-	dq -1.0
-.zero:
-	dq 0.0
-.half:
-	dq 0.5
-.sixtyfourth:
-	dq 0.015625
-.one:
-	dq 1.0
-.pi:
-	dq 3.14159265359
-.weight:
-	dq -20000.0
-.twelfth:
-	dq 0.08333333333
-.convert_deg_to_radians:
-	dq 0.01745329251
-.tolerance:
-	dq 0.000001
 
 DRAW_CROSS_CURSOR:
 ;	inputs:
@@ -587,44 +128,62 @@ DRAW_CROSS_CURSOR:
 START:
 	
 	call heap_init
-	
-	; generate ladder system (nodes and elements)
-	mov rdi,[.number_rungs]
-	mov rsi,[.number_elements_per_rung]
-	mov rdx,[.number_side_rail_elements_between_rungs]
-	mov rcx,[.rung_length]
-	mov r8,[.side_rail_length]
-	mov r9,[.rung_diameter]
-	mov r10,[.side_rail_cross_sectional_width]
-	mov r11,[.side_rail_cross_sectional_height]
-	mov r12,[.E]
-	mov r13,[.G]
-	mov r14,[.ladder_angle_deg]
-	call GENERATE_LADDER_SYSTEM
 
-	push rax
-	mov rdi,[rax+0]
-	imul rdi,rdi,48
-	call heap_alloc
-	mov r8,rax	; pivoting vector
-	mov rax,[rsp+0]
+	; generate stiffness matrix without boundary conditions
+	mov rdi,.3D_FRAME
+	call assemble_frame_elements
+	
+	; apply boundary conditions for node 0 (DOFs 0-5)
+	movsd xmm0,[.zero]
+	movsd xmm1,[.one]
+	mov rdi,[.3D_FRAME+48]
+	; first 6 columns of stiffness matrix to zero
+	xor rcx,rcx
+	mov r8,6
+.bc_col_loop:
+	mov r9,18
+	mov rsi,rdi	
+.bc_row_loop:
+	movq [rsi],xmm0
+	add rsi,144
+	dec r9
+	jnz .bc_row_loop
+	add rdi,8	
+	dec r8
+	jnz .bc_col_loop
+
+	mov rdi,[.3D_FRAME+48]
+	xor sil,sil
+	mov rdx,6*18*8	; first 6 rows of stiffness matrix to zero
+	call memset
+	movq [rdi],xmm1 ; diagonal 1.0 in the first 6 rows/columns
+	movq [rdi+152],xmm1
+	movq [rdi+304],xmm1
+	movq [rdi+456],xmm1
+	movq [rdi+608],xmm1
+	movq [rdi+760],xmm1
+
+;	mov rdi,[.3D_FRAME+0]
+;	imul rdi,rdi,48
+;	call heap_alloc
+;	mov r8,rax	; pivoting vector
+;	mov rax,[rsp+0]
 
 	; solve the linear system
-	mov rdi,[rax+64]
-	mov rsi,[rax+48]
-	mov rdx,[rax+56]
-	mov rcx,[rax+0]
+	mov rdi,[.3D_FRAME+64]
+	mov rsi,[.3D_FRAME+48]
+	mov rdx,[.3D_FRAME+56]
+	mov rcx,[.3D_FRAME+0]
 	imul rcx,rcx,6
 	; pivot vector space at {r8}
 	call lu_solve
-	pop rax	
 
 	mov rdi,SYS_STDOUT
-	mov rsi,[rax+56]
-	;mov rsi,[rax+48]
-	mov rdx,[rax+0]
-	imul rdx,rdx,6
-	;mov rcx,rdx
+	mov rsi,[.3D_FRAME+64]
+;	mov rsi,[.3D_FRAME+48]
+	mov rdx,[.3D_FRAME+0]
+;	imul rdx,rdx,6
+;	mov rcx,rdx
 	mov rcx,6
 	xor r8,r8
 	mov r9,print_float
@@ -677,24 +236,55 @@ START:
 	call framebuffer_3d_render_loop
 	jmp .loop
 
+.3D_FRAME: ; 3D frame FE system
+		dq 3 ; number of nodes (6 DOF per node)
+		dq 2 ; number of elements
+		dq 1 ; number of element types
+		dq .node_array ; pointer to node coordinate array
+			; each row: (double) x,y,z
+		dq .element_array ; pointer to element array 
+			; each row: (long) nodeID_A,nodeID_B,elementType
+		dq .element_type_matrix ; pointer to element type matrix
+			; each row (double) E,G,A,Iy,Iz,J,Vx,Vy,Vz
+		dq .stiffness_matrix ; pointer to stiffness matrix (K)
+		dq .forcing_matrix ; pointer to known forcing array (F)
+		dq .unknown_matrix ; pointer to unknown DoF array (U)
+
+.zero:
+	dq 0.0
+.one:
+	dq 1.0
+.node_array:
+	dq 0.0,0.0,0.0 ; x, y, z
+	dq 0.5,0.0,0.0
+	dq 1.0,0.0,0.0
+.element_array:
+	dq 0,1,0  ; node A, node B, element type
+	dq 1,2,0
+.element_type_matrix:
+	dq 1000000.0 ; E
+	dq 1000000.0 ; G
+	dq 1.0 ; A
+	dq 0.0833333 ; Iy
+	dq 0.0833333 ; Iz
+	dq 0.1666667 ; J
+	dq 0.0 ; Vx
+	dq 1.0 ; Vy
+	dq 0.0 ; Vz
+.stiffness_matrix:
+	times 18*18 dq 0.0
+.forcing_matrix:
+	times 13 dq 0.0
+	dq -100.0
+	times 4 dq 0.0
+.unknown_matrix:
+	times 18 dq 0.0
 
 align 16
 
-.number_rungs:
-	dq 8
-.number_elements_per_rung:
-	dq 2
-.number_side_rail_elements_between_rungs:
-	dq 2
-.rung_length:
-	dq 2.0
-.side_rail_length:
-	dq 10.0
-.rung_diameter:
+.cross_sectional_width:
 	dq 1.0
-.side_rail_cross_sectional_width:
-	dq 1.0
-.side_rail_cross_sectional_height:
+.cross_sectional_height:
 	dq 2.0
 .E:
 	dq 1000000.0
@@ -728,7 +318,7 @@ align 16
 align 16
 
 .undeformed_nodes_geometry:
-	dq 0 ; next geometry in linked list
+	dq .deformed_element_structure ; next geometry in linked list
 	dq .undeformed_node_structure ; address of point/edge/face structure
 	dq 0x1FF00FF00 ; color (0xARGB)
 	db 0b00000001 ; type of structure to render
@@ -747,6 +337,38 @@ align 16
 	dq 0 ; number of points (N)
 	dq 0 ; starting address of point array (3N elements)
 	dq 1 ; point render type (1=O,2=X,3=[],4=tri)
+	dq 15 ; characteristic size of each point
+
+align 16
+
+.deformed_element_geometry:
+	dq .deformed_nodes_geometry ; next geometry in linked list
+	dq .deformed_element_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (0xARGB)
+	db 0b00000010 ; type of structure to render
+
+align 16
+
+.deformed_nodes_geometry:
+	dq 0 ; next geometry in linked list
+	dq .deformed_node_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (0xARGB)
+	db 0b00000001 ; type of structure to render
+
+align 16
+
+.deformed_element_structure:
+	dq 0 ; number of points (N)
+	dq 0 ; number of edges (M)
+	dq 0 ; starting address of point array (3N elements)
+	dq 0 ; starting address of edge array (2M elements)
+
+align 16
+
+.deformed_node_structure:
+	dq 0 ; number of points (N)
+	dq 0 ; starting address of point array (3N elements)
+	dq 2 ; point render type (1=O,2=X,3=[],4=tri)
 	dq 15 ; characteristic size of each point
 
 

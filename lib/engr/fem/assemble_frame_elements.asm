@@ -351,7 +351,7 @@ assemble_frame_elements:
 	mov r13,[rdi]
 	mov r14,[rdi+48] ; {r14} is start of global stiffness matrix
 	imul r13,r13,48 ; {r13} is width of global stiffness system	
-
+	
 	; nodeA-nodeA DOF relation	
 	mov r9,[r8+0]	; nodeA
 	mov r15,r13
@@ -378,7 +378,7 @@ assemble_frame_elements:
 	add rdi,r13
 	add rsi,96
 	call memcopy
-
+	
 	; nodeB-nodeB DOF relation	
 	mov r9,[r8+8]	; nodeB
 	mov r15,r13
@@ -387,7 +387,7 @@ assemble_frame_elements:
 	imul r9,r15
 	mov rdi,r9
 	add rdi,r14
-	mov rsi,.Kel+528
+	mov rsi,.Kel+624
 	mov rdx,48
 	call memcopy
 	add rdi,r13
@@ -443,7 +443,7 @@ assemble_frame_elements:
 	add r9,r10
 	mov rdi,r9
 	add rdi,r14
-	mov rsi,.Kel+480
+	mov rsi,.Kel+576
 	mov rdx,48
 	call memcopy
 	add rdi,r13
@@ -461,7 +461,7 @@ assemble_frame_elements:
 	add rdi,r13
 	add rsi,96
 	call memcopy
-
+	
 	pop rdx
 
 	add r8,24
