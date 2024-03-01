@@ -361,23 +361,70 @@ assemble_frame_elements:
 	mov rdi,r9
 	add rdi,r14
 	mov rsi,.Kel
-	mov rdx,48
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
 	
 	; nodeB-nodeB DOF relation	
 	mov r9,[r8+8]	; nodeB
@@ -388,23 +435,77 @@ assemble_frame_elements:
 	mov rdi,r9
 	add rdi,r14
 	mov rsi,.Kel+624
-	mov rdx,48
-	call memcopy
+	;mov rdx,48
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	
 	; nodeA-nodeB DOF relation	
 	mov r9,[r8+0]	; nodeA
@@ -416,23 +517,77 @@ assemble_frame_elements:
 	mov rdi,r9
 	add rdi,r14
 	mov rsi,.Kel+48
-	mov rdx,48
-	call memcopy
+	;mov rdx,48
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy	
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	
 	; nodeB-nodeA DOF relation	
 	mov r9,[r8+8]	; nodeB
@@ -444,23 +599,77 @@ assemble_frame_elements:
 	mov rdi,r9
 	add rdi,r14
 	mov rsi,.Kel+576
-	mov rdx,48
-	call memcopy
+;	mov rdx,48
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	add rdi,r13
 	add rsi,96
-	call memcopy
+	movdqu xmm0,[rdi]
+	addpd xmm0,[rsi]
+	movdqu [rdi],xmm0
+	movdqu xmm0,[rdi+16]
+	addpd xmm0,[rsi+16]
+	movdqu [rdi+16],xmm0
+	movdqu xmm0,[rdi+32]
+	addpd xmm0,[rsi+32]
+	movdqu [rdi+32],xmm0
+	
 	
 	pop rdx
 
@@ -518,6 +727,8 @@ assemble_frame_elements:
 
 .Uz:
 	times 3 dq 0.0
+
+align 16
 
 .Kel:
 	times 1152 db 0	; initialize 12x12 matrix of 0.0

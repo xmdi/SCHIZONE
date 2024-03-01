@@ -176,15 +176,15 @@ START:
 	mov rcx,[.3D_FRAME+0]
 	imul rcx,rcx,6
 	; pivot vector space at {r8}
-	call lu_solve
+;	call lu_solve
 
 	mov rdi,SYS_STDOUT
-	mov rsi,[.3D_FRAME+64]
-;	mov rsi,[.3D_FRAME+48]
+;	mov rsi,[.3D_FRAME+64]
+	mov rsi,[.3D_FRAME+48]
 	mov rdx,[.3D_FRAME+0]
-;	imul rdx,rdx,6
-;	mov rcx,rdx
-	mov rcx,6
+	imul rdx,rdx,6
+	mov rcx,rdx
+;	mov rcx,6
 	xor r8,r8
 	mov r9,print_float
 	mov r10,5
