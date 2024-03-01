@@ -53,6 +53,9 @@ PROGRAM_HEADER:
 %include "lib/mem/heap_init.asm"
 ; void heap_init(void);
 
+%include "lib/mem/memset.asm"
+; void memset(void* {rdi}, char {sil}, ulong {rdx});
+
 %include "lib/mem/heap_alloc.asm"
 ; void* {rax} heap_alloc(long {rdi});
 
@@ -73,13 +76,13 @@ PROGRAM_HEADER:
 ; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
-%include "lib/math/lin_alg/plu_solve.asm"
+%include "lib/math/lin_alg/lu_solve.asm"
 ; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
 ;						uint* {r8});
 
 
 ;%include "lib/mem/heap_eval.asm"
-;%include "lib/io/print_array_float.asm"
+%include "lib/io/print_array_float.asm"
 ;%include "lib/io/print_array_int.asm"
 
 %include "lib/engr/fem/assemble_frame_elements.asm"
@@ -122,6 +125,7 @@ GENERATE_LADDER_SYSTEM:
 			; each row (double) E,G,A,Iy,Iz,J,Vx,Vy,Vz
 		dq 0 ; pointer to stiffness matrix (K)
 		dq 0 ; pointer to known forcing array (F)
+		dq 0 ; pointer to unknown DoF array (U)
 	%endif
 
 	; initialize heap if not already
@@ -129,7 +133,7 @@ GENERATE_LADDER_SYSTEM:
 	
 	; allocate space for 3D frame system
 	push rdi
-	mov rdi,64
+	mov rdi,72
 	call heap_alloc ; 3D frame system at {rax}
 	pop rdi
 	
@@ -201,6 +205,10 @@ GENERATE_LADDER_SYSTEM:
 	imul rdi,48
 	call heap_alloc
 	mov [r15+56],rax
+
+	; allocate space for unknown DoF matrix (U)
+	call heap_alloc
+	mov [r15+64],rax
 	mov rax,r15
 	pop rdi
 
@@ -436,10 +444,83 @@ GENERATE_LADDER_SYSTEM:
 	dec rcx
 	jnz .rung_loop
 
+	; generate stiffness matrix without boundary conditions
 	push rax
+	push rdi
 	mov rdi,rax
 	call assemble_frame_elements
+	pop rdi
 	pop rax
+
+	; impose boundary conditions
+	mov rcx,rdi
+	inc rcx
+	imul rcx,rdx
+	imul rcx,rcx,12 ; need to zero 12 DOFs starting at DOF {rcx}
+
+	mov r8,[rax+0]
+	imul r8,r8,6	; # DOFs
+	mov r9,[rax+48] ; K 
+	mov r11,r8
+	shl r11,3	; width of K matrix
+	mov r12,r11
+	imul r12,rcx
+	add r9,r12	; start of row for first DOF to set
+	
+	mov r13,12
+	movsd xmm0,[.one]
+	xor r15,r15
+	
+	push rdi
+	push rsi
+	push rdx
+	mov rdx,r11
+
+.set_dofs_loop:
+
+	; set column loop
+	mov r14,r8	
+	mov rdi,rcx
+	shl rdi,3
+	add rdi,[rax+48]
+.set_dofs_column:
+	mov [rdi],r15
+	add rdi,r11
+	dec r14
+	jnz .set_dofs_column
+
+	mov rdi,r9
+	xor sil,sil
+	call memset
+
+	mov rsi,rcx
+	shl rsi,3
+	add rdi,rsi
+	movq [rdi],xmm0
+
+	add r9,r11
+	inc rcx
+	dec r13
+	jnz .set_dofs_loop
+
+	pop rdx
+	pop rsi
+	pop rdi
+
+	; impose force
+	mov rcx,rdi
+	inc rcx
+	imul rcx,rdx
+	shl rcx,1
+	inc rcx
+	imul rcx,rcx,12 
+	inc rcx ; Y-force to set at DOF {rcx}
+	shl rcx,3
+
+	mov r9,[rax+56] ; F 
+	add r9,rcx	; address of DOF to set
+	movsd xmm0,[.weight]
+	movq [r9],xmm0
 
 	pop r11
 	pop r9
@@ -460,6 +541,8 @@ GENERATE_LADDER_SYSTEM:
 	dq 1.0
 .pi:
 	dq 3.14159265359
+.weight:
+	dq -20000.0
 .twelfth:
 	dq 0.08333333333
 .convert_deg_to_radians:
@@ -518,6 +601,38 @@ START:
 	mov r13,[.G]
 	mov r14,[.ladder_angle_deg]
 	call GENERATE_LADDER_SYSTEM
+
+	push rax
+	mov rdi,[rax+0]
+	imul rdi,rdi,48
+	call heap_alloc
+	mov r8,rax	; pivoting vector
+	mov rax,[rsp+0]
+
+	; solve the linear system
+	mov rdi,[rax+64]
+	mov rsi,[rax+48]
+	mov rdx,[rax+56]
+	mov rcx,[rax+0]
+	imul rcx,rcx,6
+	; pivot vector space at {r8}
+	call lu_solve
+	pop rax	
+
+	mov rdi,SYS_STDOUT
+	mov rsi,[rax+56]
+	;mov rsi,[rax+48]
+	mov rdx,[rax+0]
+	imul rdx,rdx,6
+	;mov rcx,rdx
+	mov rcx,6
+	xor r8,r8
+	mov r9,print_float
+	mov r10,5
+	call print_array_float
+	call print_buffer_flush
+	call exit
+
 
 	; populate the rendering items
 	mov rbx,[rax+0]	

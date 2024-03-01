@@ -27,6 +27,7 @@ assemble_frame_elements:
 			; each row (double) E,G,A,Iy,Iz,J,Vx,Vy,Vz
 		dq 0 ; pointer to stiffness matrix (K)
 		dq 0 ; pointer to known forcing array (F)
+		dq 0 ; pointer to unknown DoF array (U)
 %endif
 
 ; 12x12 frame element stiffness matrix has the form:
@@ -368,7 +369,16 @@ assemble_frame_elements:
 	add rdi,r13
 	add rsi,96
 	call memcopy
-	
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+
 	; nodeB-nodeB DOF relation	
 	mov r9,[r8+8]	; nodeB
 	mov r15,r13
@@ -379,6 +389,15 @@ assemble_frame_elements:
 	add rdi,r14
 	mov rsi,.Kel+528
 	mov rdx,48
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
 	call memcopy
 	add rdi,r13
 	add rsi,96
@@ -404,6 +423,15 @@ assemble_frame_elements:
 	call memcopy
 	add rdi,r13
 	add rsi,96
+	call memcopy	
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
 	call memcopy
 	
 	; nodeB-nodeA DOF relation	
@@ -417,6 +445,15 @@ assemble_frame_elements:
 	add rdi,r14
 	mov rsi,.Kel+480
 	mov rdx,48
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
+	call memcopy
+	add rdi,r13
+	add rsi,96
 	call memcopy
 	add rdi,r13
 	add rsi,96
