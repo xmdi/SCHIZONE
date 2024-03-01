@@ -83,8 +83,6 @@ PROGRAM_HEADER:
 ; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
 ;						uint* {r8});
 
-%include "lib/io/print_array_float.asm"
-
 %include "lib/engr/fem/assemble_frame_elements.asm"
 ; void assemble_frame_elements(struct* {rdi});
 
@@ -135,7 +133,7 @@ START:
 	; generate stiffness matrix without boundary conditions
 	mov rdi,.3D_FRAME
 	call assemble_frame_elements
-%if 1	
+
 	; apply boundary conditions for node 0 (DOFs 0-5)
 	movsd xmm0,[.zero]
 	movsd xmm1,[.one]
@@ -165,7 +163,7 @@ START:
 	movq [rdi+456],xmm1
 	movq [rdi+608],xmm1
 	movq [rdi+760],xmm1
-%endif
+
 	mov rdi,[.3D_FRAME+0]
 	imul rdi,rdi,48
 	call heap_alloc
@@ -183,22 +181,6 @@ START:
 	mov rdi,r8
 	call heap_free
 
-%if 0
-	mov rdi,SYS_STDOUT
-	mov rsi,[.3D_FRAME+64]
-;	mov rsi,[.3D_FRAME+48]
-	mov rdx,[.3D_FRAME+0]
-;	imul rdx,rdx,6
-;	mov rcx,rdx
-	mov rcx,6
-	xor r8,r8
-	mov r9,print_float
-	mov r10,8
-	call print_array_float
-	call print_buffer_flush
-	call exit
-%endif
-
 	; populate the rendering items
 	mov rbx,[.3D_FRAME+0]	
 	mov [.undeformed_element_structure+0],rbx
@@ -211,7 +193,6 @@ START:
 	mov rbx,[.3D_FRAME+24]	
 	mov [.undeformed_element_structure+16],rbx
 	mov [.undeformed_node_structure+8],rbx
-
 
 	mov rdi,[.3D_FRAME+8]
 	shl rdi,4
@@ -256,8 +237,6 @@ START:
 	movq xmm0,[rsi+16]
 	addsd xmm0,[rdx+16]
 	movq [r8+16],xmm0
-
-
 	add r8,24
 	add rsi,24
 	add rdx,48

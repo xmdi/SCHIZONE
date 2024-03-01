@@ -53,6 +53,9 @@ PROGRAM_HEADER:
 %include "lib/mem/heap_init.asm"
 ; void heap_init(void);
 
+%include "lib/mem/heap_free.asm"
+; void heap_free(void* {rdi});
+
 %include "lib/mem/memset.asm"
 ; void memset(void* {rdi}, char {sil}, ulong {rdx});
 
@@ -76,14 +79,9 @@ PROGRAM_HEADER:
 ; void set_line(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
-%include "lib/math/lin_alg/lu_solve.asm"
+%include "lib/math/lin_alg/plu_solve.asm"
 ; void plu_solve(double* {rdi}, double* {rsi}, double* {rdx}, uint {rcx}, 
 ;						uint* {r8});
-
-
-;%include "lib/mem/heap_eval.asm"
-%include "lib/io/print_array_float.asm"
-;%include "lib/io/print_array_int.asm"
 
 %include "lib/engr/fem/assemble_frame_elements.asm"
 ; void assemble_frame_elements(struct* {rdi});
@@ -100,7 +98,7 @@ GENERATE_LADDER_SYSTEM:
 	;	have an even number of elements >= {rsi}).
 
 	; {rdi} = # rungs
-	; {rsi} = # elements/rung
+	; {rsi} = # elements/rung ; TODO: currently only supports 2
 	; {rdx} = # side rail elements between rungs
 	; {rcx} = (double) length of rungs
 	; {r8}  = (double) length of each side rails
@@ -503,6 +501,49 @@ GENERATE_LADDER_SYSTEM:
 	dec r13
 	jnz .set_dofs_loop
 
+	; zero Z deflection for nodes 0 and 1 (DOF #2 and #8)
+	mov rcx,2*8
+	add rcx,[rax+48]
+	mov r13,r8
+
+.loop_Z_dofs_1:
+	mov [rcx],r15
+	add rcx,r11
+	dec r13
+	jnz .loop_Z_dofs_1
+
+
+	mov rcx,8*8
+	add rcx,[rax+48]
+	mov r13,r8
+.loop_Z_dofs_2:
+	mov [rcx],r15
+	add rcx,r11
+	dec r13
+	jnz .loop_Z_dofs_2
+
+	mov rdx,r11
+	mov rdi,r11
+	imul rdi,rdi,2
+	add rdi,[rax+48]
+	xor sil,sil
+	call memset
+	mov rdi,r11
+	imul rdi,rdi,8
+	add rdi,[rax+48]
+	call memset
+
+	mov rdi,2
+	imul rdi,r11
+	add rdi,[rax+48]
+	add rdi,2*8
+	movq [rdi],xmm0
+	mov rdi,8
+	imul rdi,r11
+	add rdi,[rax+48]
+	add rdi,8*8
+	movq [rdi],xmm0
+
 	pop rdx
 	pop rsi
 	pop rdi
@@ -512,11 +553,10 @@ GENERATE_LADDER_SYSTEM:
 	inc rcx
 	imul rcx,rdx
 	shl rcx,1
-	inc rcx
-	imul rcx,rcx,12 
+	add rcx,2
+	imul rcx,rcx,6 
 	inc rcx ; Y-force to set at DOF {rcx}
 	shl rcx,3
-
 	mov r9,[rax+56] ; F 
 	add r9,rcx	; address of DOF to set
 	movsd xmm0,[.weight]
@@ -542,7 +582,7 @@ GENERATE_LADDER_SYSTEM:
 .pi:
 	dq 3.14159265359
 .weight:
-	dq -20000.0
+	dq -200.0
 .twelfth:
 	dq 0.08333333333
 .convert_deg_to_radians:
@@ -616,34 +656,25 @@ START:
 	mov rcx,[rax+0]
 	imul rcx,rcx,6
 	; pivot vector space at {r8}
-	call lu_solve
+	call plu_solve
+
+	mov rdi,r8
+	call heap_free
+
 	pop rax	
-
-	mov rdi,SYS_STDOUT
-	mov rsi,[rax+56]
-	;mov rsi,[rax+48]
-	mov rdx,[rax+0]
-	imul rdx,rdx,6
-	;mov rcx,rdx
-	mov rcx,6
-	xor r8,r8
-	mov r9,print_float
-	mov r10,5
-	call print_array_float
-	call print_buffer_flush
-	call exit
-
 
 	; populate the rendering items
 	mov rbx,[rax+0]	
 	mov [.undeformed_element_structure+0],rbx
+	mov [.deformed_element_structure+0],rbx
 	mov [.undeformed_node_structure+0],rbx
+	mov [.deformed_node_structure+0],rbx
 	mov rbx,[rax+8]	
 	mov [.undeformed_element_structure+8],rbx
+	mov [.deformed_element_structure+8],rbx
 	mov rbx,[rax+24]	
 	mov [.undeformed_element_structure+16],rbx
 	mov [.undeformed_node_structure+8],rbx
-
 
 	push rax
 	mov rdi,[rax+8]
@@ -651,6 +682,7 @@ START:
 	call heap_alloc
 	mov r8,rax ; r8 points to start of new edge list
 	mov [.undeformed_element_structure+24],rax
+	mov [.deformed_element_structure+24],rax
 	pop rax
 
 	mov r9,[rax+32] ; r9 points to start of element node list
@@ -667,6 +699,46 @@ START:
 
 	dec rcx
 	jnz .element_population_loop
+	
+	; populate deformed node positions for render
+	push rax
+	mov rdi,[rax+0]
+	imul rdi,rdi,24
+	call heap_alloc
+	mov r8,rax ; r8 points to start of new node array
+	mov [.deformed_element_structure+16],rax
+	mov [.deformed_node_structure+8],rax
+	pop rax
+	mov rsi,[rax+24]
+	mov rdx,[rax+64]
+
+	movsd xmm2,[.displacement_scale_factor]
+	mov rdi,[rax+0]
+.deformed_node_position_loop:
+
+	movq xmm0,[rsi+0]
+	movq xmm1,[rdx+0]
+	mulsd xmm1,xmm2
+	addsd xmm0,xmm1
+	movq [r8+0],xmm0
+	
+	movq xmm0,[rsi+8]	
+	movq xmm1,[rdx+8]
+	mulsd xmm1,xmm2
+	addsd xmm0,xmm1
+	movq [r8+8],xmm0
+
+	movq xmm0,[rsi+16]
+	movq xmm1,[rdx+16]
+	mulsd xmm1,xmm2
+	addsd xmm0,xmm1
+	movq [r8+16],xmm0
+
+	add r8,24
+	add rsi,24
+	add rdx,48
+	dec rdi
+	jnz .deformed_node_position_loop
 
 	mov rdi,.perspective_structure
 	mov rsi,.undeformed_element_geometry
@@ -679,7 +751,8 @@ START:
 
 
 align 16
-
+.displacement_scale_factor:
+	dq 500.0
 .number_rungs:
 	dq 8
 .number_elements_per_rung:
@@ -728,7 +801,7 @@ align 16
 align 16
 
 .undeformed_nodes_geometry:
-	dq 0 ; next geometry in linked list
+	dq .deformed_element_geometry ; next geometry in linked list
 	dq .undeformed_node_structure ; address of point/edge/face structure
 	dq 0x1FF00FF00 ; color (0xARGB)
 	db 0b00000001 ; type of structure to render
@@ -747,6 +820,38 @@ align 16
 	dq 0 ; number of points (N)
 	dq 0 ; starting address of point array (3N elements)
 	dq 1 ; point render type (1=O,2=X,3=[],4=tri)
+	dq 15 ; characteristic size of each point
+
+align 16
+
+.deformed_element_geometry:
+	dq .deformed_nodes_geometry ; next geometry in linked list
+	dq .deformed_element_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (0xARGB)
+	db 0b00000010 ; type of structure to render
+
+align 16
+
+.deformed_nodes_geometry:
+	dq 0 ; next geometry in linked list
+	dq .deformed_node_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (0xARGB)
+	db 0b00000001 ; type of structure to render
+
+align 16
+
+.deformed_element_structure:
+	dq 0 ; number of points (N)
+	dq 0 ; number of edges (M)
+	dq 0 ; starting address of point array (3N elements)
+	dq 0 ; starting address of edge array (2M elements)
+
+align 16
+
+.deformed_node_structure:
+	dq 0 ; number of points (N)
+	dq 0 ; starting address of point array (3N elements)
+	dq 2 ; point render type (1=O,2=X,3=[],4=tri)
 	dq 15 ; characteristic size of each point
 
 
