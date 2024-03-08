@@ -1,8 +1,8 @@
-%ifndef TRAPEZOIDAL_METHOD
-%define TRAPEZOIDAL_METHOD
+%ifndef QUADRATURE
+%define QUADRATURE
 
-trapezoidal_method:
-; double {xmm0} trapezoidal_method();
+quadrature:
+; double {xmm0} quadrature();
 
 
 	ret		; return
