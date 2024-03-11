@@ -56,8 +56,38 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-FUNC:
-
+FUNC:	; input and output in {xmm0}
+	; y=-4x^3+3x^2+x/2-51
+	
+	sub rsp,32
+	movdqu [rsp+0],xmm1
+	movdqu [rsp+16],xmm2
+	
+	movsd xmm1,xmm0
+	mulsd xmm1,xmm1
+	movsd xmm2,xmm1
+	mulsd xmm2,xmm0
+	mulsd xmm2,[.neg_four]
+	mulsd xmm1,[.three]
+	mulsd xmm0,[.half]
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2
+	subsd xmm0,[.fifty_one]
+	
+	movdqu xmm1,[rsp+0]
+	movdqu xmm2,[rsp+16]
+	add rsp,32
+	
+	ret
+	
+.neg_four:
+	dq -4.0
+.three:
+	dq 3.0
+.half:
+	dq 0.5
+.fifty_one:
+	dq 51.0
 
 START:
 
