@@ -53,6 +53,7 @@ PROGRAM_HEADER:
 ; double {xmm0} trapezoidal_method(void* {rdi}, double {xmm0}, double {xmm1}, double {xmm2});
 
 %include "lib/io/print_float.asm"
+; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
