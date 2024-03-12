@@ -49,6 +49,11 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/math/integration/trapezoidal_method.asm"
+; double {xmm0} trapezoidal_method(void* {rdi}, double {xmm0}, double {xmm1}, double {xmm2});
+
+%include "lib/io/print_float.asm"
+
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
@@ -91,8 +96,27 @@ FUNC:	; input and output in {xmm0}
 
 START:
 
+	movsd xmm0,[.lower_bound]
+	movsd xmm1,[.upper_bound]
+	movsd xmm2,[.step_size]
+	mov rdi,FUNC
+	call trapezoidal_method
+
+	mov rdi,SYS_STDOUT
+	mov rsi,6
+	call print_float
+
+	call print_buffer_flush
+
 	xor dil,dil
 	call exit
+
+.lower_bound:
+	dq -5.0
+.upper_bound:
+	dq 5.0
+.step_size:
+	dq 0.01
 
 END:
 
