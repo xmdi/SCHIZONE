@@ -97,15 +97,46 @@ FUNC:	; input and output in {xmm0}
 
 START:
 
+	mov rdi,SYS_STDOUT
+	mov rsi,.integral
+	mov rdx,30
+	call print_chars
+
+	mov r8,.step_sizes
+
+.loop:
+	mov rdi,SYS_STDOUT
+	mov rsi,.grammar
+	mov rdx,11
+	call print_chars
+
+	movsd xmm0,[r8]
+	mov rsi,5
+	call print_float
+
+	mov rdi,SYS_STDOUT
+	mov rsi,.grammar+10
+	mov rdx,17
+	call print_chars
+
+	movsd xmm2,xmm0
 	movsd xmm0,[.lower_bound]
 	movsd xmm1,[.upper_bound]
-	movsd xmm2,[.step_size]
 	mov rdi,FUNC
 	call trapezoidal_method
 
 	mov rdi,SYS_STDOUT
 	mov rsi,6
 	call print_float
+	
+	mov rdi,SYS_STDOUT
+	mov rsi,.grammar+27
+	mov rdx,1
+	call print_chars
+
+	add r8,8
+	cmp r8,.grammar
+	jb .loop
 
 	call print_buffer_flush
 
@@ -116,9 +147,22 @@ START:
 	dq -5.0
 .upper_bound:
 	dq 5.0
-.step_size:
+.step_sizes:
+	dq 10.0
+	dq 5.0
+	dq 4.0
+	dq 3.0
+	dq 2.0
+	dq 1.0
+	dq 0.5
+	dq 0.1
+	dq 0.05
 	dq 0.01
 
+.grammar:
+	db `Step size: Estimated Area: \n`
+.integral:
+	db `function: y=-4x^3+3x^2+x/2-51\n`
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
