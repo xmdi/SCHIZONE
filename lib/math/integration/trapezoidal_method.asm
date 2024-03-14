@@ -2,8 +2,9 @@
 %define TRAPEZOIDAL_METHOD
 
 trapezoidal_method:
-; double {xmm0} trapezoidal_method(void* {rdi}, double {xmm0}, double {xmm1}, double {xmm2});
-; Estimates the definite integral of the function at address {rdi} between {xmm0}<=x<={xmm1} using a trapezoidal method and step size in {xmm2}. Area returned in {xmm0}.
+; double {xmm0} trapezoidal_method(void* {rdi}, ulong {rsi}, double {xmm0}, double {xmm1});
+; Estimates the definite integral of the function at address {rdi} between {xmm0}<=x<={xmm1} 
+; using a trapezoidal method with {rsi} steps. Area returned in {xmm0}.
 ; Function of interest should take independent variable and returns dependend variable in {xmm0}.
 
 	sub rsp,64
@@ -11,6 +12,12 @@ trapezoidal_method:
 	movdqu [rsp+16],xmm4
 	movdqu [rsp+32],xmm5
 	movdqu [rsp+48],xmm6
+
+	cvtsi2sd xmm3,rsi
+	movsd xmm2,xmm1
+	subsd xmm2,xmm0
+	divsd xmm2,xmm3
+	; step size in {xmm2}
 
 	movsd xmm3,xmm0		; x val track
 	pxor xmm4,xmm4		; track sum
