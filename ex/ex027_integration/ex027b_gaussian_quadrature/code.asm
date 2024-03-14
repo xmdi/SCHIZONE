@@ -49,6 +49,15 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/math/integration/quadrature.asm"
+; double {xmm0} trapezoidal_method(void* {rdi}, double {xmm0}, double {xmm1}, double {xmm2});
+
+%include "lib/io/print_float.asm"
+; void print_float(int {rdi}, double {xmm0}, int {rsi});
+
+%include "lib/io/print_int_d.asm"
+; void print_int_d(int {rdi}, long {rsi});
+
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
@@ -56,14 +65,90 @@ PROGRAM_HEADER:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-FUNC:
-
+FUNC:	; input and output in {xmm0}
+	; y=-4x^3+3x^2+x/2-51
+	
+	sub rsp,32
+	movdqu [rsp+0],xmm1
+	movdqu [rsp+16],xmm2
+	
+	movsd xmm1,xmm0
+	mulsd xmm1,xmm1
+	movsd xmm2,xmm1
+	mulsd xmm2,xmm0
+	mulsd xmm2,[.neg_four]
+	mulsd xmm1,[.three]
+	mulsd xmm0,[.half]
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2
+	subsd xmm0,[.fifty_one]
+	
+	movdqu xmm1,[rsp+0]
+	movdqu xmm2,[rsp+16]
+	add rsp,32
+	
+	ret
+	
+.neg_four:
+	dq -4.0
+.three:
+	dq 3.0
+.half:
+	dq 0.5
+.fifty_one:
+	dq 51.0
 
 START:
+
+	mov rdi,SYS_STDOUT
+	mov rsi,.integral
+	mov rdx,30
+	call print_chars
+
+	mov r8,1
+
+.loop:
+	mov rdi,SYS_STDOUT
+	mov rsi,.grammar
+	mov rdx,7
+	call print_chars
+	mov rsi,r8
+	call print_int_d
+	mov rsi,.grammar+6
+	mov rdx,17
+	call print_chars
+
+	movsd xmm0,[.lower_bound]
+	movsd xmm1,[.upper_bound]
+	mov rsi,r8
+	mov rdi,FUNC
+	call quadrature
+
+	mov rdi,SYS_STDOUT
+	mov rsi,6
+	call print_float
+	mov rsi,.grammar+23
+	mov rdx,1
+	call print_chars
+
+	inc r8	
+	cmp r8,5			; GAUSSING QUADRATURE ORDERS TO RUN
+	jbe .loop
+
+	call print_buffer_flush
 
 	xor dil,dil
 	call exit
 
+.lower_bound:
+	dq -5.0
+.upper_bound:
+	dq 5.0
+
+.grammar:
+	db `Order: Estimated Area: \n`
+.integral:
+	db `function: y=-4x^3+3x^2+x/2-51\n`
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,

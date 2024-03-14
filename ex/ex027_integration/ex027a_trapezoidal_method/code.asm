@@ -55,6 +55,9 @@ PROGRAM_HEADER:
 %include "lib/io/print_float.asm"
 ; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
+%include "lib/io/print_int_d.asm"
+; void print_int_d(int {rdi}, long {rsi});
+
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
@@ -102,41 +105,35 @@ START:
 	mov rdx,30
 	call print_chars
 
-	mov r8,.step_sizes
+	mov r8,1
 
 .loop:
 	mov rdi,SYS_STDOUT
 	mov rsi,.grammar
-	mov rdx,11
+	mov rdx,7
 	call print_chars
-
-	movsd xmm0,[r8]
-	mov rsi,5
-	call print_float
-
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar+10
+	mov rsi,r8
+	call print_int_d
+	mov rsi,.grammar+6
 	mov rdx,17
 	call print_chars
 
-	movsd xmm2,xmm0
 	movsd xmm0,[.lower_bound]
 	movsd xmm1,[.upper_bound]
+	mov rsi,r8
 	mov rdi,FUNC
 	call trapezoidal_method
 
 	mov rdi,SYS_STDOUT
 	mov rsi,6
 	call print_float
-	
-	mov rdi,SYS_STDOUT
-	mov rsi,.grammar+27
+	mov rsi,.grammar+23
 	mov rdx,1
 	call print_chars
 
-	add r8,8
-	cmp r8,.grammar
-	jb .loop
+	inc r8	
+	cmp r8,25			; NUMBER OF STEP CASES TO RUN
+	jbe .loop
 
 	call print_buffer_flush
 
@@ -147,20 +144,9 @@ START:
 	dq -5.0
 .upper_bound:
 	dq 5.0
-.step_sizes:
-	dq 10.0
-	dq 5.0
-	dq 4.0
-	dq 3.0
-	dq 2.0
-	dq 1.0
-	dq 0.5
-	dq 0.1
-	dq 0.05
-	dq 0.01
 
 .grammar:
-	db `Step size: Estimated Area: \n`
+	db `Steps: Estimated Area: \n`
 .integral:
 	db `function: y=-4x^3+3x^2+x/2-51\n`
 END:
