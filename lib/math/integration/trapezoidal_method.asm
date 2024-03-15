@@ -56,6 +56,5 @@ trapezoidal_method:
 
 .half:
 	dq 0.50
-.newline:
-	db `\n`
+
 %endif

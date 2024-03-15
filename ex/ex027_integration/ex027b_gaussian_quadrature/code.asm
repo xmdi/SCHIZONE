@@ -50,7 +50,7 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/math/integration/quadrature.asm"
-; double {xmm0} trapezoidal_method(void* {rdi}, double {xmm0}, double {xmm1}, double {xmm2});
+; double {xmm0} quadrature(void* {rdi}, double {xmm0}, double {xmm1}, double {xmm2});
 
 %include "lib/io/print_float.asm"
 ; void print_float(int {rdi}, double {xmm0}, int {rsi});
@@ -132,7 +132,7 @@ START:
 	call print_chars
 
 	inc r8	
-	cmp r8,5			; GAUSSING QUADRATURE ORDERS TO RUN
+	cmp r8,5			; GAUSSIAN QUADRATURE ORDERS TO RUN
 	jbe .loop
 
 	call print_buffer_flush
