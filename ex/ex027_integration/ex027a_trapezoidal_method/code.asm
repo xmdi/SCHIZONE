@@ -132,7 +132,7 @@ START:
 	call print_chars
 
 	inc r8	
-	cmp r8,1000			; NUMBER OF STEP CASES TO RUN
+	cmp r8,25			; NUMBER OF STEP CASES TO RUN
 	jbe .loop
 
 	call print_buffer_flush
