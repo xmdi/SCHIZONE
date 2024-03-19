@@ -6,7 +6,7 @@
 %include "lib/math/expressions/log/log_10.asm"
 
 print_float:
-; void print_float(int {rdi}, double {xmm0}, int {rsi});
+; void print_float(int {rdi}, double {xmm0}, long {rsi});
 ; 	Prints {rsi} significant digits of {xmm0} to file descriptor {rdi}.
 
 	sub rsp,112
@@ -67,14 +67,14 @@ print_float:
 .medium_number:	; otherwise, our float sig figs will surround the decimal
 		; (aka, UVW.XYZ)
 	mov r8,rsi
-	sub r8,rax	; {r8}=digits to right of the decimal
+	sub r8,rax		; {r8}=digits to right of the decimal
 .medium_number_shift_loop:
 	mulsd xmm0,xmm3		; {xmm0}*=10.0f until out of decimals
 	dec r8
 	jnz .medium_number_shift_loop
 .medium_number_shifted:
 	mov r8,rsi
-	sub r8,rax	; {r8}=digits to right of the decimal
+	sub r8,rax		; {r8}=digits to right of the decimal
 	mov rbp,rsp
 	cvtsd2si rax,xmm0	; round to nearest integer!
 	mov rcx,10		; integer radix for decimal in {rcx}
@@ -102,6 +102,7 @@ print_float:
 .small_number:
 	mov r8,rax	; {r8}=zeros between decimal and number
 	neg r8
+	add rsi,r8
 .small_number_shift_loop:
 	mulsd xmm0,xmm3		; {xmm0}*=10.0f until out of decimals
 	dec rsi
@@ -110,6 +111,7 @@ print_float:
 	mov rbp,rsp
 	cvtsd2si rax,xmm0	; round to nearest integer!
 	mov rcx,10		; integer radix for decimal in {rcx}
+
 .small_number_print_loop:
 	xor rdx,rdx
 	div rcx
