@@ -17,3 +17,7 @@ chmod +x bin/recycle
 nasm -f bin -I lib/sys/`uname` -o bin/nyancat ex/ex004_printing_strings/ex004d_nyancat/code.asm
 chmod +x bin/nyancat
 
+# generate "countdown" aka a countdown timer
+nasm -f bin -I lib/sys/`uname` -o bin/countdown lab/lab004_countdown_timer/code.asm
+chmod +x bin/countdown
+
