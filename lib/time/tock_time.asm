@@ -22,15 +22,15 @@ tock_time:
 
 	; syscall for current timestamp
 	mov rax,SYS_GETTIMEOFDAY
-	mov rdi,tick_time.tick
+	mov rdi,tock_time.tock
 	xor rsi,rsi
 	syscall
 
 	; get current timestamp_microseconds in {rax}
-	mov rax,[tick_time.tick]
+	mov rax,[tock_time.tock]
 	mov rdi,1000000
 	imul rax,rdi
-	add rax,[tick_time.tick+8]
+	add rax,[tock_time.tock+8]
 
 	; compute the elapsed microseconds
 	sub rax,rdx
@@ -41,5 +41,9 @@ tock_time:
 	SYS_POP_SYSCALL_CLOBBERED_REGISTERS
 
 	ret
+
+.tock:
+	dq 0	; seconds
+	dq 0	; microseconds
 
 %endif
