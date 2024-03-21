@@ -49,11 +49,13 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/print_int_d.asm"
-; int {rax} parse_int(char* {rdi});
+%include "lib/io/print_float.asm"
 
-%include "lib/time/sleep.asm"
-; void sleep(uint {rdi});
+%include "lib/time/tick_time.asm"
+; uint {rax} tick_time(void);
+
+%include "lib/time/tock_time.asm"
+; uint {rax} tock_time(void);
 
 %include "lib/io/parse_int.asm"
 ; int {rax} parse_int(char* {rdi});
@@ -80,26 +82,36 @@ START:
 	; check for positive number
 	cmp rcx,0
 	jle .die
+
+	cvtsi2sd xmm1,rcx	; target countdown time in {xmm1}
+	movsd xmm2,[.millionth]	; microsecond to second conversion in {xmm2}
+
+	call tick_time
+
 .loop:
 	
-	mov rdi,SYS_STDOUT
-	mov rsi,rcx
-	call print_int_d
+	call tock_time ; elapsed microseconds since tick in {rax}
+
+	cvtsi2sd xmm3,rax	; elapsed microsecond (float) in {xmm0}
+	mulsd xmm3,xmm2
+	movsd xmm0,xmm1
+	subsd xmm0,xmm3
+		
+	mov rdi,SYS_STDOUT	; print countdown time
+	mov rsi,4
+	call print_float
 	
-	mov rsi,.grammar+11	; print a space and carriage return
+	mov rsi,.grammar+13	; print a space and a carriage return
 	mov rdx,2
 	call print_chars
 	call print_buffer_flush
 
-	mov rdi,1000000
-	call sleep
+	pxor xmm3,xmm3
+	comisd xmm0,xmm3
+	ja .loop		; check for end of countdown
 
-	dec rcx
-	jns .loop
-
-	mov rdi,SYS_STDOUT
 	mov rsi,.grammar
-	mov rdx,11
+	mov rdx,13
 	call print_chars
 	call print_buffer_flush
 
@@ -109,7 +121,10 @@ START:
 	call exit	
 
 .grammar:
-	db `TIME'S UP!\n \r`
+	db `TIME'S UP!  \n \r`
+
+.millionth:
+	dq 0.000001
 
 END:
 
