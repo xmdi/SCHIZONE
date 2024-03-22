@@ -77,14 +77,12 @@ START:
 	; parse the input number
 	mov rdi,[SYS_ARGC_START_POINTER+16]
 	call parse_int
-
-	mov rcx,rax	; starting value
 	
 	; check for positive number
-	cmp rcx,0
+	cmp rax,0
 	jle .die
 
-	cvtsi2sd xmm1,rcx	; target countdown time in {xmm1}
+	cvtsi2sd xmm1,rax	; target countdown time in {xmm1}
 	movsd xmm2,[.millionth]	; microsecond to second conversion in {xmm2}
 
 	call tick_time
