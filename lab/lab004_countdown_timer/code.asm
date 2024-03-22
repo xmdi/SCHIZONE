@@ -50,6 +50,7 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/io/print_float.asm"
+; void print_float(int {rdi}, double {xmm0}, long {rsi});
 
 %include "lib/time/tick_time.asm"
 ; uint {rax} tick_time(void);
