@@ -1,5 +1,5 @@
-%ifndef FRAMEBUFFER_3D_RENDER_DEPTH_PERSPECTIVE_INIT
-%define FRAMEBUFFER_3D_RENDER_DEPTH_PERSPECTIVE_INIT
+%ifndef FRAMEBUFFER_3D_RENDER_DEPTH_INIT
+%define FRAMEBUFFER_3D_RENDER_DEPTH_INIT
 
 %include "lib/mem/heap_init.asm"
 ; void heap_init(void);
@@ -16,22 +16,22 @@
 %include "lib/io/framebuffer/framebuffer_mouse_init.asm"
 ; void framebuffer_mouse_init(void);
 
-%include "lib/io/framebuffer/centroid_sort.asm"
+;%include "lib/io/framebuffer/centroid_sort.asm"
 ; void centroid_sort(struct* {rdi}, struct* {rsi});
 
-%include "lib/io/bitmap/rasterize_faces.asm"
+%include "lib/io/framebuffer/perspective/rasterize_faces_depth.asm"
 ; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
-%include "lib/io/bitmap/rasterize_text.asm"
+;%include "lib/io/bitmap/rasterize_text.asm"
 ; void rasterize_text(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
-%include "lib/io/bitmap/rasterize_edges.asm"
+;%include "lib/io/bitmap/rasterize_edges.asm"
 ; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
-%include "lib/io/bitmap/rasterize_pointcloud.asm"
+;%include "lib/io/bitmap/rasterize_pointcloud.asm"
 ; void rasterize_pointcloud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
@@ -176,15 +176,16 @@ framebuffer_3d_render_depth_perspective_init:
 	; Uy = (upDir)
 	; Ux = (upDir)x(lookFrom-lookAt)
 
-	; rasterized pt x = (Pt).(Ux)*zoom*width/2+width/2
-	; rasterized pt y = -(Pt).(Uy)*zoom*height/2+height/2
+	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
+	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
 
 	; precompute Ux*zoom and Uy*zoom
 
 	; upDir
-	movsd xmm0,[r8+48]
-	movsd xmm1,[r8+56]
-	movsd xmm2,[r8+64]
+
+	movsd xmm0,[r15+48]
+	movsd xmm1,[r15+56]
+	movsd xmm2,[r15+64]
 
 	mulsd xmm0,xmm0
 	mulsd xmm1,xmm1
@@ -196,20 +197,20 @@ framebuffer_3d_render_depth_perspective_init:
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0		; 1/magnitude factor
 
-	movsd xmm3,[r8+48]
-	movsd xmm4,[r8+56]
-	movsd xmm5,[r8+64]
+	movsd xmm3,[r15+48]
+	movsd xmm4,[r15+56]
+	movsd xmm5,[r15+64]
 
 	mulsd xmm3,xmm1
 	mulsd xmm4,xmm1
 	mulsd xmm5,xmm1		; Uy is now normalized
 
-	movsd xmm6,[r8+0]
-	subsd xmm6,[r8+24]
-	movsd xmm7,[r8+8]
-	subsd xmm7,[r8+32]
-	movsd xmm8,[r8+16]
-	subsd xmm8,[r8+40]
+	movsd xmm6,[r15+0]
+	subsd xmm6,[r15+24]
+	movsd xmm7,[r15+8]
+	subsd xmm7,[r15+32]
+	movsd xmm8,[r15+16]
+	subsd xmm8,[r15+40]
 
 	movsd [.look_vector],xmm6
 	movsd [.look_vector+8],xmm7
@@ -230,14 +231,12 @@ framebuffer_3d_render_depth_perspective_init:
 	sqrtsd xmm0,xmm0
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0		; 1/magnitude factor
-;	mulsd xmm1,[r8+72]	; zoom factor, can't do this yet. need unit vector
 
 	mulsd xmm6,xmm1
 	mulsd xmm7,xmm1
 	mulsd xmm8,xmm1		; lookFrom-lookAt now normalized before cross product
 
-
-	; now compute cross product
+	; now compute cross product to solve Ux
 
 	movsd xmm13,xmm4
 	mulsd xmm13,xmm8
@@ -269,7 +268,7 @@ framebuffer_3d_render_depth_perspective_init:
 	addsd xmm0,xmm2
 	movsd xmm1,[.one]
 	divsd xmm1,xmm0		; 1/magnitude factor
-	mulsd xmm1,[r8+72]	; zoom factor
+	mulsd xmm1,[r15+72]	; focal length factor
 	
 	cvtsi2sd xmm0,rdx
 	cvtsi2sd xmm2,rcx
@@ -284,7 +283,7 @@ framebuffer_3d_render_depth_perspective_init:
 	movsd [.Uxzoom+8],xmm14
 	movsd [.Uxzoom+16],xmm15
 
-	; scale Uy by zoom	
+	; scale Uy by focal length
 	mulsd xmm3,[r8+72]
 	mulsd xmm4,[r8+72]
 	mulsd xmm5,[r8+72]
@@ -326,24 +325,24 @@ framebuffer_3d_render_depth_perspective_init:
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	mov r9,[r14+8]
-	call rasterize_pointcloud	
+;	mov rdi,[framebuffer_init.framebuffer_address]
+;	mov rsi,[r14+16]
+;	mov edx,[framebuffer_init.framebuffer_width]
+;	mov ecx,[framebuffer_init.framebuffer_height]
+;	mov r8,[.perspective_structure_address]
+;	mov r9,[r14+8]
+;	call rasterize_pointcloud	
 
 	jmp .geometry_type_unsupported
 
 .is_wireframe:
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	mov r9,[r14+8]
-	call rasterize_edges	
+;	mov rdi,[framebuffer_init.framebuffer_address]
+;	mov rsi,[r14+16]
+;	mov edx,[framebuffer_init.framebuffer_width]
+;	mov ecx,[framebuffer_init.framebuffer_height]
+;	mov r8,[.perspective_structure_address]
+;	mov r9,[r14+8]
+;	call rasterize_edges	
 
 	jmp .geometry_type_unsupported
 
@@ -354,51 +353,51 @@ framebuffer_3d_render_depth_perspective_init:
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,[.perspective_structure_address]
 	mov r9,[r14+8]
-	call rasterize_faces
+	call rasterize_faces_depth
 
 	jmp .geometry_type_unsupported
 
 .is_shell_list:
 
-	mov rdi,[r14+8]
-	mov rsi,[.perspective_structure_address]
-	call centroid_sort ; sort all shell bodies by distance from viewer
+;	mov rdi,[r14+8]
+;	mov rsi,[.perspective_structure_address]
+;	call centroid_sort ; sort all shell bodies by distance from viewer
+;
+;	mov rcx,[r14+8]
+;	mov rdx,rcx
+;	add rdx,8
+;	mov rcx,[rcx]
+;	cmp rcx,0	
+;	jbe .geometry_type_unsupported
+;
+;.shell_body_loop:
 
-	mov rcx,[r14+8]
-	mov rdx,rcx
-	add rdx,8
-	mov rcx,[rcx]
-	cmp rcx,0	
-	jbe .geometry_type_unsupported
-
-.shell_body_loop:
-
-	push rdx
-	push rcx
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov r9,[rdx]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	call rasterize_faces
-	pop rcx
-	pop rdx
-
-	add rdx,32
-	dec rcx
-	jnz .shell_body_loop
+;	push rdx
+;	push rcx
+;	mov rdi,[framebuffer_init.framebuffer_address]
+;	mov rsi,[r14+16]
+;	mov r9,[rdx]
+;	mov edx,[framebuffer_init.framebuffer_width]
+;	mov ecx,[framebuffer_init.framebuffer_height]
+;	mov r8,[.perspective_structure_address]
+;	call rasterize_faces
+;	pop rcx
+;	pop rdx
+;
+;	add rdx,32
+;	dec rcx
+;	jnz .shell_body_loop
 
 	jmp .geometry_type_unsupported
 
 .is_text:
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	mov r9,[r14+8]
-	call rasterize_text
+;	mov rdi,[framebuffer_init.framebuffer_address]
+;	mov rsi,[r14+16]
+;	mov edx,[framebuffer_init.framebuffer_width]
+;	mov ecx,[framebuffer_init.framebuffer_height]
+;	mov r8,[.perspective_structure_address]
+;	mov r9,[r14+8]
+;	call rasterize_text
 
 .geometry_type_unsupported:
 
@@ -504,7 +503,5 @@ align 16
 	dq 0
 .look_vector:
 	times 3 dq 0
-
-
 
 %endif	

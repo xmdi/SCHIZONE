@@ -1,5 +1,5 @@
-%ifndef RASTERIZE_FACES_DEPTHBUFFER
-%define RASTERIZE_FACES_DEPTHBUFFER
+%ifndef RASTERIZE_FACES_DEPTH
+%define RASTERIZE_FACES_DEPTH
 
 ; dependencies
 %include "lib/io/framebuffer/depth/set_triangle_depth.asm"
@@ -41,15 +41,10 @@ rasterize_faces_depth:
 %endif
 
 	push rax
-	push rbx
-	push rbp
+	push rcx
 	push r10
-	push r11
-	push r12
-	push r13
-	push r14
 	push r15
-	sub rsp,144
+	sub rsp,160
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
 	movdqu [rsp+32],xmm2
@@ -59,6 +54,7 @@ rasterize_faces_depth:
 	movdqu [rsp+96],xmm6
 	movdqu [rsp+112],xmm7
 	movdqu [rsp+128],xmm8
+	movdqu [rsp+144],xmm9
 
 	mov r15,[r9+8]	; number of faces in r15
 	mov rax,[r9+24]
@@ -106,154 +102,75 @@ rasterize_faces_depth:
 	comisd xmm0,xmm1
 	jb .skip
 	
-	; grab first point
+	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
+	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
+	xor rcx,rcx
+
+.triangle_points_loop:
+
+	; grab a point
 	
 	mov r10,[rax]
 	shl r10,3
 	imul r10,r10,3	; {r10} points to the x value of the first point
 	add r10,[r9+16]
 
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
+	movsd xmm3,[r10]	; Pt_x
+	movsd xmm4,[r10+8]	; Pt_y
+	movsd xmm5,[r10+16]	; Pt_z
 	
 	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
+;	subsd xmm0,[r8+24]
+;	subsd xmm1,[r8+32]
+;	subsd xmm2,[r8+40]
 
-	mulsd xmm0,[framebuffer_3d_render_depth_init.Uxzoom+0]
-	mulsd xmm1,[framebuffer_3d_render_depth_init.Uxzoom+8]
-	mulsd xmm2,[framebuffer_3d_render_depth_init.Uxzoom+16]
+	movsd xmm0,[.view_axes_old+48]
+	movsd xmm1,[.view_axes_old+56]
+	movsd xmm2,[.view_axes_old+64]
+
+	mulsd xmm0,xmm3
+	mulsd xmm1,xmm4
+	mulsd xmm2,xmm5
+	
 	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Ux*zoom in {xmm0}
+	addsd xmm0,xmm2		
+	movsd xmm6,xmm0		; Pt.Uz in {xmm6}
 
+	movsd xmm0,[framebuffer_3d_render_depth_init.Uxzoom+0]
+	movsd xmm1,[framebuffer_3d_render_depth_init.Uxzoom+8]
+	movsd xmm2,[framebuffer_3d_render_depth_init.Uxzoom+16]
+	movsd xmm7,[framebuffer_3d_render_depth_init.Uyzoom+0]
+	movsd xmm8,[framebuffer_3d_render_depth_init.Uyzoom+8]
+	movsd xmm9,[framebuffer_3d_render_depth_init.Uyzoom+16]
+
+	mulsd xmm0,xmm3
+	mulsd xmm1,xmm4
+	mulsd xmm2,xmm5	
+	mulsd xmm7,xmm3
+	mulsd xmm8,xmm4
+	mulsd xmm9,xmm5
+	
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2		; Pt.Ux*f in {xmm0}	
+	addsd xmm7,xmm8
+	addsd xmm7,xmm9		; Pt.Uy*f in {xmm7}
+
+	divsd xmm0,xmm6
+	divsd xmm7,xmm6
+
+	;TODO parallelize
 	addsd xmm0,[.one]
 	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
-
-	cvtsd2si r11,xmm0	; {r11} contains pixel 1 x-coord
+	addsd xmm7,[.one]
+	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
 	
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,[framebuffer_3d_render_depth_init.Uyzoom+0]
-	mulsd xmm1,[framebuffer_3d_render_depth_init.Uyzoom+8]
-	mulsd xmm2,[framebuffer_3d_render_depth_init.Uyzoom+16]
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Uy*zoom in {xmm0}
-
-	mulsd xmm0,[.neg]
-	addsd xmm0,[.one]
-	mulsd xmm0,[framebuffer_3d_render_depth_init.half_height]
-
-	cvtsd2si r12,xmm0	; {r12} contains pixel 1 y-coord
-	
+	movsd [rcx+.triangle_points+0],xmm0
+	movsd [rcx+.triangle_points+8],xmm7
+			
 	add rax,8
-	
-	mov r10,[rax]
-	shl r10,3
-	imul r10,r10,3	; {r10} points to the x value of the second point
-	add r10,[r9+16]
-	
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,[framebuffer_3d_render_depth_init.Uxzoom+0]
-	mulsd xmm1,[framebuffer_3d_render_depth_init.Uxzoom+8]
-	mulsd xmm2,[framebuffer_3d_render_depth_init.Uxzoom+16]
-	
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Ux*zoom in {xmm0}
-
-	addsd xmm0,[.one]
-	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
-
-	cvtsd2si r13,xmm0	; {r13} contains pixel 1 x-coord
-
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,[framebuffer_3d_render_depth_init.Uyzoom+0]
-	mulsd xmm1,[framebuffer_3d_render_depth_init.Uyzoom+8]
-	mulsd xmm2,[framebuffer_3d_render_depth_init.Uyzoom+16]
-	
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Uy*zoom in {xmm0}
-
-	mulsd xmm0,[.neg]
-	addsd xmm0,[.one]
-	mulsd xmm0,[framebuffer_3d_render_depth_init.half_height]
-
-	cvtsd2si r14,xmm0	; {r14} contains pixel 2 y-coord
-
-	add rax,8
-
-	mov r10,[rax]
-	shl r10,3
-	imul r10,r10,3	; {r10} points to the x value of the third point
-	add r10,[r9+16]
-	
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,[framebuffer_3d_render_depth_init.Uxzoom+0]
-	mulsd xmm1,[framebuffer_3d_render_depth_init.Uxzoom+8]
-	mulsd xmm2,[framebuffer_3d_render_depth_init.Uxzoom+16]
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Ux*zoom in {xmm0}
-
-	addsd xmm0,[.one]
-	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
-
-	cvtsd2si rbx,xmm0	; {rbx} contains vertex 3 x-coord
-
-	movsd xmm0,[r10]	; Pt_x
-	movsd xmm1,[r10+8]	; Pt_y
-	movsd xmm2,[r10+16]	; Pt_z
-
-	; correct relative to lookAt point
-	subsd xmm0,[r8+24]
-	subsd xmm1,[r8+32]
-	subsd xmm2,[r8+40]
-
-	mulsd xmm0,[framebuffer_3d_render_depth_init.Uyzoom+0]
-	mulsd xmm1,[framebuffer_3d_render_depth_init.Uyzoom+8]
-	mulsd xmm2,[framebuffer_3d_render_depth_init.Uyzoom+16]
-	
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2		; Pt.Uy*zoom in {xmm0}
-
-	mulsd xmm0,[.neg]
-	addsd xmm0,[.one]
-	mulsd xmm0,[framebuffer_3d_render_depth_init.half_height]
-
-	cvtsd2si rbp,xmm0	; {rbp} contains vertex 3 y-coord
-
-	add rax,8
+	add rcx,16
+	cmp rcx,32
+	jle .triangle_points_loop
 
 	push rax
 	push r8
@@ -267,7 +184,7 @@ rasterize_faces_depth:
 	mov r12,rbx
 	mov r13,rbp
 	mov rsi,[rax]
-	call set_triangle
+	call set_triangle_depth
 	pop r11
 	pop r10
 	pop r9
@@ -289,15 +206,10 @@ rasterize_faces_depth:
 	movdqu xmm6,[rsp+96]
 	movdqu xmm7,[rsp+112]
 	movdqu xmm8,[rsp+128]
-	add rsp,144
-	pop r15
-	pop r14
-	pop r13
-	pop r12
-	pop r11
+	movdqu xmm9,[rsp+144]
+	add rsp,160
 	pop r10
-	pop rbp
-	pop rbx
+	pop rcx
 	pop rax
 
 	ret
@@ -313,6 +225,7 @@ rasterize_faces_depth:
 align 16
 	dq 0
 .triangle_normal:
-	times 3 dq 0
-
+	times 3 dq 0.0
+.triangle_points:	; store x and y of 3 vertices as a float 
+	times 6 dq 0.0
 %endif
