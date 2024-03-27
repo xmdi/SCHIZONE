@@ -119,10 +119,10 @@ rasterize_faces_depth:
 	movsd xmm4,[r10+8]	; Pt_y
 	movsd xmm5,[r10+16]	; Pt_z
 	
-	; correct relative to lookAt point
-;	subsd xmm0,[r8+24]
-;	subsd xmm1,[r8+32]
-;	subsd xmm2,[r8+40]
+	; correct relative to lookFrom point
+	subsd xmm0,[r8+0]
+	subsd xmm1,[r8+8]
+	subsd xmm2,[r8+16]
 
 	movsd xmm0,[.view_axes_old+48]
 	movsd xmm1,[.view_axes_old+56]
