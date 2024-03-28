@@ -46,6 +46,19 @@ set_triangle:
 	maxsd xmm15,[r8+24]	; max vtx 2 y
 	maxsd xmm15,[r8+40]	; max vtx 3 y
 
+	; check if triangle is off the screen
+	pxor xmm0,xmm0	
+	comisd xmm15,xmm0
+	jb .off_screen
+	comisd xmm13,xmm0
+	jb .off_screen
+	cvtsi2sd xmm0,rdx
+	comisd xmm12,xmm0
+	ja .off_screen
+	cvtsi2sd xmm0,rcx
+	comisd xmm14,xmm0
+	ja .off_screen
+
 	; pt to check/plot at ({xmm10},{xmm11})
 
 	movsd xmm11,xmm14
@@ -208,6 +221,7 @@ set_triangle:
 	cmp r13,r9
 	jge .loop2
 
+.off_screen:
 .ret:
 
 	movdqu xmm0,[rsp+0]
