@@ -3,6 +3,8 @@
 
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
+%include "lib/math/vector/cross_product_3.asm"
+%include "lib/math/vector/dot_product_3.asm"
 
 set_triangle:
 ; void set_triangle(void* {rdi}, int {esi}, int {edx}, int {ecx},
@@ -61,16 +63,23 @@ set_triangle:
 
 	; pt to check/plot at ({xmm10},{xmm11})
 
+	pxor xmm9,xmm9
 	movsd xmm11,xmm14
 
 .rect_loop_y:
-
 
 	movsd xmm10,xmm12
 
 .rect_loop_x:
 
+	; check edges	
+
 	
+
+	
+	comisd xmm0,xmm9
+	
+
 
 
 
