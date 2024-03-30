@@ -61,10 +61,21 @@ set_triangle:
 	comisd xmm14,xmm0
 	ja .off_screen
 
-	; pt to check/plot at ({xmm10},{xmm11})
+	; populate vtx_to_vtx arrays
+	movpd xmm0,[r8+16]
+	subpd xmm0,[r8+0]
+	movpd [.vtx0_to_vtx1],xmm0
+	movpd xmm0,[r8+32]
+	subpd xmm0,[r8+16]
+	movpd [.vtx1_to_vtx2],xmm0
+	movpd xmm0,[r8+0]
+	subpd xmm0,[r8+32]
+	movpd [.vtx2_to_vtx0],xmm0
 
 	pxor xmm9,xmm9
 	movsd xmm11,xmm14
+
+	; pt to check/plot at ({xmm10},{xmm11})
 
 .rect_loop_y:
 
@@ -74,8 +85,13 @@ set_triangle:
 
 	; check edges	
 
-	
-
+	; cross product of vtx0->pt and vtx0->vtx1	
+	movsd xmm0,xmm10
+	subsd xmm0,[r8+0] ; todo x and y can be parallelized here
+	movsd [.vtx_to_pt],xmm0
+	movsd xmm0,xmm11
+	subsd xmm0,[r8+8]
+	movsd [.vtx_to_pt],xmm0
 	
 	comisd xmm0,xmm9
 	
@@ -257,5 +273,14 @@ set_triangle:
 
 .one
 	dq 1.0
+
+.vtx_to_pt:
+	times 2 dq 0.0
+.vtx0_to_vtx1:
+	times 2 dq 0.0
+.vtx1_to_vtx2:
+	times 2 dq 0.0
+.vtx2_to_vtx0:
+	times 2 dq 0.0
 
 %endif
