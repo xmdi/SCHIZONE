@@ -3,8 +3,6 @@
 
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
-%include "lib/math/vector/cross_product_3.asm"
-%include "lib/math/vector/dot_product_3.asm"
 
 set_triangle:
 ; void set_triangle(void* {rdi}, int {esi}, int {edx}, int {ecx},
@@ -86,12 +84,61 @@ set_triangle:
 	; check edges	
 
 	; cross product of vtx0->pt and vtx0->vtx1	
-	movsd xmm0,xmm10
-	subsd xmm0,[r8+0] ; todo x and y can be parallelized here
-	movsd [.vtx_to_pt],xmm0
+	; pt-vtx0
+	movsd xmm1,xmm10
+	subsd xmm1,[r8+0] ; todo x and y can be parallelized here
 	movsd xmm0,xmm11
 	subsd xmm0,[r8+8]
-	movsd [.vtx_to_pt],xmm0
+	; vtx1-vtx0
+	movsd xmm3,[r8+16]
+	subsd xmm3,[r8+0]
+	movsd xmm2,[r8+24]
+	subsd xmm2,[r8+8]
+	mulsd xmm1,xmm2
+	mulsd xmm0,xmm3
+	subsd xmm1,xmm0
+	comisd xmm1,xmm9
+	jb .point_no_good ; might need to be ja
+
+	; cross product of vtx1->pt and vtx1->vtx2	
+	; pt-vtx1
+	movsd xmm1,xmm10
+	subsd xmm1,[r8+16] ; todo x and y can be parallelized here
+	movsd xmm0,xmm11
+	subsd xmm0,[r8+24]
+	; vtx2-vtx1
+	movsd xmm3,[r8+32]
+	subsd xmm3,[r8+16]
+	movsd xmm2,[r8+40]
+	subsd xmm2,[r8+24]
+	mulsd xmm1,xmm2
+	mulsd xmm0,xmm3
+	subsd xmm1,xmm0
+	comisd xmm1,xmm9
+	jb .point_no_good ; might need to be ja
+
+	; cross product of vtx2->pt and vtx2->vtx0	
+	; pt-vtx2
+	movsd xmm1,xmm10
+	subsd xmm1,[r8+32] ; todo x and y can be parallelized here
+	movsd xmm0,xmm11
+	subsd xmm0,[r8+40]
+	; vtx0-vtx2
+	movsd xmm3,[r8+0]
+	subsd xmm3,[r8+32]
+	movsd xmm2,[r8+8]
+	subsd xmm2,[r8+40]
+	mulsd xmm1,xmm2
+	mulsd xmm0,xmm3
+	subsd xmm1,xmm0
+	comisd xmm1,xmm9
+	jb .point_no_good ; might need to be ja
+	
+	
+
+
+
+
 	
 	comisd xmm0,xmm9
 	
