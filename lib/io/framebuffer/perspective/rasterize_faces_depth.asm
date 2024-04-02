@@ -8,13 +8,15 @@
 
 rasterize_faces_depth:
 ; void rasterize_faces_depthbuffer(void* {rdi}, int {rsi}, int {edx}, 
-;		int {ecx}, struct* {r8}, struct* {r9}, single* {r10});
+;		int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, bool {r12});
 ;	Rasterizes a set of faces described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
 ;	image using the color value in the low 32 bits of {rsi} to the bitmap
 ;	starting at address {rdi}. The 32nd bit of {rsi} indicates the stacking
-;	direction of the bitmap rows. If NULL {rsi}, colors stored alongside
-;	vertex information. Depthbuffer at {r10} (4*{ecx}*{edx} bytes).
+;	direction of the bitmap rows. If low bit of {r12} is high, colors stored
+;	alongside vertex information in 32 byte chunks of (x,y,z,ARGB). If low 
+;	bit of {r12} is low, solid face color stored in {rsi}.
+;	Depthbuffer at {r10} (4*{ecx}*{edx} bytes).
 
 %if 0
 .perspective_structure:
@@ -105,6 +107,7 @@ rasterize_faces_depth:
 	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
 	xor rcx,rcx
+	mov rbp,.triangle_colors
 
 .triangle_points_loop:
 
@@ -118,7 +121,14 @@ rasterize_faces_depth:
 	movsd xmm3,[r10]	; Pt_x
 	movsd xmm4,[r10+8]	; Pt_y
 	movsd xmm5,[r10+16]	; Pt_z
-	
+
+	cmp r12,1
+	jne .no_vtx_colors
+	mov rbx,[r10+24]
+	mov [rbp],rbx
+
+.no_vtx_colors:
+
 	; correct relative to lookFrom point
 	subsd xmm0,[r8+0]
 	subsd xmm1,[r8+8]
@@ -168,28 +178,25 @@ rasterize_faces_depth:
 	movsd [rcx+.triangle_points+8],xmm7
 			
 	add rax,8
+	add rbp,8
 	add rcx,16
 	cmp rcx,32
 	jle .triangle_points_loop
 
+	push rsi
 	push rax
 	push r8
-	push r9
-	push r10
-	push r11
 	mov r8,r11
 	mov r9,r12
-	mov r10,r13
-	mov r11,r14
-	mov r12,rbx
-	mov r13,rbp
-	mov rsi,[rax]
+	cmp r12,1
+	jne .set_triangle_depth
+	mov rsi,.triangle_color
+.set_triangle_depth:
 	call set_triangle_depth
-	pop r11
-	pop r10
 	pop r9
 	pop r8
 	pop rax
+	pop rsi
 
 	add rax,8
 
@@ -228,4 +235,6 @@ align 16
 	times 3 dq 0.0
 .triangle_points:	; store x and y of 3 vertices as a float 
 	times 6 dq 0.0
+.triangle_colors:
+	times 3 dq 0
 %endif
