@@ -170,7 +170,7 @@ rasterize_faces_depth:
 	movsd xmm3,[r14]	; Pt_x
 	movsd xmm4,[r14+8]	; Pt_y
 	movsd xmm5,[r14+16]	; Pt_z
-
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -195,7 +195,7 @@ rasterize_faces_depth:
 	pop rdx
 	pop rsi
 	pop rdi
-
+%endif
 
 
 	cmp r11,1
@@ -272,7 +272,7 @@ rasterize_faces_depth:
 	jne .set_triangle_depth
 	mov rsi,.triangle_colors
 .set_triangle_depth:
-
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -297,7 +297,7 @@ rasterize_faces_depth:
 	pop rdx
 	pop rsi
 	pop rdi
-
+%endif
 
 
 	call set_triangle_depth

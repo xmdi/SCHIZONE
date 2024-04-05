@@ -274,8 +274,8 @@ framebuffer_3d_render_depth_init:
 	divsd xmm1,xmm0		; 1/magnitude factor
 	mulsd xmm1,[r15+72]	; focal length factor
 	
-	cvtsi2sd xmm0,rdx
-	cvtsi2sd xmm2,rcx
+	cvtsi2sd xmm0,[framebuffer_init.framebuffer_width]
+	cvtsi2sd xmm2,[framebuffer_init.framebuffer_height]
 	divsd xmm2,xmm0
 	mulsd xmm1,xmm2		; scale by aspect ratio
 
@@ -297,18 +297,16 @@ framebuffer_3d_render_depth_init:
 	movsd [.Uyzoom+16],xmm5
 
 	; width/2 and height/2
-	mov rax,rdx
+	mov eax,[framebuffer_init.framebuffer_width]
 	shr rax,1
 	cvtsi2sd xmm9,rax
 	movsd [.half_width],xmm9
-	mov rax,rcx
+	mov eax,[framebuffer_init.framebuffer_height]
 	shr rax,1
 	cvtsi2sd xmm10,rax
 	movsd [.half_height],xmm10
 
 	mov r14,[.geometry_linked_list_address]
-
-
 
 .loop:
 	; need to put some logic hear to accommodate things that aren't wireframes
