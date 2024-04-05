@@ -2,22 +2,30 @@
 %define SET_TRIANGLE_DEPTH
 
 ; dependency
+%include "lib/io/print_int_h.asm"
+%include "lib/io/print_float.asm"
+%include "lib/io/print_array_float.asm"
 %include "lib/io/bitmap/set_pixel.asm"
 
 set_triangle_depth:
 ; void set_triangle_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
-;		 double* {r8}, bool {r9})
-;	Fills triangle with vertices described by 6 double-precision floats
-;	starting at {r8} in ARGB data array starting at {rdi} for an 
+;		 double* {r8}, bool {r9}, single* {r10})
+;	Fills triangle with vertices described by 9 double-precision floats
+;	starting at {r8} (projected x, projected y, projected depth)
+;	in ARGB data array starting at {rdi} for an 
 ;	{edx}x{ecx} (WxH) image. {r9} contains color interpolation flag. If 
-;	low bit of {r12} is high, {rsi} points to 3x1 ARGB color array 
+;	low bit of {r9} is high, {rsi} points to 3x1 ARGB color array 
 ;	(32 bpp). If low bit of {r9} is low, {rsi} contains triangle fill
-;	color (32 bpp).
+;	color (32 bpp). Pointer to single-precision depth buffer at {r10}
+;	(4*{ecx}*{edx} bytes).
 
 	push rax
+	push rbx
+	push rbp
+	push rsi
 	push r8
 	push r9
-	sub rsp,176
+	sub rsp,256
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
 	movdqu [rsp+32],xmm2
@@ -29,6 +37,12 @@ set_triangle_depth:
 	movdqu [rsp+128],xmm8
 	movdqu [rsp+144],xmm9
 	movdqu [rsp+160],xmm10
+	movdqu [rsp+176],xmm11
+	movdqu [rsp+192],xmm12
+	movdqu [rsp+208],xmm13
+	movdqu [rsp+224],xmm14
+	movdqu [rsp+240],xmm15
+
 
 	movsd xmm12,[r8+0]	; min vtx 1 x
 	minsd xmm12,[r8+16]	; min vtx 2 x
@@ -47,6 +61,46 @@ set_triangle_depth:
 	maxsd xmm15,[r8+40]	; max vtx 3 y
 	roundsd xmm15,xmm15,0b0010
 
+
+	push rdi
+	push rsi
+	push rdx
+	mov rdi,SYS_STDOUT
+	mov rsi,5
+	movsd xmm0,xmm12
+	call print_float	
+	mov rsi,.grammar+4
+	mov rdx,1
+	call print_chars
+	mov rsi,5
+	movsd xmm0,xmm13
+	call print_float	
+	mov rsi,.grammar+4
+	mov rdx,1
+	call print_chars
+	mov rsi,5
+	movsd xmm0,xmm14
+	call print_float	
+	mov rsi,.grammar+4
+	mov rdx,1
+	call print_chars
+	mov rsi,5
+	movsd xmm0,xmm15
+	call print_float	
+	mov rsi,.grammar+4
+	mov rdx,1
+	call print_chars
+	call print_buffer_flush
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+
+
+
+
+
 	; check if triangle is off the screen
 	pxor xmm0,xmm0	
 	comisd xmm15,xmm0
@@ -60,19 +114,55 @@ set_triangle_depth:
 	comisd xmm14,xmm0
 	ja .off_screen
 
+	; screw parallel stuff
 	; populate vtx_to_vtx arrays
-	movpd xmm0,[r8+16]
-	subpd xmm0,[r8+0]
-	movpd [.vtx0_to_vtx1],xmm0
-	movpd xmm0,[r8+32]
-	subpd xmm0,[r8+16]
-	movpd [.vtx1_to_vtx2],xmm0
-	movpd xmm0,[r8+0]
-	subpd xmm0,[r8+32]
-	movpd [.vtx2_to_vtx0],xmm0
+;	movupd xmm0,[r8+24]
+;	subpd xmm0,[r8+0]
+;	movupd [.vtx0_to_vtx1],xmm0
+;	movupd xmm0,[r8+48]
+;	subpd xmm0,[r8+24]
+;	movupd [.vtx1_to_vtx2],xmm0
+;	movupd xmm0,[r8+0]
+;	subpd xmm0,[r8+48]
+;	movupd [.vtx2_to_vtx0],xmm0
+
+	movsd xmm0,[r8+24]
+	subsd xmm0,[r8+0]
+	movsd [.vtx0_to_vtx1+0],xmm0
+	movsd xmm0,[r8+32]
+	subsd xmm0,[r8+8]
+	movsd [.vtx0_to_vtx1+8],xmm0
+
+	movsd xmm0,[r8+48]
+	subsd xmm0,[r8+24]
+	movsd [.vtx1_to_vtx2+0],xmm0
+	movsd xmm0,[r8+56]
+	subsd xmm0,[r8+32]
+	movsd [.vtx1_to_vtx2+8],xmm0
+
+	movsd xmm0,[r8+0]
+	subsd xmm0,[r8+48]
+	movsd [.vtx2_to_vtx0+0],xmm0
+	movsd xmm0,[r8+8]
+	subsd xmm0,[r8+56]
+	movsd [.vtx2_to_vtx0+8],xmm0
 
 	pxor xmm9,xmm9
 	movsd xmm11,xmm14
+
+
+	push rdi
+	push rsi
+	push rdx
+	mov rdi,SYS_STDOUT
+	mov rsi,.vtx_computed
+	mov rdx,10
+	call print_chars
+	call print_buffer_flush
+
+	pop rdx
+	pop rsi
+	pop rdi
 
 	; pt to check/plot at ({xmm10},{xmm11}) ; could be ints and constantly converted via cvtsi2sd
 
@@ -91,9 +181,9 @@ set_triangle_depth:
 	movsd xmm0,xmm11
 	subsd xmm0,[r8+8]
 	; vtx1-vtx0
-	movsd xmm3,[r8+16]
+	movsd xmm3,[r8+24]
 	subsd xmm3,[r8+0]
-	movsd xmm2,[r8+24]
+	movsd xmm2,[r8+32]
 	subsd xmm2,[r8+8]
 	mulsd xmm1,xmm2
 	mulsd xmm0,xmm3
@@ -105,14 +195,14 @@ set_triangle_depth:
 	; cross product of vtx1->pt and vtx1->vtx2	
 	; pt-vtx1
 	movsd xmm1,xmm10
-	subsd xmm1,[r8+16] ; todo x and y can be parallelized here
+	subsd xmm1,[r8+24] ; todo x and y can be parallelized here
 	movsd xmm0,xmm11
-	subsd xmm0,[r8+24]
+	subsd xmm0,[r8+32]
 	; vtx2-vtx1
-	movsd xmm3,[r8+32]
-	subsd xmm3,[r8+16]
-	movsd xmm2,[r8+40]
-	subsd xmm2,[r8+24]
+	movsd xmm3,[r8+48]
+	subsd xmm3,[r8+24]
+	movsd xmm2,[r8+56]
+	subsd xmm2,[r8+32]
 	mulsd xmm1,xmm2
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
@@ -123,29 +213,113 @@ set_triangle_depth:
 	; cross product of vtx2->pt and vtx2->vtx0	
 	; pt-vtx2
 	movsd xmm1,xmm10
-	subsd xmm1,[r8+32] ; todo x and y can be parallelized here
+	subsd xmm1,[r8+48] ; todo x and y can be parallelized here
 	movsd xmm0,xmm11
-	subsd xmm0,[r8+40]
+	subsd xmm0,[r8+56]
 	; vtx0-vtx2
 	movsd xmm3,[r8+0]
-	subsd xmm3,[r8+32]
+	subsd xmm3,[r8+48]
 	movsd xmm2,[r8+8]
-	subsd xmm2,[r8+40]
+	subsd xmm2,[r8+56]
 	mulsd xmm1,xmm2
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
 	jb .point_no_good ; might need to be ja
 	movsd xmm6,xmm1	 	; {xmm6} contains barycentric coefficient v
-	
+
+
 .point_in_triangle:
 	;	barycentric coordinates for point in triangle at
 	;		( {xmm4} , {xmm5} , {xmm6} )
 
+	; compute depth at this point first
+	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
+
+	movsd xmm0,xmm4
+	movsd xmm1,xmm5
+	movsd xmm2,xmm6
+	mulsd xmm0,[r8+16]	
+	mulsd xmm1,[r8+40]	
+	mulsd xmm2,[r8+64]	
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2
+	; depth of pixel of interest in {xmm0} (double precision)
+	cvtsd2ss xmm0,xmm0 ; might not work LOL
+
+	cvtsd2si rax,xmm10 ; x coord
+	cvtsd2si rbx,xmm11 ; y coord
+
+	mov rbp,rbx
+	imul rbp,rdx
+	add rbp,rax
+	shl rbp,2 ; {rbp} contains byte number for pixel of interest
+	add rbp,r10	; {rbp} points to depth for pixel of interest
+	movss xmm1,[rbp]
+
+
+	comiss xmm0,xmm1
+	jae .too_deep_to_put_pixel
+	
+	; overwrite depth
+	movss [rbp],xmm0
+
+	; compute color at this point
+	cmp r9,0 ; TODO should be a test instruction tbh, not cmp
+	je .color_computed
+
+	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
+	cvtsi2sd xmm0,[rsi+0]
+	cvtsi2sd xmm1,[rsi+8]
+	cvtsi2sd xmm2,[rsi+16]
+	mulsd xmm0,xmm4
+	mulsd xmm1,xmm5	
+	mulsd xmm2,xmm6
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2
+	; color of pixel of interest in {xmm0} (double precision)
+	cvtsd2si rsi,xmm0 ; and now in {rsi}
+
+
+.color_computed:
+	; put the pixel
+	push r8
+	push r9
+	mov r8,rax
+	mov r9,rbx
+	call set_pixel
+	pop r9
+	pop r8
+	
+	push rdi
+	push rsi
+	push rdx
+	mov rdi,SYS_STDOUT
+	mov rsi,.put_pixel
+	mov rdx,10
+	call print_chars
+	mov rsi,[rsp+8]
+	call print_int_h
+	call print_buffer_flush
+
+	mov rsi,.grammar
+	mov rdx,4
+	call print_chars
+	mov rsi,rax
+	call print_int_d
+	mov rsi,.grammar+4
+	mov rdx,1
+	call print_chars
+	mov rsi,rbx
+	call print_int_d
+
+	pop rdx
+	pop rsi
+	pop rdi
 
 
 
-
+.too_deep_to_put_pixel:
 
 
 .point_no_good:
@@ -158,10 +332,7 @@ set_triangle_depth:
 	comisd xmm11,xmm15
 	jb .rect_loop_y
 
-
-
-
-
+.off_screen:
 
 
 
@@ -176,14 +347,37 @@ set_triangle_depth:
 	movdqu xmm8,[rsp+128]
 	movdqu xmm9,[rsp+144]
 	movdqu xmm10,[rsp+160]
-	add rsp,176
+	movdqu xmm11,[rsp+176]
+	movdqu xmm12,[rsp+192]
+	movdqu xmm13,[rsp+208]
+	movdqu xmm14,[rsp+224]
+	movdqu xmm15,[rsp+240]
+	add rsp,256
 	pop r9
 	pop r8
+	pop rsi
+	pop rbp
+	pop rbx
 	pop rax
+	
+	push rdi
+	push rsi
+	push rdx
+	mov rdi,SYS_STDOUT
+	mov rsi,.got_out
+	mov rdx,8
+	call print_chars
+	call print_buffer_flush
+
+	pop rdx
+	pop rsi
+	pop rdi
+
+
 	
 	ret
 
-.one
+.one:
 	dq 1.0
 
 .vtx_to_pt:
@@ -194,5 +388,18 @@ set_triangle_depth:
 	times 2 dq 0.0
 .vtx2_to_vtx0:
 	times 2 dq 0.0
+
+.vtx_computed:
+	db `vecs comp\n`
+.put_pixel:
+	db `put pixel\n`
+.got_out:
+	db  `got out\n`
+.in_tri:
+	db  `in tri\n`
+.check_dep:
+	db  `check_dep\n`
+.grammar:
+	db ` at ,`
 
 %endif

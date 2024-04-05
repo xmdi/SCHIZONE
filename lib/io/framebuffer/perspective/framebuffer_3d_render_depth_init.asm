@@ -44,10 +44,12 @@
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
+
+; TODO DELETE
 %include "lib/sys/exit.asm"
 %include "lib/io/print_int_d.asm"
 
-framebuffer_3d_render_depth_perspective_init:
+framebuffer_3d_render_depth_init:
 ; void framebuffer_3d_render_depth_perspective_init(struct* {rdi}, 
 ;	struct* {rsi}, void* {rdx});
 ;	Initializes a 3D rendering setup with a perspective structure at
@@ -212,6 +214,8 @@ framebuffer_3d_render_depth_perspective_init:
 	movsd xmm8,[r15+16]
 	subsd xmm8,[r15+40]
 
+
+
 	movsd [.look_vector],xmm6
 	movsd [.look_vector+8],xmm7
 	movsd [.look_vector+16],xmm8
@@ -284,10 +288,10 @@ framebuffer_3d_render_depth_perspective_init:
 	movsd [.Uxzoom+16],xmm15
 
 	; scale Uy by focal length
-	mulsd xmm3,[r8+72]
-	mulsd xmm4,[r8+72]
-	mulsd xmm5,[r8+72]
-
+	mulsd xmm3,[r15+72]
+	mulsd xmm4,[r15+72]
+	mulsd xmm5,[r15+72]
+	
 	movsd [.Uyzoom+0],xmm3
 	movsd [.Uyzoom+8],xmm4
 	movsd [.Uyzoom+16],xmm5
@@ -304,6 +308,8 @@ framebuffer_3d_render_depth_perspective_init:
 
 	mov r14,[.geometry_linked_list_address]
 
+
+
 .loop:
 	; need to put some logic hear to accommodate things that aren't wireframes
 
@@ -317,10 +323,10 @@ framebuffer_3d_render_depth_perspective_init:
 	je .is_text
 
 	cmp byte [r14+24],0b00000100
-	je .is_face
+	je .is_face_solid_color
 
 	cmp byte [r14+24],0b00000101
-	je .is_shell_list
+	je .is_face_interpolated_color
 
 	jmp .geometry_type_unsupported
 
@@ -346,18 +352,20 @@ framebuffer_3d_render_depth_perspective_init:
 
 	jmp .geometry_type_unsupported
 
-.is_face:
+.is_face_solid_color:
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[r14+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,[.perspective_structure_address]
 	mov r9,[r14+8]
+	mov r10,[.depth_buffer_address]
+	xor r11,r11
 	call rasterize_faces_depth
 
 	jmp .geometry_type_unsupported
 
-.is_shell_list:
+.is_face_interpolated_color:
 
 ;	mov rdi,[r14+8]
 ;	mov rsi,[.perspective_structure_address]

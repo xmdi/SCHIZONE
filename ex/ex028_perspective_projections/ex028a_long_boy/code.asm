@@ -50,6 +50,8 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/io/bitmap/set_line.asm"
+
 %include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_init.asm"
 
 ;%include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_loop.asm"
@@ -120,12 +122,12 @@ START:
 .faces_geometry:
 	dq 0 ; next geometry in linked list
 	dq .faces_structure ; address of point/edge/face structure
-	dq 0x100000000 ; color (0xARGB)
+	dq 0x1000000FF ; color (0xARGB)
 	db 0b00000100 ; type of structure to render
 
 .faces_structure:
 	dq 24 ; number of points (N)
-	dq 36 ; number of faces (M)
+	dq 1;36 ; number of faces (M)
 	dq .points ; starting address of point array (3N elements)
 	dq .faces ; starting address of face array 
 		;	(3M elements if no colors)
@@ -169,23 +171,23 @@ START:
 	dq -1.5,0.5,3.0
 
 .faces:
-	dq 0,2,1,0x1FFFF0000 ; bottom
-	dq 0,3,2,0x1FFFF0000 ; bottom
+;	dq 0,2,1,0x1FFFF0000 ; bottom
+;	dq 0,3,2,0x1FFFF0000 ; bottom
 
-	dq 17,7,16,0x1FFFF0000 ; bottom right
-	dq 16,7,4,0x1FFFF0000 ; bottom right
+;	dq 17,7,16,0x1FFFF0000 ; bottom right
+;	dq 16,7,4,0x1FFFF0000 ; bottom right
 
-	dq 5,21,20,0x1FFFF0000 ; bottom left
-	dq 5,6,21,0x1FFFF0000 ; bottom left
+;	dq 5,21,20,0x1FFFF0000 ; bottom left
+;	dq 5,6,21,0x1FFFF0000 ; bottom left
 	
-	dq 13,14,12,0x1FF0000FF ; top
-	dq 14,15,12,0x1FF0000FF ; top
+;	dq 13,14,12,0x1FF0000FF ; top
+;	dq 14,15,12,0x1FF0000FF ; top
 
-	dq 11,18,19,0x1FF0000FF ; top right
-	dq 11,19,8,0x1FF0000FF ; top right
+;	dq 11,18,19,0x1FF0000FF ; top right
+;	dq 11,19,8,0x1FF0000FF ; top right
 
-	dq 9,23,22,0x1FF0000FF ; top left
-	dq 9,22,10,0x1FF0000FF ; top left
+;	dq 9,23,22,0x1FF0000FF ; top left
+;	dq 9,22,10,0x1FF0000FF ; top left
 
 	dq 0,13,12,0x1FF00FF00 ; front
 	dq 0,1,13,0x1FF00FF00 ; front
