@@ -39,6 +39,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | FEB 16, 2024 | [STL Files](ex/ex025_stl_files) | [EP. 025](https://youtu.be/4G7QglTu1eM) |
 | MAR 01, 2024 | [3D Frames FEA](ex/ex026_3d_frames_FEA) | [EP. 026](https://youtu.be/4mKymYT_kP8) |
 | MAR 15, 2024 | [Integration](ex/ex027_integration) | [EP. 027](https://youtu.be/2txsBh5PPJk) |
+| APR 12, 2024 | [Depth & Perspective](ex/ex028_perspective_projections) | [EP. 028](https://youtu.be/) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
