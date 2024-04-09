@@ -197,6 +197,151 @@ set_triangle_depth:
 
 	; check edges	
 
+%if 0
+	push rdi
+	push rsi
+	push rdx
+	mov rdi,SYS_STDOUT
+	
+	; vtx 0
+	mov rsi,.cp+1
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,[r8+0]
+	call print_float
+
+	mov rsi,.cp+2
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,[r8+8]
+	call print_float
+
+	mov rsi,.cp+3
+	mov rdx,5
+	call print_chars
+
+	; Pt
+	mov rsi,.cp+1
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,xmm10
+	call print_float
+
+	mov rsi,.cp+2
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,xmm11
+	call print_float
+
+	mov rsi,.cp+3
+	mov rdx,1
+	call print_chars
+
+	mov rsi,.cp+8
+	mov rdx,1
+	call print_chars
+
+	; vector vtx0->Pt
+	mov rsi,.cp+1
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,xmm10
+	subsd xmm0,[r8+0]
+	call print_float
+
+	mov rsi,.cp+2
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,xmm11
+	subsd xmm0,[r8+8]
+	call print_float
+
+	mov rsi,.cp+3
+	mov rdx,1
+	call print_chars
+
+	; newline
+	mov rsi,.cp+9
+	mov rdx,1
+	call print_chars
+
+	; vtx 0 to vtx1
+	mov rsi,.cp+1
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,[.vtx0_to_vtx1+0]
+	call print_float
+
+	mov rsi,.cp+2
+	mov rdx,1
+	call print_chars
+
+	mov rsi,5
+	movsd xmm0,[.vtx0_to_vtx1+8]
+	call print_float
+
+	mov rsi,.cp+3
+	mov rdx,1
+	call print_chars
+
+	; newline
+	mov rsi,.cp+9
+	mov rdx,1
+	call print_chars
+
+
+	; cross product result
+	mov rsi,.cp+8
+	mov rdx,1
+	call print_chars
+
+
+	movsd xmm1,xmm10
+	subsd xmm1,[r8+0] ; todo x and y can be parallelized here
+	movsd xmm0,xmm11
+	subsd xmm0,[r8+8]
+	; vtx1-vtx0
+	movsd xmm3,[.vtx0_to_vtx1+0]
+	movsd xmm2,[.vtx0_to_vtx1+8]
+;	movsd xmm3,[r8+24]
+;	subsd xmm3,[r8+0]
+;	movsd xmm2,[r8+32]
+;	subsd xmm2,[r8+8]
+	mulsd xmm1,xmm2
+	mulsd xmm0,xmm3
+	subsd xmm1,xmm0
+
+	movsd xmm0,xmm1
+	mov rsi,5
+	call print_float
+
+	; newline
+	mov rsi,.cp+9
+	mov rdx,1
+	call print_chars
+	
+	pop rdx
+	pop rsi
+	pop rdi
+
+;	db `X(,) to =\n`
+
+%endif
+
 	; cross product of vtx0->pt and vtx0->vtx1	
 	; pt-vtx0
 	movsd xmm1,xmm10
@@ -214,7 +359,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	jb .point_no_good ; might need to be ja
+	ja .point_no_good ; might need to be ja
 	movsd xmm4,xmm1	 	; {xmm4} contains barycentric coefficient w
 
 	; cross product of vtx1->pt and vtx1->vtx2	
@@ -234,7 +379,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	jb .point_no_good ; might need to be ja
+	ja .point_no_good ; might need to be ja
 	movsd xmm5,xmm1	 	; {xmm5} contains barycentric coefficient u
 
 	; cross product of vtx2->pt and vtx2->vtx0	
@@ -254,9 +399,10 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	jb .point_no_good ; might need to be ja
+	ja .point_no_good ; might need to be ja
 	movsd xmm6,xmm1	 	; {xmm6} contains barycentric coefficient v
 
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -273,7 +419,7 @@ set_triangle_depth:
 	
 	call print_buffer_flush
 	call exit
-
+%endif
 
 
 .point_in_triangle:
@@ -312,7 +458,7 @@ set_triangle_depth:
 	call print_chars
 	
 	call print_buffer_flush
-	call exit
+;	call exit
 
 	cvtsd2ss xmm0,xmm0 ; might not work LOL
 
@@ -386,14 +532,13 @@ set_triangle_depth:
 	pop rsi
 	pop rdi
 
-
-
 .too_deep_to_put_pixel:
-
 
 .point_no_good:
 	
 	; pt to check/plot at ({xmm10},{xmm11}) ; could be ints and constantly converted via cvtsi2sd
+
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -422,7 +567,7 @@ set_triangle_depth:
 	pop rdx
 	pop rsi
 	pop rdi
-
+%endif
 
 	addsd xmm10,[.one]
 	comisd xmm10,xmm13
@@ -433,8 +578,6 @@ set_triangle_depth:
 	jb .rect_loop_y
 
 .off_screen:
-
-
 
 	movdqu xmm0,[rsp+0]
 	movdqu xmm1,[rsp+16]
@@ -472,8 +615,6 @@ set_triangle_depth:
 	pop rdx
 	pop rsi
 	pop rdi
-
-
 	
 	ret
 
@@ -505,4 +646,6 @@ set_triangle_depth:
 	db `no put pixel\n`
 .newline:
 	db `\n`
+.cp:
+	db `X(,) to =\n`
 %endif
