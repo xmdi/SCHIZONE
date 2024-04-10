@@ -317,14 +317,17 @@ framebuffer_3d_render_depth_init:
 	cmp byte [r14+24],0b00000010
 	je .is_wireframe
 
-	cmp byte [r14+24],0b00001000
-	je .is_text
-
 	cmp byte [r14+24],0b00000100
-	je .is_face_solid_color
+	je .is_face_from_solid_color
 
 	cmp byte [r14+24],0b00000101
+	je .is_face_from_face_color
+
+	cmp byte [r14+24],0b00000110
 	je .is_face_interpolated_color
+
+	cmp byte [r14+24],0b00001000
+	je .is_text
 
 	jmp .geometry_type_unsupported
 
@@ -350,7 +353,7 @@ framebuffer_3d_render_depth_init:
 
 	jmp .geometry_type_unsupported
 
-.is_face_solid_color:
+.is_face_from_solid_color:
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[r14+16]
 	mov edx,[framebuffer_init.framebuffer_width]
@@ -363,36 +366,29 @@ framebuffer_3d_render_depth_init:
 
 	jmp .geometry_type_unsupported
 
+.is_face_from_face_color:
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,[r14+16]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,[.perspective_structure_address]
+	mov r9,[r14+8]
+	mov r10,[.depth_buffer_address]
+	mov r11,1
+	call rasterize_faces_depth
+
+	jmp .geometry_type_unsupported
+
 .is_face_interpolated_color:
-
-;	mov rdi,[r14+8]
-;	mov rsi,[.perspective_structure_address]
-;	call centroid_sort ; sort all shell bodies by distance from viewer
-;
-;	mov rcx,[r14+8]
-;	mov rdx,rcx
-;	add rdx,8
-;	mov rcx,[rcx]
-;	cmp rcx,0	
-;	jbe .geometry_type_unsupported
-;
-;.shell_body_loop:
-
-;	push rdx
-;	push rcx
-;	mov rdi,[framebuffer_init.framebuffer_address]
-;	mov rsi,[r14+16]
-;	mov r9,[rdx]
-;	mov edx,[framebuffer_init.framebuffer_width]
-;	mov ecx,[framebuffer_init.framebuffer_height]
-;	mov r8,[.perspective_structure_address]
-;	call rasterize_faces
-;	pop rcx
-;	pop rdx
-;
-;	add rdx,32
-;	dec rcx
-;	jnz .shell_body_loop
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,[r14+16]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8,[.perspective_structure_address]
+	mov r9,[r14+8]
+	mov r10,[.depth_buffer_address]
+	mov r11,2
+	call rasterize_faces_depth
 
 	jmp .geometry_type_unsupported
 
@@ -491,8 +487,7 @@ framebuffer_3d_render_depth_init:
 .was_dragging:
 	db 0
 .Inf:
-	db 0b01111111
-	times 3 db 0
+	dd 0x7F800000
 .Uxzoom:
 	times 3 dq 0.0
 .Uyzoom:

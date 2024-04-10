@@ -123,17 +123,17 @@ START:
 	dq 0 ; next geometry in linked list
 	dq .faces_structure ; address of point/edge/face structure
 	dq 0x1000000FF ; color (0xARGB)
-	db 0b00000100 ; type of structure to render
+	db 0b00000110 ; type of structure to render
 
 .faces_structure:
 	dq 24 ; number of points (N)
 	dq 1;36 ; number of faces (M)
-	dq .points ; starting address of point array (3N elements)
+	dq .points ; starting address of point array (3N elements, 4N if colors)
 	dq .faces ; starting address of face array 
 		;	(3M elements if no colors)
 		;	(4M elements if colors)
 
-.points:
+.points_old:
 	; base of vertical beam
 	dq 0.5,0.5,0.0
 	dq -0.5,0.5,0.0
@@ -169,6 +169,43 @@ START:
 	dq -1.5,-0.5,2.0
 	dq -1.5,-0.5,3.0
 	dq -1.5,0.5,3.0
+
+.points:
+	; base of vertical beam
+	dq 0.5,0.5,0.0,0x1FF0000FF
+	dq -0.5,0.5,0.0,0x1FF00FF00
+	dq -0.5,-0.5,0.0,0x1FFFF0000
+	dq 0.5,-0.5,0.0,0x1FFFF00FF
+
+	; bottom of cross beam
+	dq 0.5,0.5,2.0,0x1FF0000FF
+	dq -0.5,0.5,2.0,0x1FF00FF00
+	dq -0.5,-0.5,2.0,0x1FFFF0000
+	dq 0.5,-0.5,2.0,0x1FFFF00FF
+
+	; top of cross beam
+	dq 0.5,0.5,3.0,0x1FF0000FF
+	dq -0.5,0.5,3.0,0x1FF00FF00
+	dq -0.5,-0.5,3.0,0x1FFFF0000
+	dq 0.5,-0.5,3.0,0x1FFFF00FF
+
+	; top of vertical beam
+	dq 0.5,0.5,4.0,0x1FF0000FF
+	dq -0.5,0.5,4.0,0x1FF00FF00
+	dq -0.5,-0.5,4.0,0x1FFFF0000
+	dq 0.5,-0.5,4.0,0x1FFFF00FF
+
+	; right side of cross beam
+	dq 1.5,0.5,2.0,0x1FF0000FF
+	dq 1.5,-0.5,2.0,0x1FF00FF00
+	dq 1.5,-0.5,3.0,0x1FFFF0000
+	dq 1.5,0.5,3.0,0x1FFFF00FF
+
+	; left side of cross beam
+	dq -1.5,0.5,2.0,0x1FF0000FF
+	dq -1.5,-0.5,2.0,0x1FF00FF00
+	dq -1.5,-0.5,3.0,0x1FFFF0000
+	dq -1.5,0.5,3.0,0x1FFFF00FF
 
 .faces:
 ;	dq 0,2,1,0x1FFFF0000 ; bottom

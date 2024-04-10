@@ -8,15 +8,16 @@
 
 rasterize_faces_depth:
 ; void rasterize_faces_depthbuffer(void* {rdi}, int {rsi}, int {edx}, 
-;		int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, bool {r11});
+;		int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, long {r11});
 ;	Rasterizes a set of faces described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
 ;	image using the color value in the low 32 bits of {rsi} to the bitmap
 ;	starting at address {rdi}. The 32nd bit of {rsi} indicates the stacking
-;	direction of the bitmap rows. If low bit of {r11} is high, colors stored
-;	alongside vertex information in 32 byte chunks of (x,y,z,ARGB). If low 
-;	bit of {r11} is low, solid face color stored in {rsi}.
-;	Depthbuffer at {r10} (4*{ecx}*{edx} bytes).
+;	direction of the bitmap rows. If {r11}=2, colors stored alongside vertex 
+;	information in 32-byte chunks of (x,y,z,ARGB). If {r11}=1, colors stored
+;	alongside face information in 32-byte chunks (v0,v1,v2,ARGB). If {r11}=0,
+;	solid face color stored in {rsi}. Depthbuffer at {r10} 
+;	(4*{ecx}*{edx} bytes).
 
 %if 0
 .perspective_structure:
@@ -44,7 +45,7 @@ rasterize_faces_depth:
 
 	push rax
 	push rcx
-	push r10
+	push r13
 	push r14
 	push r15
 	sub rsp,160
@@ -90,19 +91,27 @@ rasterize_faces_depth:
 
 	mov rsi,.grammar
 	call print_chars
-	
+
 	call print_buffer_flush
 	pop rdx
 	pop rsi
 	pop rdi
-;
+
 	; first check if normal is pointing opposite the view direction
 	push rdi
 	push rsi
 	push rdx
 	push rcx
+
 	; normal buffer
 	mov rdi,.triangle_normal
+	
+	cmp r11,2
+	je .ARGB_yes
+
+.ARGB_no:
+	;;; no ARGB color alongside vtx positions
+	
 	; vertex A	
 	mov rsi,[rax]
 	shl rsi,3
@@ -118,7 +127,32 @@ rasterize_faces_depth:
 	shl rcx,3
 	imul rcx,rcx,3
 	add rcx,[r9+16]
+	jmp .eval_triangle_normal
+
+.ARGB_yes:
+	;;; yes ARGB color alongside vtx positions
+
+	; normal buffer
+	mov rdi,.triangle_normal
+	; vertex A	
+	mov rsi,[rax]
+	shl rsi,3
+	imul rsi,rsi,4
+	add rsi,[r9+16]
+	; vertex B
+	mov rdx,[rax+8]
+	shl rdx,3
+	imul rdx,rdx,4
+	add rdx,[r9+16]
+	; vertex C
+	mov rcx,[rax+16]
+	shl rcx,3
+	imul rcx,rcx,4
+	add rcx,[r9+16]
+
+.eval_triangle_normal:
 	call triangle_normal
+	
 	pop rcx
 	pop rdx
 	pop rsi
@@ -146,16 +180,18 @@ rasterize_faces_depth:
 	pop rsi
 	pop rdi
 
-
 	pxor xmm1,xmm1
 	comisd xmm0,xmm1
 	jb .skip
+
+;	mov rdi,100
+;	call exit
 	
 	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
 	
-	xor rcx,rcx
+	xor r13,r13
 	mov rbp,.triangle_colors
 
 .triangle_points_loop:
@@ -164,13 +200,20 @@ rasterize_faces_depth:
 	
 	mov r14,[rax]
 	shl r14,3
+	cmp r11,2
+	jne .no_encoded_color
+	imul r14,r14,4	; {r14} points to the x value of the first point
+	jmp .color_encoding
+.no_encoded_color:
 	imul r14,r14,3	; {r14} points to the x value of the first point
+.color_encoding:
 	add r14,[r9+16]
 
 	movsd xmm3,[r14]	; Pt_x
 	movsd xmm4,[r14+8]	; Pt_y
 	movsd xmm5,[r14+16]	; Pt_z
 %if 0
+
 	push rdi
 	push rsi
 	push rdx
@@ -197,9 +240,9 @@ rasterize_faces_depth:
 	pop rdi
 %endif
 
-
-	cmp r11,1
+	cmp r11,2
 	jne .no_vtx_colors
+
 	mov rbx,[r14+24]
 	mov [rbp],rbx
 
@@ -250,14 +293,14 @@ rasterize_faces_depth:
 	addsd xmm7,[.one]
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
 	
-	movsd [rcx+.triangle_points+0],xmm0 ; projected x
-	movsd [rcx+.triangle_points+8],xmm7 ; projected y
-	movsd [rcx+.triangle_points+16],xmm6 ; projected depth z
+	movsd [r13+.triangle_points+0],xmm0 ; projected x
+	movsd [r13+.triangle_points+8],xmm7 ; projected y
+	movsd [r13+.triangle_points+16],xmm6 ; projected depth z
 			
 	add rax,8
 	add rbp,8
-	add rcx,24
-	cmp rcx,56
+	add r13,24
+	cmp r13,56
 	jle .triangle_points_loop
 
 	push rsi
@@ -265,12 +308,26 @@ rasterize_faces_depth:
 	push r8
 	push r9
 
-	mov r8,.triangle_points
-	mov r9,r11
 	; {r10} points to depth buffer
+	mov r8,.triangle_points
+	
+	cmp r11,2
+	je .colors_interpolated_from_vertices
 	cmp r11,1
-	jne .set_triangle_depth
+	je .colors_set_per_face
+	cmp r11,0
+	je .solid_color_override
+
+.colors_interpolated_from_vertices:
+	mov r9,1
 	mov rsi,.triangle_colors
+	jmp .set_triangle_depth
+.colors_set_per_face:
+	mov rsi,[rax]
+.solid_color_override:
+	; color in {rsi} from function call
+	xor r9,r9
+
 .set_triangle_depth:
 %if 0
 	push rdi
@@ -299,7 +356,6 @@ rasterize_faces_depth:
 	pop rdi
 %endif
 
-
 	call set_triangle_depth
 
 	pop r9
@@ -326,7 +382,7 @@ rasterize_faces_depth:
 	add rsp,160
 	pop r15
 	pop r14
-	pop r10
+	pop r13
 	pop rcx
 	pop rax
 

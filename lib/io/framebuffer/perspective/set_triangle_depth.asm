@@ -12,12 +12,11 @@ set_triangle_depth:
 ;		 double* {r8}, bool {r9}, single* {r10})
 ;	Fills triangle with vertices described by 9 double-precision floats
 ;	starting at {r8} (projected x, projected y, projected depth)
-;	in ARGB data array starting at {rdi} for an 
-;	{edx}x{ecx} (WxH) image. {r9} contains color interpolation flag. If 
-;	low bit of {r9} is high, {rsi} points to 3x1 ARGB color array 
-;	(32 bpp). If low bit of {r9} is low, {rsi} contains triangle fill
-;	color (32 bpp). Pointer to single-precision depth buffer at {r10}
-;	(4*{ecx}*{edx} bytes).
+;	in ARGB data array starting at {rdi} for an {edx}x{ecx} (WxH) image. 
+;	{r9} contains color interpolation flag. If low bit of {r9} is high, 
+;	{rsi} points to 3x1 ARGB color array (32 bpp). If low bit of {r9} 
+;	is low, {rsi} contains triangle fill color (32 bpp). Pointer to 
+;	single-precision depth buffer at {r10} (4*{ecx}*{edx} bytes).
 
 	push rax
 	push rbx
@@ -25,6 +24,7 @@ set_triangle_depth:
 	push rsi
 	push r8
 	push r9
+	push r15
 	sub rsp,256
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
@@ -43,6 +43,7 @@ set_triangle_depth:
 	movdqu [rsp+224],xmm14
 	movdqu [rsp+240],xmm15
 
+	mov r15,rsi
 
 	movsd xmm12,[r8+0]	; min vtx 1 x
 	minsd xmm12,[r8+24]	; min vtx 2 x
@@ -60,6 +61,7 @@ set_triangle_depth:
 	maxsd xmm15,[r8+32]	; max vtx 2 y
 	maxsd xmm15,[r8+56]	; max vtx 3 y
 	roundsd xmm15,xmm15,0b0010
+
 %if 0
 
 	push rdi
@@ -144,7 +146,7 @@ set_triangle_depth:
 	subsd xmm0,[r8+56]
 	movsd [.vtx2_to_vtx0+8],xmm0
 
-%if 1
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -170,10 +172,8 @@ set_triangle_depth:
 	pop rdi
 %endif
 
-
 	pxor xmm9,xmm9
 	movsd xmm11,xmm14
-
 
 ;	push rdi
 ;	push rsi
@@ -429,9 +429,6 @@ set_triangle_depth:
 	; compute depth at this point first
 	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
 
-	;mov dil,5
-	;call exit
-
 	movsd xmm0,xmm4
 	movsd xmm1,xmm5
 	movsd xmm2,xmm6
@@ -442,7 +439,7 @@ set_triangle_depth:
 	addsd xmm0,xmm2
 	; depth of pixel of interest in {xmm0} (double precision)
 
-
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -460,6 +457,8 @@ set_triangle_depth:
 	call print_buffer_flush
 ;	call exit
 
+%endif
+
 	cvtsd2ss xmm0,xmm0 ; might not work LOL
 
 	cvtsd2si rax,xmm10 ; x coord
@@ -472,7 +471,6 @@ set_triangle_depth:
 	add rbp,r10	; {rbp} points to depth for pixel of interest
 	movss xmm1,[rbp]
 
-
 	comiss xmm0,xmm1
 	jae .too_deep_to_put_pixel
 	
@@ -483,10 +481,31 @@ set_triangle_depth:
 	cmp r9,0 ; TODO should be a test instruction tbh, not cmp
 	je .color_computed
 
+%if 0
+	push rdi
+	push rsi
+	push rdx
+
+	mov rdi,SYS_STDOUT
+	mov rsi,10
+	cvtss2sd xmm0,xmm0
+	call print_float
+
+	call print_buffer_flush
+;	call exit
+
+	pop rdx
+	pop rsi
+	pop rdi
+
+%endif
+
+
+
 	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
-	cvtsi2sd xmm0,[rsi+0]
-	cvtsi2sd xmm1,[rsi+8]
-	cvtsi2sd xmm2,[rsi+16]
+	cvtsi2sd xmm0,[r15+0]
+	cvtsi2sd xmm1,[r15+8]
+	cvtsi2sd xmm2,[r15+16]
 	mulsd xmm0,xmm4
 	mulsd xmm1,xmm5	
 	mulsd xmm2,xmm6
@@ -495,9 +514,9 @@ set_triangle_depth:
 	; color of pixel of interest in {xmm0} (double precision)
 	cvtsd2si rsi,xmm0 ; and now in {rsi}
 
-
 .color_computed:
 	; put the pixel
+
 	push r8
 	push r9
 	mov r8,rax
@@ -505,7 +524,26 @@ set_triangle_depth:
 	call set_pixel
 	pop r9
 	pop r8
-	
+
+%if 0
+	push rdi
+	push rsi
+
+	mov rsi,rcx	
+	mov rdi,SYS_STDOUT
+	call print_int_d
+	call print_buffer_flush
+	call exit
+
+
+	pop rsi
+	pop rdi
+%endif
+
+;	mov rdi,6
+;	call exit
+
+%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -531,6 +569,8 @@ set_triangle_depth:
 	pop rdx
 	pop rsi
 	pop rdi
+
+%endif
 
 .too_deep_to_put_pixel:
 
@@ -573,6 +613,7 @@ set_triangle_depth:
 	comisd xmm10,xmm13
 	jb .rect_loop_x
 
+
 	addsd xmm11,[.one]
 	comisd xmm11,xmm15
 	jb .rect_loop_y
@@ -596,13 +637,15 @@ set_triangle_depth:
 	movdqu xmm14,[rsp+224]
 	movdqu xmm15,[rsp+240]
 	add rsp,256
+	pop r15
 	pop r9
 	pop r8
 	pop rsi
 	pop rbp
 	pop rbx
 	pop rax
-	
+
+%if 0	
 	push rdi
 	push rsi
 	push rdx
@@ -615,12 +658,12 @@ set_triangle_depth:
 	pop rdx
 	pop rsi
 	pop rdi
+%endif
 	
 	ret
 
 .one:
 	dq 1.0
-
 .vtx_to_pt:
 	times 2 dq 0.0
 .vtx0_to_vtx1:
