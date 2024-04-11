@@ -44,6 +44,7 @@ rasterize_faces_depth:
 %endif
 
 	push rax
+	push rbx
 	push rcx
 	push r13
 	push r14
@@ -65,37 +66,6 @@ rasterize_faces_depth:
 	;loop thru all faces
 
 .loop_faces:
-
-	push rdi
-	push rsi
-	push rdx
-	mov rdi,SYS_STDOUT
-	mov rsi,r15
-	call print_int_d
-	mov rsi,.grammar
-	mov rdx,1
-	call print_chars
-	
-	mov rsi,[rax]
-	call print_int_d
-	mov rsi,.grammar+1
-	call print_chars
-	mov rsi,[rax+8]
-	call print_int_d
-	mov rsi,.grammar+1
-	call print_chars
-	mov rsi,[rax+16]
-	call print_int_d
-	mov rsi,.grammar+1
-	call print_chars
-
-	mov rsi,.grammar
-	call print_chars
-
-	call print_buffer_flush
-	pop rdx
-	pop rsi
-	pop rdi
 
 	; first check if normal is pointing opposite the view direction
 	push rdi
@@ -132,8 +102,6 @@ rasterize_faces_depth:
 .ARGB_yes:
 	;;; yes ARGB color alongside vtx positions
 
-	; normal buffer
-	mov rdi,.triangle_normal
 	; vertex A	
 	mov rsi,[rax]
 	shl rsi,3
@@ -165,28 +133,11 @@ rasterize_faces_depth:
 	call dot_product_3
 	pop rsi
 	pop rdi
-
 	
-	push rdi
-	push rsi
-	push rdx
-	mov rdi,SYS_STDOUT
-	mov rsi,.normal_completed
-	mov rdx,10
-	call print_chars
-	call print_buffer_flush
-
-	pop rdx
-	pop rsi
-	pop rdi
-
 	pxor xmm1,xmm1
 	comisd xmm0,xmm1
 	jb .skip
 
-;	mov rdi,100
-;	call exit
-	
 	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
@@ -212,39 +163,13 @@ rasterize_faces_depth:
 	movsd xmm3,[r14]	; Pt_x
 	movsd xmm4,[r14+8]	; Pt_y
 	movsd xmm5,[r14+16]	; Pt_z
-%if 0
-
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	push r10
-	mov rdi,SYS_STDOUT
-	mov rsi,r14
-	mov rdx,1
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,8
-	call print_array_float
-	call print_buffer_flush
-
-	pop r10
-	pop r9
-	pop r8
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
-%endif
 
 	cmp r11,2
 	jne .no_vtx_colors
 
 	mov rbx,[r14+24]
 	mov [rbp],rbx
+	add rbp,8
 
 .no_vtx_colors:
 
@@ -298,7 +223,6 @@ rasterize_faces_depth:
 	movsd [r13+.triangle_points+16],xmm6 ; projected depth z
 			
 	add rax,8
-	add rbp,8
 	add r13,24
 	cmp r13,56
 	jle .triangle_points_loop
@@ -329,35 +253,9 @@ rasterize_faces_depth:
 	xor r9,r9
 
 .set_triangle_depth:
-%if 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	push r10
-	mov rdi,SYS_STDOUT
-	mov rsi,.triangle_points
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,8
-	call print_array_float
-	call print_buffer_flush
-
-	pop r10
-	pop r9
-	pop r8
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
-%endif
 
 	call set_triangle_depth
-
+	
 	pop r9
 	pop r8
 	pop rax
@@ -384,6 +282,7 @@ rasterize_faces_depth:
 	pop r14
 	pop r13
 	pop rcx
+	pop rbx
 	pop rax
 
 	ret
@@ -405,8 +304,4 @@ align 16
 .triangle_colors:
 	times 3 dq 0
 
-.grammar:
-	db `\n,`
-.normal_completed:
-	db `norm comp\n`
 %endif

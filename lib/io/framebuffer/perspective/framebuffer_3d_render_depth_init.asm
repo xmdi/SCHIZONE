@@ -44,11 +44,6 @@
 %include "lib/math/vector/cross_product_3.asm"
 ; void cross_product_3(double* {rdi}, double* {rsi}, double* {rdx});
 
-
-; TODO DELETE
-%include "lib/sys/exit.asm"
-%include "lib/io/print_int_d.asm"
-
 framebuffer_3d_render_depth_init:
 ; void framebuffer_3d_render_depth_perspective_init(struct* {rdi}, 
 ;	struct* {rsi}, void* {rdx});
@@ -412,7 +407,7 @@ framebuffer_3d_render_depth_init:
 .done:
 
 	call framebuffer_flush
-	
+
 	; copy this to the intermediate buffer to start
 	mov rdi,rbx
 	mov rsi,[framebuffer_init.framebuffer_address]
