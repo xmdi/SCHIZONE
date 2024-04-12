@@ -334,6 +334,26 @@ framebuffer_3d_render_depth_loop:
 
 .draw_wires:
 
+	; reset depth buffer to start at +Inf
+	push rdi
+	push rcx
+	push rbx
+
+	mov rcx,[framebuffer_init.framebuffer_size]
+	shr rcx,2
+	mov rdi,[framebuffer_3d_render_depth_init.depth_buffer_address]
+	mov ebx,[framebuffer_3d_render_depth_init.Inf]
+
+.depth_buffer_init:
+	mov [rdi],ebx	
+	add rdi,4
+	dec rcx
+	jnz .depth_buffer_init
+
+	pop rbx
+	pop rcx
+	pop rdi
+
 	; Uy = (upDir)
 	; Ux = (upDir)x(lookFrom-lookAt)
 
@@ -341,14 +361,22 @@ framebuffer_3d_render_depth_loop:
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
 
 	; precompute Ux*zoom 
+
+	cvtsi2sd xmm0,[framebuffer_init.framebuffer_width]
+	cvtsi2sd xmm2,[framebuffer_init.framebuffer_height]
+	divsd xmm2,xmm0
+
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+0]
 	mulsd xmm0,[r15+72]
+	mulsd xmm0,xmm2
 	movsd [framebuffer_3d_render_depth_init.Uxzoom+0],xmm0
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+8]
 	mulsd xmm0,[r15+72]
+	mulsd xmm0,xmm2
 	movsd [framebuffer_3d_render_depth_init.Uxzoom+8],xmm0
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+16]
 	mulsd xmm0,[r15+72]
+	mulsd xmm0,xmm2
 	movsd [framebuffer_3d_render_depth_init.Uxzoom+16],xmm0
 
 	; precompute Uy*zoom
@@ -362,6 +390,7 @@ framebuffer_3d_render_depth_loop:
 	mulsd xmm0,[r15+72]
 	movsd [framebuffer_3d_render_depth_init.Uyzoom+16],xmm0
 
+%if 0
 	; "precompute" aka copy over Uz
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+48]
 	movsd [framebuffer_3d_render_depth_init.Uz+0],xmm0
@@ -370,7 +399,6 @@ framebuffer_3d_render_depth_loop:
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+64]
 	movsd [framebuffer_3d_render_depth_init.Uz+16],xmm0
 
-%if 0
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2
 	movsd xmm1,[framebuffer_3d_render_depth_init.one]

@@ -58,6 +58,8 @@ PROGRAM_HEADER:
 
 %include "lib/sys/exit.asm"
 
+%include "lib/io/print_array_float.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,6 +109,30 @@ START:
 
 .loop:
 	call framebuffer_3d_render_depth_loop
+
+	mov rdi,SYS_STDOUT
+	mov rsi,framebuffer_3d_render_depth_init.Uxzoom
+	mov rdx,3
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,10
+	call print_array_float
+	call print_buffer_flush
+
+	mov rdi,SYS_STDOUT
+	mov rsi,framebuffer_3d_render_depth_init.view_axes_old
+	mov rdx,3
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,10
+	call print_array_float
+	call print_buffer_flush
+
+
+
+;	call exit
 	jmp .loop
 
 .perspective_structure:
