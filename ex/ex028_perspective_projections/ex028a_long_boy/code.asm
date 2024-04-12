@@ -54,7 +54,9 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_init.asm"
 
-;%include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_loop.asm"
+%include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_loop.asm"
+
+%include "lib/sys/exit.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,7 +106,7 @@ START:
 	call framebuffer_3d_render_depth_init
 
 .loop:
-;	call framebuffer_3d_render_loop
+	call framebuffer_3d_render_depth_loop
 	jmp .loop
 
 .perspective_structure:

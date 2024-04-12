@@ -16,23 +16,11 @@
 %include "lib/io/framebuffer/framebuffer_mouse_init.asm"
 ; void framebuffer_mouse_init(void);
 
-;%include "lib/io/framebuffer/centroid_sort.asm"
-; void centroid_sort(struct* {rdi}, struct* {rsi});
+%include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_switch.asm"
+; void framebuffer_3d_render_depth_switch(void);
 
 %include "lib/io/framebuffer/perspective/rasterize_faces_depth.asm"
 ; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 struct* {r8}, struct* {r9});
-
-;%include "lib/io/bitmap/rasterize_text.asm"
-; void rasterize_text(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 struct* {r8}, struct* {r9});
-
-;%include "lib/io/bitmap/rasterize_edges.asm"
-; void rasterize_edges(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 struct* {r8}, struct* {r9});
-
-;%include "lib/io/bitmap/rasterize_pointcloud.asm"
-; void rasterize_pointcloud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
 %include "lib/math/vector/normalize_3.asm"
@@ -301,110 +289,8 @@ framebuffer_3d_render_depth_init:
 	cvtsi2sd xmm10,rax
 	movsd [.half_height],xmm10
 
-	mov r14,[.geometry_linked_list_address]
-
-.loop:
-	; need to put some logic hear to accommodate things that aren't wireframes
-
-	cmp byte [r14+24],0b00000001
-	je .is_pointcloud
-
-	cmp byte [r14+24],0b00000010
-	je .is_wireframe
-
-	cmp byte [r14+24],0b00000100
-	je .is_face_from_solid_color
-
-	cmp byte [r14+24],0b00000101
-	je .is_face_from_face_color
-
-	cmp byte [r14+24],0b00000110
-	je .is_face_interpolated_color
-
-	cmp byte [r14+24],0b00001000
-	je .is_text
-
-	jmp .geometry_type_unsupported
-
-.is_pointcloud:
-;	mov rdi,[framebuffer_init.framebuffer_address]
-;	mov rsi,[r14+16]
-;	mov edx,[framebuffer_init.framebuffer_width]
-;	mov ecx,[framebuffer_init.framebuffer_height]
-;	mov r8,[.perspective_structure_address]
-;	mov r9,[r14+8]
-;	call rasterize_pointcloud	
-
-	jmp .geometry_type_unsupported
-
-.is_wireframe:
-;	mov rdi,[framebuffer_init.framebuffer_address]
-;	mov rsi,[r14+16]
-;	mov edx,[framebuffer_init.framebuffer_width]
-;	mov ecx,[framebuffer_init.framebuffer_height]
-;	mov r8,[.perspective_structure_address]
-;	mov r9,[r14+8]
-;	call rasterize_edges	
-
-	jmp .geometry_type_unsupported
-
-.is_face_from_solid_color:
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	mov r9,[r14+8]
-	mov r10,[.depth_buffer_address]
-	xor r11,r11
-	call rasterize_faces_depth
-
-	jmp .geometry_type_unsupported
-
-.is_face_from_face_color:
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	mov r9,[r14+8]
-	mov r10,[.depth_buffer_address]
-	mov r11,1
-	call rasterize_faces_depth
-
-	jmp .geometry_type_unsupported
-
-.is_face_interpolated_color:
-	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
-	mov edx,[framebuffer_init.framebuffer_width]
-	mov ecx,[framebuffer_init.framebuffer_height]
-	mov r8,[.perspective_structure_address]
-	mov r9,[r14+8]
-	mov r10,[.depth_buffer_address]
-	mov r11,2
-	call rasterize_faces_depth
-
-	jmp .geometry_type_unsupported
-
-.is_text:
-;	mov rdi,[framebuffer_init.framebuffer_address]
-;	mov rsi,[r14+16]
-;	mov edx,[framebuffer_init.framebuffer_width]
-;	mov ecx,[framebuffer_init.framebuffer_height]
-;	mov r8,[.perspective_structure_address]
-;	mov r9,[r14+8]
-;	call rasterize_text
-
-.geometry_type_unsupported:
-
-	cmp qword [r14],0
-	je .done
-
-	mov r14,[r14]
-	jmp .loop
-
-.done:
+	; process objects
+	call framebuffer_3d_render_depth_switch
 
 	call framebuffer_flush
 
