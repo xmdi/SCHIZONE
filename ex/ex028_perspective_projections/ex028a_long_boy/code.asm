@@ -60,6 +60,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/print_array_float.asm"
 
+%include "lib/io/print_int_h.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -102,14 +104,21 @@ DRAW_CROSS_CURSOR:
 
 START:
 
+;	mov rdi,SYS_STDOUT
+;	mov rsi,set_triangle_depth.test_label
+;	call print_int_h
+;	call print_buffer_flush
+;	call exit
+
 	mov rdi,.perspective_structure
 	mov rsi,.faces_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
 .loop:
-	call framebuffer_3d_render_depth_loop
 
+	call framebuffer_3d_render_depth_loop
+%if 0
 	mov rdi,SYS_STDOUT
 	mov rsi,framebuffer_3d_render_depth_init.Uxzoom
 	mov rdx,3
@@ -129,9 +138,7 @@ START:
 	mov r10,10
 	call print_array_float
 	call print_buffer_flush
-
-
-
+%endif
 ;	call exit
 	jmp .loop
 

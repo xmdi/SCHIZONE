@@ -256,6 +256,8 @@ rasterize_faces_depth:
 
 	call set_triangle_depth
 	
+	
+
 	pop r9
 	pop r8
 	pop rax
@@ -266,7 +268,7 @@ rasterize_faces_depth:
 .continue:
 	dec r15
 	jnz .loop_faces
-
+.jmp_out
 	movdqu xmm0,[rsp+0]
 	movdqu xmm1,[rsp+16]
 	movdqu xmm2,[rsp+32]

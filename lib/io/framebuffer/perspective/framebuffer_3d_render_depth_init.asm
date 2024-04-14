@@ -290,6 +290,7 @@ framebuffer_3d_render_depth_init:
 	movsd [.half_height],xmm10
 
 	; process objects
+	mov rdi,[framebuffer_init.framebuffer_address]
 	call framebuffer_3d_render_depth_switch
 
 	call framebuffer_flush

@@ -105,9 +105,25 @@ set_triangle_depth:
 
 .rect_loop_y:
 
+	; check if y value is within bounds 0<=xmm11<=screen_height
+	pxor xmm0,xmm0
+	comisd xmm11,xmm0
+	jb .skip_row
+	cvtsi2sd xmm0,rcx
+	comisd xmm11,xmm0
+	jae .skip_row ; maybe just 'ja'
+
 	movsd xmm10,xmm12
 
 .rect_loop_x:
+
+	; check if x value is within bounds 0<=xmm10<=screen_width
+	pxor xmm0,xmm0
+	comisd xmm10,xmm0
+	jb .skip_col
+	cvtsi2sd xmm0,rdx
+	comisd xmm10,xmm0
+	jae .skip_col ; maybe just 'ja'
 
 	; check edges	
 
@@ -189,6 +205,7 @@ set_triangle_depth:
 	add rbp,rax
 	shl rbp,2 ; {rbp} contains byte number for pixel of interest
 	add rbp,r10	; {rbp} points to depth for pixel of interest
+.test_label:
 	movss xmm1,[rbp]
 
 	comiss xmm0,xmm1
@@ -339,11 +356,13 @@ set_triangle_depth:
 .point_no_good:
 	
 	; pt to check/plot at ({xmm10},{xmm11}) ; could be ints and constantly converted via cvtsi2sd
+.skip_col:
 
 	addsd xmm10,[.one]
 	comisd xmm10,xmm13
 	jb .rect_loop_x
 
+.skip_row:
 	addsd xmm11,[.one]
 	comisd xmm11,xmm15
 	jb .rect_loop_y

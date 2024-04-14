@@ -7,15 +7,14 @@
 %include "lib/io/framebuffer/perspective/rasterize_faces_depth.asm"
 
 framebuffer_3d_render_depth_switch:
-; void framebuffer_3d_render_depth_switch(void);
-;	Processes objects for the 3D rendering setup with perspective
-;	and depth.
+; void framebuffer_3d_render_depth_switch(void* {rdi});
+;	Processes objects for the 3D rendering setup with perspective and 
+;	depth located at {rdi}.
 
 ; No error handling; deal with it.
 
 ; NOTE: NEED TO RUN THIS AS SUDO
 
-	push rdi
 	push rsi
 	push rdx
 	push rcx
@@ -27,7 +26,7 @@ framebuffer_3d_render_depth_switch:
 
 	mov r14,[framebuffer_3d_render_depth_init.geometry_linked_list_address]
 	
-	mov rdi,[framebuffer_init.framebuffer_address]
+;	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[r14+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
@@ -107,7 +106,6 @@ framebuffer_3d_render_depth_switch:
 	pop rcx
 	pop rdx
 	pop rsi
-	pop rdi
 	
 	ret
 

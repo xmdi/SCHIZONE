@@ -93,7 +93,7 @@ framebuffer_3d_render_depth_loop:
 	je .right_click
 	cmp byte [framebuffer_mouse_init.mouse_state],4
 	je .middle_click
-	
+
 .left_click:
 	; (rotating)
 	; rotate the look_From point about the look_At point
@@ -428,8 +428,11 @@ framebuffer_3d_render_depth_loop:
 	movsd [framebuffer_3d_render_depth_init.Uyzoom+16],xmm5
 %endif
 	; process objects
+	push rdi
+	mov rdi,[framebuffer_3d_render_depth_init.intermediate_buffer_address]
 	call framebuffer_3d_render_depth_switch
-	
+	pop rdi
+
 	jmp .was_not_dragging
 
 .first_click:
