@@ -137,6 +137,7 @@ rasterize_faces_depth:
 	pxor xmm1,xmm1
 	comisd xmm0,xmm1
 	jb .skip
+;	ja .skip	; test
 
 	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
@@ -212,12 +213,16 @@ rasterize_faces_depth:
 	divsd xmm0,xmm6
 	divsd xmm7,xmm6
 
+	;;;; test??
+	mulsd xmm0,[.neg]
+	
 	;TODO parallelize
 	addsd xmm0,[.one]
 	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
 	addsd xmm7,[.one]
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
-	
+
+
 	movsd [r13+.triangle_points+0],xmm0 ; projected x
 	movsd [r13+.triangle_points+8],xmm7 ; projected y
 	movsd [r13+.triangle_points+16],xmm6 ; projected depth z
