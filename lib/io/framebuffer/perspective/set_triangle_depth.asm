@@ -140,7 +140,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	ja .point_no_good ; might need to be ja
+	jb .point_no_good ; might need to be ja
 	movsd xmm6,xmm1	 	; {xmm4} contains barycentric coefficient w
 
 	; cross product of vtx1->pt and vtx1->vtx2	
@@ -156,7 +156,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	ja .point_no_good ; might need to be ja
+	jb .point_no_good ; might need to be ja
 	movsd xmm4,xmm1	 	; {xmm5} contains barycentric coefficient u
 
 	; cross product of vtx2->pt and vtx2->vtx0	
@@ -172,7 +172,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	ja .point_no_good ; might need to be ja
+	jb .point_no_good ; might need to be ja
 	movsd xmm5,xmm1	 	; {xmm6} contains barycentric coefficient v
 
 .point_in_triangle:
@@ -191,7 +191,7 @@ set_triangle_depth:
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2
 
-	mulsd xmm0,[.neg_one];;;;;; RANDOM NEGATIVE SIGN
+;	mulsd xmm0,[.neg_one];;;;;; RANDOM NEGATIVE SIGN
 
 	; depth of pixel of interest in {xmm0} (double precision)
 

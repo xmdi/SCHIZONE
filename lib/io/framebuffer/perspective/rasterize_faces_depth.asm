@@ -214,7 +214,8 @@ rasterize_faces_depth:
 	divsd xmm7,xmm6
 
 	;;;; test??
-	mulsd xmm0,[.neg]
+;	mulsd xmm0,[.neg]
+	mulsd xmm7,[.neg]
 	
 	;TODO parallelize
 	addsd xmm0,[.one]
@@ -258,6 +259,95 @@ rasterize_faces_depth:
 	xor r9,r9
 
 .set_triangle_depth:
+	
+	%if 1
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+
+	mov rdi,SYS_STDOUT
+	mov rsi,.triangle_points
+	mov rdx,3
+	mov rcx,3
+	mov r8,0
+	mov r9,print_float
+	mov r10,8
+	call print_array_float
+	call print_buffer_flush
+
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	%endif
+
+	%if 1
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+
+	mov rdi,SYS_STDOUT
+	mov rsi,.triangle_normal
+	mov rdx,3
+	mov rcx,1
+	mov r8,0
+	mov r9,print_float
+	mov r10,8
+	call print_array_float
+	call print_buffer_flush
+
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	%endif
+
+	%if 1
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+
+	mov rdi,SYS_STDOUT
+	mov rsi,framebuffer_3d_render_depth_init.look_vector
+	mov rdx,3
+	mov rcx,1
+	mov r8,0
+	mov r9,print_float
+	mov r10,8
+	call print_array_float
+	call print_buffer_flush
+
+	call exit
+
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	%endif
+
+
+
 
 	call set_triangle_depth
 	
@@ -273,7 +363,7 @@ rasterize_faces_depth:
 .continue:
 	dec r15
 	jnz .loop_faces
-.jmp_out
+.jmp_out:
 	movdqu xmm0,[rsp+0]
 	movdqu xmm1,[rsp+16]
 	movdqu xmm2,[rsp+32]
