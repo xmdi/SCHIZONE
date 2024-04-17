@@ -62,6 +62,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/print_int_h.asm"
 
+%include "lib/io/print_array_int.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -208,95 +210,95 @@ START:
 
 .points:
 	; base of vertical beam
-	dq 0.5,0.5,0.0,0x1FF0000FF
-	dq -0.5,0.5,0.0,0x1FF00FF00
-	dq -0.5,-0.5,0.0,0x1FFFF0000
-	dq 0.5,-0.5,0.0,0x1FFFF00FF
+	dq 0.5,0.5,0.0,0xFF0000FF
+	dq -0.5,0.5,0.0,0xFF00FF00
+	dq -0.5,-0.5,0.0,0xFFFF0000
+	dq 0.5,-0.5,0.0,0xFFFF00FF
 
 	; bottom of cross beam
-	dq 0.5,0.5,2.0,0x1FF0000FF
-	dq -0.5,0.5,2.0,0x1FF00FF00
-	dq -0.5,-0.5,2.0,0x1FFFF0000
-	dq 0.5,-0.5,2.0,0x1FFFF00FF
+	dq 0.5,0.5,2.0,0xFF0000FF
+	dq -0.5,0.5,2.0,0xFF00FF00
+	dq -0.5,-0.5,2.0,0xFFFF0000
+	dq 0.5,-0.5,2.0,0xFFFF00FF
 
 	; top of cross beam
-	dq 0.5,0.5,3.0,0x1FF0000FF
-	dq -0.5,0.5,3.0,0x1FF00FF00
-	dq -0.5,-0.5,3.0,0x1FFFF0000
-	dq 0.5,-0.5,3.0,0x1FFFF00FF
+	dq 0.5,0.5,3.0,0xFF0000FF
+	dq -0.5,0.5,3.0,0xFF00FF00
+	dq -0.5,-0.5,3.0,0xFFFF0000
+	dq 0.5,-0.5,3.0,0xFFFF00FF
 
 	; top of vertical beam
-	dq 0.5,0.5,4.0,0x1FF0000FF
-	dq -0.5,0.5,4.0,0x1FF00FF00
-	dq -0.5,-0.5,4.0,0x1FFFF0000
-	dq 0.5,-0.5,4.0,0x1FFFF00FF
+	dq 0.5,0.5,4.0,0xFF0000FF
+	dq -0.5,0.5,4.0,0xFF00FF00 ; FF00
+	dq -0.5,-0.5,4.0,0xFFFF0000
+	dq 0.5,-0.5,4.0,0xFFFF00FF
 
 	; right side of cross beam
-	dq 1.5,0.5,2.0,0x1FF0000FF
-	dq 1.5,-0.5,2.0,0x1FF00FF00
-	dq 1.5,-0.5,3.0,0x1FFFF0000
-	dq 1.5,0.5,3.0,0x1FFFF00FF
+	dq 1.5,0.5,2.0,0xFF0000FF
+	dq 1.5,-0.5,2.0,0xFF00FF00
+	dq 1.5,-0.5,3.0,0xFFFF0000
+	dq 1.5,0.5,3.0,0xFFFF00FF
 
 	; left side of cross beam
-	dq -1.5,0.5,2.0,0x1FF0000FF
-	dq -1.5,-0.5,2.0,0x1FF00FF00
-	dq -1.5,-0.5,3.0,0x1FFFF0000
-	dq -1.5,0.5,3.0,0x1FFFF00FF
+	dq -1.5,0.5,2.0,0xFF0000FF
+	dq -1.5,-0.5,2.0,0xFF00FF00
+	dq -1.5,-0.5,3.0,0xFFFF0000
+	dq -1.5,0.5,3.0,0xFFFF00FF
 
 .faces:
-;	dq 0,2,1,0x1FFFF0000 ; bottom
-;	dq 0,3,2,0x1FFFF0000 ; bottom
+;	dq 0,2,1,0xFFFF0000 ; bottom
+;	dq 0,3,2,0xFFFF0000 ; bottom
 
-;	dq 17,7,16,0x1FFFF0000 ; bottom right
-;	dq 16,7,4,0x1FFFF0000 ; bottom right
+;	dq 17,7,16,0xFFFF0000 ; bottom right
+;	dq 16,7,4,0xFFFF0000 ; bottom right
 
-;	dq 5,21,20,0x1FFFF0000 ; bottom left
-;	dq 5,6,21,0x1FFFF0000 ; bottom left
+;	dq 5,21,20,0xFFFF0000 ; bottom left
+;	dq 5,6,21,0xFFFF0000 ; bottom left
 	
-;	dq 13,14,12,0x1FF0000FF ; top
-;	dq 14,15,12,0x1FF0000FF ; top
+;	dq 13,14,12,0xFF0000FF ; top
+;	dq 14,15,12,0xFF0000FF ; top
 
-;	dq 11,18,19,0x1FF0000FF ; top right
-;	dq 11,19,8,0x1FF0000FF ; top right
+;	dq 11,18,19,0xFF0000FF ; top right
+;	dq 11,19,8,0xFF0000FF ; top right
 
-;	dq 9,23,22,0x1FF0000FF ; top left
-;	dq 9,22,10,0x1FF0000FF ; top left
+;	dq 9,23,22,0xFF0000FF ; top left
+;	dq 9,22,10,0xFF0000FF ; top left
 
-	dq 0,13,12,0x1FF00FF00 ; front
-	dq 0,1,13,0x1FF00FF00 ; front
+	dq 0,13,12,0xFF00FF00 ; front
+	dq 0,1,13,0xFF00FF00 ; front
 
-	dq 5,23,9,0x1FF00FF00 ; front right	
-	dq 5,20,23,0x1FF00FF00 ; front right	
+	dq 5,23,9,0xFF00FF00 ; front right	
+	dq 5,20,23,0xFF00FF00 ; front right	
 
-	dq 4,8,19,0x1FF00FF00 ; front left	
-	dq 4,19,16,0x1FF00FF00 ; front left	
+	dq 4,8,19,0xFF00FF00 ; front left	
+	dq 4,19,16,0xFF00FF00 ; front left	
 	
-	dq 3,14,2,0x1FFFFFFFF ; back
-	dq 3,15,14,0x1FFFFFFFF ; back
+	dq 3,14,2,0xFFFFFFFF ; back
+	dq 3,15,14,0xFFFFFFFF ; back
 
-	dq 7,18,11,0x1FFFFFFFF ; back left
-	dq 7,17,18,0x1FFFFFFFF ; back left
+	dq 7,18,11,0xFFFFFFFF ; back left
+	dq 7,17,18,0xFFFFFFFF ; back left
 	
-	dq 6,22,21,0x1FFFFFFFF ; back right
-	dq 6,10,22,0x1FFFFFFFF ; back right
+	dq 6,22,21,0xFFFFFFFF ; back right
+	dq 6,10,22,0xFFFFFFFF ; back right
 	
-	dq 16,18,17,0x1FFFF00FF ; left
-	dq 16,19,18,0x1FFFF00FF ; left
+	dq 16,18,17,0xFFFF00FF ; left
+	dq 16,19,18,0xFFFF00FF ; left
 	
-	dq 8,12,15,0x1FFFF00FF ; top left
-	dq 8,15,11,0x1FFFF00FF ; top left
+	dq 8,12,15,0xFFFF00FF ; top left
+	dq 8,15,11,0xFFFF00FF ; top left
 	
-	dq 0,7,3,0x1FFFF00FF ; bottom left
-	dq 0,4,7,0x1FFFF00FF ; bottom left
+	dq 0,7,3,0xFFFF00FF ; bottom left
+	dq 0,4,7,0xFFFF00FF ; bottom left
 	
-	dq 20,22,23,0x1FFFFFF00 ; right
-	dq 20,21,22,0x1FFFFFF00 ; right
+	dq 20,22,23,0xFFFFFF00 ; right
+	dq 20,21,22,0xFFFFFF00 ; right
 	
-	dq 9,14,13,0x1FFFFFF00 ; top right
-	dq 9,10,14,0x1FFFFFF00 ; top right
+	dq 9,14,13,0xFFFFFF00 ; top right
+	dq 9,10,14,0xFFFFFF00 ; top right
 	
-	dq 2,6,5,0x1FFFFFF00 ; bottom right
-	dq 2,5,1,0x1FFFFFF00 ; bottom right
+	dq 2,6,5,0xFFFFFF00 ; bottom right
+	dq 2,5,1,0xFFFFFF00 ; bottom right
 
 END:
 

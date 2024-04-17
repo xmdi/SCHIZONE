@@ -140,7 +140,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	jb .point_no_good ; might need to be ja
+	ja .point_no_good ; might need to be ja
 	movsd xmm6,xmm1	 	; {xmm4} contains barycentric coefficient w
 
 	; cross product of vtx1->pt and vtx1->vtx2	
@@ -156,7 +156,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	jb .point_no_good ; might need to be ja
+	ja .point_no_good ; might need to be ja
 	movsd xmm4,xmm1	 	; {xmm5} contains barycentric coefficient u
 
 	; cross product of vtx2->pt and vtx2->vtx0	
@@ -172,7 +172,7 @@ set_triangle_depth:
 	mulsd xmm0,xmm3
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
-	jb .point_no_good ; might need to be ja
+	ja .point_no_good ; might need to be ja
 	movsd xmm5,xmm1	 	; {xmm6} contains barycentric coefficient v
 
 .point_in_triangle:
@@ -255,7 +255,40 @@ set_triangle_depth:
 	pop rsi
 	pop rdi
 
-	mov r13,0x100000000
+	%if 0
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+
+	mov rdi,SYS_STDOUT
+	;mov rsi,.triangle_colors
+	mov rsi,r15
+	mov rdx,3
+	mov rcx,1
+	mov r8,0
+	mov r9,print_int_h
+	call print_array_int
+	call print_buffer_flush
+
+;	call exit
+
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	%endif
+
+
+;	mov r13,0x100000000
+	xor r13,r13
+
 
 	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
 	mov r14,[r15+0]
@@ -340,6 +373,7 @@ set_triangle_depth:
 
 	mov rsi,r13 ; color of pixel of interest in {rsi}
 
+	
 .color_computed:
 	; put the pixel
 

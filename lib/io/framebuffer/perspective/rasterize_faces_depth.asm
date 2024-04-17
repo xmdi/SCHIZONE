@@ -136,8 +136,7 @@ rasterize_faces_depth:
 	
 	pxor xmm1,xmm1
 	comisd xmm0,xmm1
-	jb .skip
-;	ja .skip	; test
+	jb .skip 	; confirmed !
 
 	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
@@ -213,8 +212,8 @@ rasterize_faces_depth:
 	divsd xmm0,xmm6
 	divsd xmm7,xmm6
 
-	;;;; test??
-;	mulsd xmm0,[.neg]
+	;;;; confirmed!
+	mulsd xmm0,[.neg]
 	mulsd xmm7,[.neg]
 	
 	;TODO parallelize
@@ -260,7 +259,7 @@ rasterize_faces_depth:
 
 .set_triangle_depth:
 	
-	%if 1
+	%if 0
 	push rdi
 	push rsi
 	push rdx
@@ -286,9 +285,8 @@ rasterize_faces_depth:
 	pop rdx
 	pop rsi
 	pop rdi
-	%endif
+	
 
-	%if 1
 	push rdi
 	push rsi
 	push rdx
@@ -314,9 +312,7 @@ rasterize_faces_depth:
 	pop rdx
 	pop rsi
 	pop rdi
-	%endif
-
-	%if 1
+	
 	push rdi
 	push rsi
 	push rdx
@@ -335,7 +331,34 @@ rasterize_faces_depth:
 	call print_array_float
 	call print_buffer_flush
 
-	call exit
+;	call exit
+
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+
+	mov rdi,SYS_STDOUT
+	;mov rsi,.triangle_colors
+	mov rdx,3
+	mov rcx,1
+	mov r8,0
+	mov r9,print_int_h
+	call print_array_int
+	call print_buffer_flush
+
+;	call exit
 
 	pop r10
 	pop r9
