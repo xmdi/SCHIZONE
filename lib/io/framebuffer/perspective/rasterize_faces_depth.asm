@@ -178,9 +178,9 @@ rasterize_faces_depth:
 	subsd xmm4,[r8+8]
 	subsd xmm5,[r8+16]
 
-	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes_old+48]
-	movsd xmm1,[framebuffer_3d_render_depth_init.view_axes_old+56]
-	movsd xmm2,[framebuffer_3d_render_depth_init.view_axes_old+64]
+	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+48]
+	movsd xmm1,[framebuffer_3d_render_depth_init.view_axes+56]
+	movsd xmm2,[framebuffer_3d_render_depth_init.view_axes+64]
 
 	mulsd xmm0,xmm3
 	mulsd xmm1,xmm4
@@ -269,6 +269,8 @@ rasterize_faces_depth:
 	push r10
 
 	mov rdi,SYS_STDOUT
+	;mov rsi,framebuffer_3d_render_depth_init.view_axes
+	;mov rsi,START.perspective_structure+48
 	mov rsi,.triangle_points
 	mov rdx,3
 	mov rcx,3
@@ -285,7 +287,10 @@ rasterize_faces_depth:
 	pop rdx
 	pop rsi
 	pop rdi
+
+	%endif
 	
+	%if 0
 
 	push rdi
 	push rsi

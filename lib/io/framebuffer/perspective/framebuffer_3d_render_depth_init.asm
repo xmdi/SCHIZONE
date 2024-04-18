@@ -158,6 +158,12 @@ framebuffer_3d_render_depth_init:
 	mov rdx,24
 	call memcopy
 
+	; copy over view axis
+	mov rdi,.view_axes
+	mov rsi,.view_axes_old
+	mov rdx,72
+	call memcopy
+
 	; Uy = (upDir)
 	; Ux = (upDir)x(lookFrom-lookAt)
 
