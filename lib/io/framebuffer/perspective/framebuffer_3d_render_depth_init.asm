@@ -23,6 +23,9 @@
 ; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
+%include "lib/math/vector/distance_3.asm"
+; double {xmm0} distance_3(double* {rdi}, double* {rsi});
+
 %include "lib/math/vector/normalize_3.asm"
 ; void normalize_3(double* {rdi});
 
@@ -306,6 +309,13 @@ framebuffer_3d_render_depth_init:
 	mov rsi,[framebuffer_init.framebuffer_address]
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
+
+	; compute look distance to prevent downstream error accumulation and expensive sqrtsd op in distance_3
+	mov rdi,r15
+	mov rsi,r15
+	add rsi,24
+	call distance_3
+	movsd [.look_distance],xmm0
 	
 	movdqu xmm15,[rsp+0]
 	add rsp,16
@@ -388,9 +398,8 @@ framebuffer_3d_render_depth_init:
 	dq 0.0
 .one:
 	dq 1.0
-align 16
-	dq 0
 .look_vector:
 	times 3 dq 0
-
+.look_distance:
+	dq 0.0
 %endif	

@@ -56,14 +56,6 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_loop.asm"
 
-%include "lib/sys/exit.asm"
-
-%include "lib/io/print_array_float.asm"
-
-%include "lib/io/print_int_h.asm"
-
-%include "lib/io/print_array_int.asm"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,42 +98,14 @@ DRAW_CROSS_CURSOR:
 
 START:
 
-;	mov rdi,SYS_STDOUT
-;	mov rsi,set_triangle_depth.test_label
-;	call print_int_h
-;	call print_buffer_flush
-;	call exit
-
 	mov rdi,.perspective_structure
-	mov rsi,.faces_geometry
+	mov rsi,.cross_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
 .loop:
 
 	call framebuffer_3d_render_depth_loop
-%if 0
-	mov rdi,SYS_STDOUT
-	mov rsi,framebuffer_3d_render_depth_init.Uxzoom
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,10
-	call print_array_float
-	call print_buffer_flush
-
-	mov rdi,SYS_STDOUT
-	mov rsi,framebuffer_3d_render_depth_init.view_axes_old
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,10
-	call print_array_float
-	call print_buffer_flush
-%endif
-;	call exit
 	jmp .loop
 
 .perspective_structure:
@@ -156,19 +120,34 @@ START:
 	dq 1.0 ; upDir_z	
 	dq 1.3	; zoom
 
-.faces_geometry:
-	dq 0 ; next geometry in linked list
-	dq .faces_structure ; address of point/edge/face structure
+.cross_geometry:
+	dq .cube_geometry ; next geometry in linked list
+	dq .cross_structure ; address of point/edge/face structure
 	dq 0x1000000FF ; color (0xARGB)
 	db 0b00000110 ; type of structure to render
 
-.faces_structure:
+.cross_structure:
 	dq 24 ; number of points (N)
-	dq 1;36 ; number of faces (M)
-	dq .points ; starting address of point array (3N elements, 4N if colors)
-	dq .faces ; starting address of face array 
+	dq 36 ; number of faces (M)
+	dq .cross_points ; starting address of point array (3N elements, 4N if colors)
+	dq .cross_faces ; starting address of face array 
 		;	(3M elements if no colors)
 		;	(4M elements if colors)
+
+.cube_geometry:
+	dq 0 ; next geometry in linked list
+	dq .cube_structure ; address of point/edge/face structure
+	dq 0x1000000FF ; color (0xARGB)
+	db 0b00000110 ; type of structure to render
+
+.cube_structure:
+	dq 8 ; number of points (N)
+	dq 12 ; number of faces (M)
+	dq .cube_points ; starting address of point array (3N elements, 4N if colors)
+	dq .cube_faces ; starting address of face array 
+		;	(3M elements if no colors)
+		;	(4M elements if colors)
+
 %if 0
 .points_old:
 	; base of vertical beam
@@ -208,7 +187,7 @@ START:
 	dq -1.5,0.5,3.0
 %endif
 
-.points:
+.cross_points:
 	; base of vertical beam
 	dq 0.5,0.5,0.0,0xFF0000FF
 	dq -0.5,0.5,0.0,0xFF00FF00
@@ -245,7 +224,7 @@ START:
 	dq -1.5,-0.5,3.0,0xFFFF0000
 	dq -1.5,0.5,3.0,0xFFFF00FF
 
-.faces:
+.cross_faces:
 	dq 0,2,1,0xFFFF0000 ; bottom
 	dq 0,3,2,0xFFFF0000 ; bottom
 
@@ -300,6 +279,38 @@ START:
 	dq 2,6,5,0xFFFFFF00 ; bottom right
 	dq 2,5,1,0xFFFFFF00 ; bottom right
 
+.cube_points:
+	; base
+	dq 0.5,-4.5,0.0,0xFF0000FF
+	dq -0.5,-4.5,0.0,0xFF00FF00
+	dq -0.5,-5.5,0.0,0xFFFF0000
+	dq 0.5,-5.5,0.0,0xFFFF00FF
+
+	; top
+	dq 0.5,-4.5,1.0,0xFF0000FF
+	dq -0.5,-4.5,1.0,0xFF00FF00
+	dq -0.5,-5.5,1.0,0xFFFF0000
+	dq 0.5,-5.5,1.0,0xFFFF00FF
+
+.cube_faces:
+	dq 0,2,1,0xFFFF0000 ; bottom
+	dq 0,3,2,0xFFFF0000 ; bottom
+	
+	dq 5,6,4,0xFF0000FF ; top
+	dq 6,7,4,0xFF0000FF ; top
+	
+	dq 0,4,3,0xFF0000FF ; left
+	dq 7,3,4,0xFF0000FF ; left
+
+	dq 1,2,5,0xFF0000FF ; right
+	dq 6,5,2,0xFF0000FF ; right
+	
+	dq 0,1,4,0xFF0000FF ; front
+	dq 4,1,5,0xFF0000FF ; front
+
+	dq 2,3,6,0xFF0000FF ; back
+	dq 6,3,7,0xFF0000FF ; back
+		
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,

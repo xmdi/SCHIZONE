@@ -27,15 +27,16 @@ framebuffer_3d_render_depth_switch:
 	mov r14,[framebuffer_3d_render_depth_init.geometry_linked_list_address]
 	
 ;	mov rdi,[framebuffer_init.framebuffer_address]
-	mov rsi,[r14+16]
 	mov edx,[framebuffer_init.framebuffer_width]
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,[framebuffer_3d_render_depth_init.perspective_structure_address]
-	mov r9,[r14+8]
 	mov r10,[framebuffer_3d_render_depth_init.depth_buffer_address]
 	
 .loop:
 	; need to put some logic hear to accommodate things that aren't wireframes
+
+	mov rsi,[r14+16]
+	mov r9,[r14+8]
 
 	cmp byte [r14+24],0b00000001
 	je .is_pointcloud
@@ -108,5 +109,8 @@ framebuffer_3d_render_depth_switch:
 	pop rsi
 	
 	ret
+
+.we_in:
+	db `we in\n`
 
 %endif	

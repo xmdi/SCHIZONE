@@ -239,26 +239,17 @@ framebuffer_3d_render_depth_loop:
 	mov rdx,24
 	call memcopy
 
-	push rdi
-	push rsi
-	mov rdi,r15
-	mov rsi,r15
-	add rsi,24
-	call distance_3
-	pop rsi
-	pop rdi
-
 	; copy looking direction into structure
 	movsd xmm15,[framebuffer_3d_render_depth_init.view_axes+48]
-	mulsd xmm15,xmm0
+	mulsd xmm15,[framebuffer_3d_render_depth_init.look_distance]
 	addsd xmm15,[r15+24]
 	movsd [r15+0],xmm15
 	movsd xmm15,[framebuffer_3d_render_depth_init.view_axes+56]
-	mulsd xmm15,xmm0
+	mulsd xmm15,[framebuffer_3d_render_depth_init.look_distance]
 	addsd xmm15,[r15+32]
 	movsd [r15+8],xmm15
 	movsd xmm15,[framebuffer_3d_render_depth_init.view_axes+64]
-	mulsd xmm15,xmm0
+	mulsd xmm15,[framebuffer_3d_render_depth_init.look_distance]
 	addsd xmm15,[r15+40]
 	movsd [r15+16],xmm15
 
@@ -390,43 +381,6 @@ framebuffer_3d_render_depth_loop:
 	mulsd xmm0,[r15+72]
 	movsd [framebuffer_3d_render_depth_init.Uyzoom+16],xmm0
 
-%if 0
-	; "precompute" aka copy over Uz
-	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+48]
-	movsd [framebuffer_3d_render_depth_init.Uz+0],xmm0
-	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+56]
-	movsd [framebuffer_3d_render_depth_init.Uz+8],xmm0
-	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+64]
-	movsd [framebuffer_3d_render_depth_init.Uz+16],xmm0
-
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2
-	movsd xmm1,[framebuffer_3d_render_depth_init.one]
-	divsd xmm1,xmm0		; 1/magnitude factor
-	mulsd xmm1,[r15+72]	; focal length factor
-	
-	cvtsi2sd xmm0,[framebuffer_init.framebuffer_width]
-	cvtsi2sd xmm2,[framebuffer_init.framebuffer_height]
-	divsd xmm2,xmm0
-	mulsd xmm1,xmm2		; scale by aspect ratio
-
-	mulsd xmm13,xmm1
-	mulsd xmm14,xmm1
-	mulsd xmm15,xmm1	; Ux is now normalized and then scaled by zoom
-
-	movsd [framebuffer_3d_render_depth_init.Uxzoom+0],xmm13
-	movsd [framebuffer_3d_render_depth_init.Uxzoom+8],xmm14
-	movsd [framebuffer_3d_render_depth_init.Uxzoom+16],xmm15
-
-	; scale Uy by focal length
-	mulsd xmm3,[r15+72]
-	mulsd xmm4,[r15+72]
-	mulsd xmm5,[r15+72]
-	
-	movsd [framebuffer_3d_render_depth_init.Uyzoom+0],xmm3
-	movsd [framebuffer_3d_render_depth_init.Uyzoom+8],xmm4
-	movsd [framebuffer_3d_render_depth_init.Uyzoom+16],xmm5
-%endif
 	; process objects
 	push rdi
 	mov rdi,[framebuffer_3d_render_depth_init.intermediate_buffer_address]
