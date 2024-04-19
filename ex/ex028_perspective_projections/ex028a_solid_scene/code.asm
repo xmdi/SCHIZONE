@@ -124,7 +124,7 @@ START:
 	dq .cube_geometry ; next geometry in linked list
 	dq .cross_structure ; address of point/edge/face structure
 	dq 0x1000000FF ; color (0xARGB)
-	db 0b00000110 ; type of structure to render
+	db 0b00000101 ; type of structure to render
 
 .cross_structure:
 	dq 24 ; number of points (N)
@@ -138,7 +138,7 @@ START:
 	dq 0 ; next geometry in linked list
 	dq .cube_structure ; address of point/edge/face structure
 	dq 0x1000000FF ; color (0xARGB)
-	db 0b00000110 ; type of structure to render
+	db 0b00000101 ; type of structure to render
 
 .cube_structure:
 	dq 8 ; number of points (N)
@@ -150,40 +150,40 @@ START:
 
 .cross_points:
 	; base of vertical beam
-	dq 0.5,0.5,0.0,0xFF0000FF
-	dq -0.5,0.5,0.0,0xFF00FF00
-	dq -0.5,-0.5,0.0,0xFFFF0000
-	dq 0.5,-0.5,0.0,0xFFFF00FF
+	dq 0.5,0.5,0.0
+	dq -0.5,0.5,0.0
+	dq -0.5,-0.5,0.0
+	dq 0.5,-0.5,0.0
 
 	; bottom of cross beam
-	dq 0.5,0.5,2.0,0xFF0000FF
-	dq -0.5,0.5,2.0,0xFF00FF00
-	dq -0.5,-0.5,2.0,0xFFFF0000
-	dq 0.5,-0.5,2.0,0xFFFF00FF
+	dq 0.5,0.5,2.0
+	dq -0.5,0.5,2.0
+	dq -0.5,-0.5,2.0
+	dq 0.5,-0.5,2.0
 
 	; top of cross beam
-	dq 0.5,0.5,3.0,0xFF0000FF
-	dq -0.5,0.5,3.0,0xFF00FF00
-	dq -0.5,-0.5,3.0,0xFFFF0000
-	dq 0.5,-0.5,3.0,0xFFFF00FF
+	dq 0.5,0.5,3.0
+	dq -0.5,0.5,3.0
+	dq -0.5,-0.5,3.0
+	dq 0.5,-0.5,3.0
 
 	; top of vertical beam
-	dq 0.5,0.5,4.0,0xFF0000FF
-	dq -0.5,0.5,4.0,0xFF00FF00
-	dq -0.5,-0.5,4.0,0xFFFF0000
-	dq 0.5,-0.5,4.0,0xFFFF00FF
+	dq 0.5,0.5,4.0
+	dq -0.5,0.5,4.0
+	dq -0.5,-0.5,4.0
+	dq 0.5,-0.5,4.0
 
 	; left side of cross beam
-	dq 1.5,0.5,2.0,0xFF0000FF
-	dq 1.5,-0.5,2.0,0xFF00FF00
-	dq 1.5,-0.5,3.0,0xFFFF0000
-	dq 1.5,0.5,3.0,0xFFFF00FF
+	dq 1.5,0.5,2.0
+	dq 1.5,-0.5,2.0
+	dq 1.5,-0.5,3.0
+	dq 1.5,0.5,3.0
 
 	; right side of cross beam
-	dq -1.5,0.5,2.0,0xFF0000FF
-	dq -1.5,-0.5,2.0,0xFF00FF00
-	dq -1.5,-0.5,3.0,0xFFFF0000
-	dq -1.5,0.5,3.0,0xFFFF00FF
+	dq -1.5,0.5,2.0
+	dq -1.5,-0.5,2.0
+	dq -1.5,-0.5,3.0
+	dq -1.5,0.5,3.0
 
 .cross_faces:
 	dq 0,2,1,0xFFFF0000 ; bottom
@@ -242,16 +242,16 @@ START:
 
 .cube_points:
 	; base
-	dq 0.5,-4.5,0.0,0xFF0000FF
-	dq -0.5,-4.5,0.0,0xFF00FF00
-	dq -0.5,-5.5,0.0,0xFFFF0000
-	dq 0.5,-5.5,0.0,0xFFFF00FF
+	dq 0.5,-4.5,0.0
+	dq -0.5,-4.5,0.0
+	dq -0.5,-5.5,0.0
+	dq 0.5,-5.5,0.0
 
 	; top
-	dq 0.5,-4.5,1.0,0xFF0000FF
-	dq -0.5,-4.5,1.0,0xFF00FF00
-	dq -0.5,-5.5,1.0,0xFFFF0000
-	dq 0.5,-5.5,1.0,0xFFFF00FF
+	dq 0.5,-4.5,1.0
+	dq -0.5,-4.5,1.0
+	dq -0.5,-5.5,1.0
+	dq 0.5,-5.5,1.0
 
 .cube_faces:
 	dq 0,2,1,0xFFFF0000 ; bottom
@@ -260,17 +260,17 @@ START:
 	dq 5,6,4,0xFF0000FF ; top
 	dq 6,7,4,0xFF0000FF ; top
 	
-	dq 0,4,3,0xFF0000FF ; left
-	dq 7,3,4,0xFF0000FF ; left
+	dq 0,4,3,0xFFFF00FF ; left
+	dq 7,3,4,0xFFFF00FF ; left
 
-	dq 1,2,5,0xFF0000FF ; right
-	dq 6,5,2,0xFF0000FF ; right
+	dq 1,2,5,0xFFFFFF00 ; right
+	dq 6,5,2,0xFFFFFF00 ; right
 	
-	dq 0,1,4,0xFF0000FF ; front
-	dq 4,1,5,0xFF0000FF ; front
+	dq 0,1,4,0xFF00FF00 ; front
+	dq 4,1,5,0xFF00FF00 ; front
 
-	dq 2,3,6,0xFF0000FF ; back
-	dq 6,3,7,0xFF0000FF ; back
+	dq 2,3,6,0xFFFFFFFF ; back
+	dq 6,3,7,0xFFFFFFFF ; back
 		
 END:
 
