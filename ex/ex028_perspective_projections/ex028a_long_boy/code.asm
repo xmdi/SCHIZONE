@@ -145,9 +145,9 @@ START:
 	jmp .loop
 
 .perspective_structure:
-	dq 0.00;2.00 ; lookFrom_x	
-	dq 10.00;3.00 ; lookFrom_y	
-	dq 2.00;4.50 ; lookFrom_z	
+	dq 0.00 ; lookFrom_x	
+	dq 10.00 ; lookFrom_y	
+	dq 2.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 2.00 ; lookAt_z	
@@ -164,7 +164,7 @@ START:
 
 .faces_structure:
 	dq 24 ; number of points (N)
-	dq 36 ; number of faces (M)
+	dq 1;36 ; number of faces (M)
 	dq .points ; starting address of point array (3N elements, 4N if colors)
 	dq .faces ; starting address of face array 
 		;	(3M elements if no colors)
@@ -195,13 +195,13 @@ START:
 	dq -0.5,-0.5,4.0
 	dq 0.5,-0.5,4.0
 
-	; right side of cross beam
+	; left side of cross beam
 	dq 1.5,0.5,2.0
 	dq 1.5,-0.5,2.0
 	dq 1.5,-0.5,3.0
 	dq 1.5,0.5,3.0
 
-	; left side of cross beam
+	; right side of cross beam
 	dq -1.5,0.5,2.0
 	dq -1.5,-0.5,2.0
 	dq -1.5,-0.5,3.0
@@ -229,17 +229,17 @@ START:
 
 	; top of vertical beam
 	dq 0.5,0.5,4.0,0xFF0000FF
-	dq -0.5,0.5,4.0,0xFF00FF00 ; FF00
+	dq -0.5,0.5,4.0,0xFF00FF00
 	dq -0.5,-0.5,4.0,0xFFFF0000
 	dq 0.5,-0.5,4.0,0xFFFF00FF
 
-	; right side of cross beam
+	; left side of cross beam
 	dq 1.5,0.5,2.0,0xFF0000FF
 	dq 1.5,-0.5,2.0,0xFF00FF00
 	dq 1.5,-0.5,3.0,0xFFFF0000
 	dq 1.5,0.5,3.0,0xFFFF00FF
 
-	; left side of cross beam
+	; right side of cross beam
 	dq -1.5,0.5,2.0,0xFF0000FF
 	dq -1.5,-0.5,2.0,0xFF00FF00
 	dq -1.5,-0.5,3.0,0xFFFF0000

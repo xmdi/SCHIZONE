@@ -128,7 +128,8 @@ rasterize_faces_depth:
 
 	push rdi
 	push rsi
-	mov rdi,framebuffer_3d_render_depth_init.look_vector
+	;mov rdi,framebuffer_3d_render_depth_init.look_vector
+	mov rdi,framebuffer_3d_render_depth_init.view_axes+48
 	mov rsi,.triangle_normal
 	call dot_product_3
 	pop rsi
@@ -259,7 +260,7 @@ rasterize_faces_depth:
 
 .set_triangle_depth:
 	
-	%if 0
+	%if 1
 	push rdi
 	push rsi
 	push rdx
@@ -270,10 +271,11 @@ rasterize_faces_depth:
 
 	mov rdi,SYS_STDOUT
 	;mov rsi,framebuffer_3d_render_depth_init.view_axes
-	;mov rsi,START.perspective_structure+48
-	mov rsi,.triangle_points
+	;mov rsi,framebuffer_3d_render_depth_init.Uxzoom
+;	mov rsi,framebuffer_3d_render_depth_init.view_axes
+	mov rsi,START.perspective_structure+24
 	mov rdx,3
-	mov rcx,3
+	mov rcx,1
 	mov r8,0
 	mov r9,print_float
 	mov r10,8

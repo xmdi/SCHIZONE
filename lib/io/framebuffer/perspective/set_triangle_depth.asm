@@ -141,7 +141,7 @@ set_triangle_depth:
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
 	ja .point_no_good ; might need to be ja
-	movsd xmm6,xmm1	 	; {xmm4} contains barycentric coefficient w
+	movsd xmm6,xmm1	 	; {xmm6} contains barycentric coefficient w
 
 	; cross product of vtx1->pt and vtx1->vtx2	
 	; pt-vtx1
@@ -157,7 +157,7 @@ set_triangle_depth:
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
 	ja .point_no_good ; might need to be ja
-	movsd xmm4,xmm1	 	; {xmm5} contains barycentric coefficient u
+	movsd xmm4,xmm1	 	; {xmm4} contains barycentric coefficient u
 
 	; cross product of vtx2->pt and vtx2->vtx0	
 	; pt-vtx2
@@ -173,50 +173,9 @@ set_triangle_depth:
 	subsd xmm1,xmm0
 	comisd xmm1,xmm9
 	ja .point_no_good ; might need to be ja
-	movsd xmm5,xmm1	 	; {xmm6} contains barycentric coefficient v
+	movsd xmm5,xmm1	 	; {xmm5} contains barycentric coefficient v
 
 .point_in_triangle:
-	;	barycentric coordinates for point in triangle at
-	;		( {xmm4} , {xmm5} , {xmm6} )
-
-	; compute depth at this point first
-	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
-
-	movsd xmm0,xmm4
-	movsd xmm1,xmm5
-	movsd xmm2,xmm6
-	mulsd xmm0,[r8+16]	
-	mulsd xmm1,[r8+40]	
-	mulsd xmm2,[r8+64]	
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2
-
-;	mulsd xmm0,[.neg_one];;;;;; RANDOM NEGATIVE SIGN
-
-	; depth of pixel of interest in {xmm0} (double precision)
-
-	cvtsd2ss xmm0,xmm0 ; might not work LOL
-
-	cvtsd2si rax,xmm10 ; x coord
-	cvtsd2si rbx,xmm11 ; y coord
-
-	mov rbp,rbx
-	imul rbp,rdx
-	add rbp,rax
-	shl rbp,2 ; {rbp} contains byte number for pixel of interest
-	add rbp,r10	; {rbp} points to depth for pixel of interest
-.test_label:
-	movss xmm1,[rbp]
-
-	comiss xmm0,xmm1
-	jae .too_deep_to_put_pixel
-	
-	; overwrite depth
-	movss [rbp],xmm0
-
-	; compute color at this point
-	cmp r9,0 ; TODO should be a test instruction tbh, not cmp
-	je .color_computed
 
 	push rdi
 	push rsi
@@ -255,40 +214,48 @@ set_triangle_depth:
 	pop rsi
 	pop rdi
 
-	%if 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	push r10
+	;	barycentric coordinates for point in triangle at
+	;		( {xmm4} , {xmm5} , {xmm6} )
 
-	mov rdi,SYS_STDOUT
-	;mov rsi,.triangle_colors
-	mov rsi,r15
-	mov rdx,3
-	mov rcx,1
-	mov r8,0
-	mov r9,print_int_h
-	call print_array_int
-	call print_buffer_flush
+	; compute depth at this point first
+	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
 
-;	call exit
+	movsd xmm0,xmm4;4
+	movsd xmm1,xmm5;5
+	movsd xmm2,xmm6;6
+	mulsd xmm0,[r8+16]	
+	mulsd xmm1,[r8+40]	
+	mulsd xmm2,[r8+64]	
+	addsd xmm0,xmm1
+	addsd xmm0,xmm2
 
-	pop r10
-	pop r9
-	pop r8
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
-	%endif
+	; depth of pixel of interest in {xmm0} (double precision)
 
+	cvtsd2ss xmm0,xmm0 ; might not work LOL
+
+	cvtsd2si rax,xmm10 ; x coord
+	cvtsd2si rbx,xmm11 ; y coord
+
+	mov rbp,rbx
+	imul rbp,rdx
+	add rbp,rax
+	shl rbp,2 ; {rbp} contains byte number for pixel of interest
+	add rbp,r10	; {rbp} points to depth for pixel of interest
+.test_label:
+	movss xmm1,[rbp]
+
+	comiss xmm0,xmm1
+	jbe .too_deep_to_put_pixel
+	
+	; overwrite depth
+	movss [rbp],xmm0
+
+	; compute color at this point
+	cmp r9,0 ; TODO should be a test instruction tbh, not cmp
+	je .color_computed
 
 ;	mov r13,0x100000000
 	xor r13,r13
-
 
 	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
 	mov r14,[r15+0]
@@ -372,7 +339,6 @@ set_triangle_depth:
 	add r13,r14
 
 	mov rsi,r13 ; color of pixel of interest in {rsi}
-
 	
 .color_computed:
 	; put the pixel
@@ -446,8 +412,6 @@ set_triangle_depth:
 	times 2 dq 0.0
 .vertices_copy:
 	times 9 dq 0.0
-align 16
-	dq 0.0	; TODO FIX ALIGNMENT BUG in DOT PRODUCT 3
 .triangle_normal:
 	times 3 dq 0.0
 %endif

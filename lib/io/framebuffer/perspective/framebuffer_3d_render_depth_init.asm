@@ -375,7 +375,7 @@ framebuffer_3d_render_depth_init:
 .was_dragging:
 	db 0
 .Inf:
-	dd 0x7F800000
+	dd 0xFF800000	; -Inf
 .Uxzoom:
 	times 3 dq 0.0
 .Uyzoom:

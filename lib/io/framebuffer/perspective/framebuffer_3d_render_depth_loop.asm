@@ -334,7 +334,7 @@ framebuffer_3d_render_depth_loop:
 
 .draw_wires:
 
-	; reset depth buffer to start at +Inf
+	; reset depth buffer to start at -Inf
 	push rdi
 	push rcx
 	push rbx
