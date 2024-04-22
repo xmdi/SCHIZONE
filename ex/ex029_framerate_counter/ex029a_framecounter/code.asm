@@ -56,6 +56,10 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_loop.asm"
 
+%include "lib/io/framebuffer/framerate/framerate_poll.asm"
+
+%include "lib/io/print_float.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,6 +110,27 @@ START:
 .loop:
 
 	call framebuffer_3d_render_depth_loop
+	call framerate_poll
+
+	push rdi
+	push rsi
+	push rdx	
+
+	mov rdi,SYS_STDOUT
+	mov rsi,7
+	movsd xmm0,[framerate_poll.framerate]
+	call print_float
+
+	mov rsi,.newline
+	mov rdx,1
+	call print_chars
+
+	call print_buffer_flush
+
+	pop rdx
+	pop rsi
+	pop rdi
+
 	jmp .loop
 
 .perspective_structure:
@@ -272,6 +297,9 @@ START:
 	dq 2,3,6,0xFFFFFFFF ; back
 	dq 6,3,7,0xFFFFFFFF ; back
 		
+.newline:
+	db `\n`
+
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
