@@ -110,7 +110,4 @@ framebuffer_3d_render_depth_switch:
 	
 	ret
 
-.we_in:
-	db `we in\n`
-
 %endif	

@@ -16,7 +16,6 @@ framerate_poll:
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
 
-
 	; check if 120 frames have elapsed
 	cmp byte [.framecount],120
 	jbe .no_calc

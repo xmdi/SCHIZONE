@@ -45,6 +45,49 @@ set_triangle_depth:
 	movdqu [rsp+224],xmm14
 	movdqu [rsp+240],xmm15
 
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+
+	mov rdi,.vertices_copy
+	mov rsi,r8
+	mov rdx,9*8
+	call memcopy
+
+	xor rdx,rdx
+	mov [.vertices_copy+16],rdx
+	mov [.vertices_copy+40],rdx
+	mov [.vertices_copy+64],rdx
+
+	mov rdi,.triangle_normal
+	mov rsi,.vertices_copy+0
+	mov rdx,.vertices_copy+24
+	mov rcx,.vertices_copy+48
+	call triangle_normal
+
+	pxor xmm1,xmm1
+	movsd xmm0,[.triangle_normal+16]
+	comisd xmm0,xmm1
+	jb .skip
+
+	mov rdi,.triangle_normal
+	mov rsi,.triangle_normal
+	call dot_product_3
+
+	sqrtsd xmm0,xmm0
+;	mulsd xmm0,[.neg_one]
+	movsd xmm1,[.neg_one]
+	divsd xmm1,xmm0
+	
+	movsd [.scale_factor],xmm1
+	
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+
+
 	mov r15,rsi
 
 	movsd xmm12,[r8+0]	; min vtx 1 x
@@ -104,6 +147,9 @@ set_triangle_depth:
 	; pt to check/plot at ({xmm10},{xmm11}) ; could be ints and constantly converted via cvtsi2sd
 
 .rect_loop_y:
+
+	xor al,al
+	mov byte [.line_test],al
 
 	; check if y value is within bounds 0<=xmm11<=screen_height
 	pxor xmm0,xmm0
@@ -177,42 +223,13 @@ set_triangle_depth:
 
 .point_in_triangle:
 
-	push rdi
-	push rsi
-	push rdx
-	push rcx
+	mov al,1
+	mov byte [.line_test],al
 
-	mov rdi,.vertices_copy
-	mov rsi,r8
-	mov rdx,9*8
-	call memcopy
-
-	xor rdx,rdx
-	mov [.vertices_copy+16],rdx
-	mov [.vertices_copy+40],rdx
-	mov [.vertices_copy+64],rdx
-
-	mov rdi,.triangle_normal
-	mov rsi,.vertices_copy+0
-	mov rdx,.vertices_copy+24
-	mov rcx,.vertices_copy+48
-	call triangle_normal
-
-	mov rdi,.triangle_normal
-	mov rsi,.triangle_normal
-	call dot_product_3
-
-	sqrtsd xmm0,xmm0
-	mulsd xmm0,[.neg_one]
-
-	divsd xmm4,xmm0
-	divsd xmm5,xmm0
-	divsd xmm6,xmm0
+	mulsd xmm4,[.scale_factor]
+	mulsd xmm5,[.scale_factor]
+	mulsd xmm6,[.scale_factor]
 	
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
 
 	;	barycentric coordinates for point in triangle at
 	;		( {xmm4} , {xmm5} , {xmm6} )
@@ -220,9 +237,9 @@ set_triangle_depth:
 	; compute depth at this point first
 	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
 
-	movsd xmm0,xmm4;4
-	movsd xmm1,xmm5;5
-	movsd xmm2,xmm6;6
+	movsd xmm0,xmm4
+	movsd xmm1,xmm5
+	movsd xmm2,xmm6
 	mulsd xmm0,[r8+16]	
 	mulsd xmm1,[r8+40]	
 	mulsd xmm2,[r8+64]	
@@ -353,7 +370,13 @@ set_triangle_depth:
 
 .too_deep_to_put_pixel:
 
+	jmp .skip_col
+
 .point_no_good:
+	
+	; if line_test = 1, skip to next row
+	cmp word [.line_test],1
+	je .skip_row
 	
 	; pt to check/plot at ({xmm10},{xmm11}) ; could be ints and constantly converted via cvtsi2sd
 .skip_col:
@@ -398,10 +421,19 @@ set_triangle_depth:
 	
 	ret
 
+.skip:
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	jmp .off_screen
+
 .one:
 	dq 1.0
 .neg_one:
 	dq -1.0
+.scale_factor:
+	dq 0.0
 .vtx_to_pt:
 	times 2 dq 0.0
 .vtx0_to_vtx1:
@@ -414,4 +446,6 @@ set_triangle_depth:
 	times 9 dq 0.0
 .triangle_normal:
 	times 3 dq 0.0
+.line_test:
+	db 0
 %endif

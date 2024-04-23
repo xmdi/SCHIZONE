@@ -58,7 +58,9 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/framerate/framerate_poll.asm"
 
-%include "lib/io/print_float.asm"
+;%include "lib/io/print_array_float.asm"
+
+;%include "lib/sys/exit.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,6 +114,7 @@ START:
 	call framebuffer_3d_render_depth_loop
 	call framerate_poll
 
+%if 0
 	push rdi
 	push rsi
 	push rdx	
@@ -130,6 +133,8 @@ START:
 	pop rdx
 	pop rsi
 	pop rdi
+
+%endif
 
 	jmp .loop
 

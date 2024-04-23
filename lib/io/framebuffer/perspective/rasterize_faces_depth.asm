@@ -126,23 +126,12 @@ rasterize_faces_depth:
 	pop rsi
 	pop rdi
 
-	push rdi
-	push rsi
-	;mov rdi,framebuffer_3d_render_depth_init.look_vector
-	mov rdi,framebuffer_3d_render_depth_init.view_axes+48
-	mov rsi,.triangle_normal
-	call dot_product_3
-	pop rsi
-	pop rdi
-	
-	pxor xmm1,xmm1
-	comisd xmm0,xmm1
-	jb .skip 	; confirmed !
+	; used to cull faces here LOL, nah bro
 
 	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
 	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
-	
+
 	xor r13,r13
 	mov rbp,.triangle_colors
 
@@ -267,6 +256,33 @@ rasterize_faces_depth:
 	pop rax
 	pop rsi
 
+%if 0
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+	mov rdi,SYS_STDOUT
+	mov rsi,.triangle_points
+	mov rdx,3
+	mov rcx,3
+	xor r8,r8
+	mov r9,print_float
+	mov r10,8
+	call print_array_float
+	call print_buffer_flush
+	pop r10
+	pop r9
+	pop r8
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+
+%endif
+
 	add rax,8
 
 .continue:
@@ -301,13 +317,12 @@ rasterize_faces_depth:
 	dq 1.0
 .neg:
 	dq -1.0
-align 16
-	dq 0
 .triangle_normal:
 	times 3 dq 0.0
 .triangle_points:	; store x and y and depth of 3 vertices as a float 
 	times 9 dq 0.0
 .triangle_colors:
 	times 3 dq 0
-
+.working:
+	times 3 dq 0
 %endif
