@@ -58,6 +58,9 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/framerate/framerate_poll.asm"
 
+%include "lib/io/bitmap/set_text.asm"
+%include "lib/io/bitmap/SCHIZOFONT.asm"
+
 ;%include "lib/io/print_array_float.asm"
 
 ;%include "lib/sys/exit.asm"
@@ -114,7 +117,7 @@ START:
 	call framebuffer_3d_render_depth_loop
 	call framerate_poll
 
-%if 0
+%if 1
 	push rdi
 	push rsi
 	push rdx	
