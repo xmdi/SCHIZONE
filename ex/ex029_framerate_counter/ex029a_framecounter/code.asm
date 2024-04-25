@@ -62,6 +62,7 @@ PROGRAM_HEADER:
 %include "lib/io/bitmap/SCHIZOFONT.asm"
 
 ;%include "lib/io/print_array_float.asm"
+%include "lib/io/print_float.asm"
 
 ;%include "lib/sys/exit.asm"
 
