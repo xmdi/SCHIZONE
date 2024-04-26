@@ -61,6 +61,8 @@ PROGRAM_HEADER:
 %include "lib/io/bitmap/set_text.asm"
 %include "lib/io/bitmap/SCHIZOFONT.asm"
 
+%include "lib/io/print_buffer_flush_to_memory.asm"
+
 ;%include "lib/io/print_array_float.asm"
 %include "lib/io/print_float.asm"
 
@@ -123,16 +125,13 @@ START:
 	push rsi
 	push rdx	
 
-	mov rdi,SYS_STDOUT
+	call print_buffer_reset
+
 	mov rsi,7
 	movsd xmm0,[framerate_poll.framerate]
 	call print_float
 
-	mov rsi,.newline
-	mov rdx,1
-	call print_chars
-
-	call print_buffer_flush
+	call print_buffer_flush_to_memory
 
 	pop rdx
 	pop rsi
@@ -141,6 +140,13 @@ START:
 %endif
 
 	jmp .loop
+
+.hud_structure:
+	db 0b00000001 ; text object
+	dq 0 ; address of start of null-terminated text
+	dq 0xFFFFFFFF ; color
+	dd 150 ; text X start
+	dd 150 ; text Y start
 
 .perspective_structure:
 	dq 0.00 ; lookFrom_x	
