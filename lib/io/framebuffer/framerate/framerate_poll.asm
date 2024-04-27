@@ -5,7 +5,7 @@ framerate_poll:
 ; void framerate_poll(void);
 ;	This function can be called every frame to populate a double at
 ;	[framerate_poll.framerate] containing the average framerate
-;	(frames/second) over the past 120 frames.
+;	(frames/second) over the past 30 frames.
 
 	SYS_PUSH_SYSCALL_CLOBBERED_REGISTERS
 	push rdi
@@ -16,8 +16,8 @@ framerate_poll:
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
 
-	; check if 120 frames have elapsed
-	cmp byte [.framecount],120
+	; check if 30 frames have elapsed
+	cmp byte [.framecount],30
 	jbe .no_calc
 	
 	; query ending timestamp
@@ -78,8 +78,8 @@ framerate_poll:
 .timestamp_end:
 	times 2 dq 0
 
-.conversion: ; 1e6*120
-	dq 120000000.0
+.conversion: ; 1e6*30
+	dq 30000000.0
 
 .framecount:
 	db 200
