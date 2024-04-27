@@ -5,7 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 0x2000000 ; ~32 MB
+%define HEAP_SIZE 0x4000000 ; ~64 MB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,11 +52,16 @@ PROGRAM_HEADER:
 
 %include "lib/io/bitmap/set_line.asm"
 
+%include "lib/io/framebuffer/framebuffer_hud_init.asm"
+
 %include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_init.asm"
 
 %include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_loop.asm"
 
 %include "lib/io/framebuffer/framerate/framerate_poll.asm"
+
+%include "lib/mem/memset.asm"
+; void memset(void* {rdi}, char {sil}, ulong {rdx});
 
 %include "lib/io/bitmap/set_text.asm"
 %include "lib/io/bitmap/SCHIZOFONT.asm"
@@ -66,7 +71,7 @@ PROGRAM_HEADER:
 ;%include "lib/io/print_array_float.asm"
 %include "lib/io/print_float.asm"
 
-;%include "lib/sys/exit.asm"
+%include "lib/sys/exit.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -115,6 +120,20 @@ START:
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
+	; initialize HUD
+	call framebuffer_hud_init
+
+	; enable HUD
+	mov al,1
+	mov [framebuffer_hud_init.hud_enabled],al
+
+	mov rax,.HUD_ELEMENT_FOR_FPS
+	mov [framebuffer_hud_init.hud_head],rax
+
+	mov rax,.HUD_ELEMENT_FOR_FPS
+	mov [framebuffer_hud_init.hud_tail],rax
+
+
 .loop:
 
 	call framebuffer_3d_render_depth_loop
@@ -125,12 +144,19 @@ START:
 	push rsi
 	push rdx	
 
+	; reset string
+	mov rdi,.framerate_string
+	mov sil,0
+	mov rdx,20
+	call memset	
+
 	call print_buffer_reset
 
-	mov rsi,7
+	mov rsi,4
 	movsd xmm0,[framerate_poll.framerate]
 	call print_float
 
+	mov rdi,.framerate_string	
 	call print_buffer_flush_to_memory
 
 	pop rdx
@@ -141,12 +167,40 @@ START:
 
 	jmp .loop
 
-.hud_structure:
-	db 0b00000001 ; text object
-	dq 0 ; address of start of null-terminated text
-	dq 0xFFFFFFFF ; color
-	dd 150 ; text X start
-	dd 150 ; text Y start
+.HUD_ELEMENT_FOR_FPS:
+	dw 1710 ; X start coordinate for all children
+	dw 0 ; Y start coordinate for all children
+	dq 0 ; address of cousin (next top-level HUD element)
+	dq .FPS_RECTANGLE ; address of child element
+
+.FPS_RECTANGLE:
+	db 0b10000001 ; VISIBLE RECTANGLE
+	dw 0 ; X displacement from parent
+	dw 0 ; Y displacement from parent
+	dw 200 ; width of rectangle
+	dw 40 ; height of rectangle
+	dd 0xFFFA2DD0 ; color of rectangle
+	db 2 ; border thickness 
+	dd 0xFF0000FF ; color of rectangle border
+	dd 0xFF00FF00 ; hover color of rectangle
+	dq .FPS_TEXT ; address of cousin HUD element
+	dq 0 ; address of child HUD element
+	dq 0 ; onClick function pointer
+	; space for onClick function input data/params
+
+.FPS_TEXT:
+	db 0b10000010 ; VISIBLE TEXT
+	dw 5 ; X displacement from parent
+	dw 5 ; Y displacement from parent
+	db 4 ; font scaling
+	dq SCHIZOFONT ; font definition pointer
+	dd 0xFFFFFFFF ; color of text
+	dd 0xFFFF0000 ; hover color
+	dq 0 ; address of cousin HUD element
+	dq .framerate_string ; null-terminated char array to write
+
+.framerate_string:
+	times 20 db 0
 
 .perspective_structure:
 	dq 0.00 ; lookFrom_x	

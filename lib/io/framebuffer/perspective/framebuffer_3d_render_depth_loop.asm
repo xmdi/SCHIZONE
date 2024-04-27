@@ -16,6 +16,17 @@
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
+%include "lib/io/framebuffer/framebuffer_hud_init.asm"
+; void* {rax} framebuffer_hud_init(void);
+
+%include "lib/io/framebuffer/framebuffer_process_hud.asm"
+; void framebuffer_process_hud(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+;		 struct* {r8}, struct* {r9});
+
+%include "lib/io/bitmap/set_foreground.asm"
+; void set_foreground(void* {rdi}, void* {rsi}, int {edx}, int {ecx},
+;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
+
 %include "lib/math/vector/distance_3.asm"
 ; double {xmm0} distance_3(double* {rdi}, double* {rsi});
 
@@ -432,6 +443,29 @@ framebuffer_3d_render_depth_loop:
 	mov rdx,[framebuffer_init.framebuffer_size]
 	call memcopy
 
+	; if the HUD is even a thing, draw it
+	cmp byte [framebuffer_hud_init.hud_enabled],0
+	je .no_hud
+
+	; draw the HUD onto the HUDbuffer
+	call framebuffer_process_hud
+
+	; copy hudbuffer on top of framebuffer
+	mov rdi,[framebuffer_init.framebuffer_address]
+	mov rsi,[framebuffer_hud_init.hudbuffer_address]
+	mov edx,[framebuffer_init.framebuffer_width]
+	mov ecx,[framebuffer_init.framebuffer_height]
+	mov r8d,edx
+	mov r9d,ecx	
+	xor r10d,r10d
+	inc r10d
+	xor r11d,r11d
+	inc r11d
+	call set_foreground
+
+.no_hud:
+
+
 	; then draw the cursor as foreground onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov edx,[framebuffer_init.framebuffer_width]
@@ -439,6 +473,14 @@ framebuffer_3d_render_depth_loop:
 	mov r8d,[framebuffer_mouse_init.mouse_x]
 	mov r9d,[framebuffer_mouse_init.mouse_y]
 	call [framebuffer_3d_render_depth_init.cursor_function_address]
+
+; ONLY DRAW HUDBUFFER
+;	; first copy intermediate buffer to framebuffer
+;	mov rdi,[framebuffer_init.framebuffer_address]
+;	mov rsi,[framebuffer_hud_init.hudbuffer_address]
+;	mov rdx,[framebuffer_init.framebuffer_size]
+;	call memcopy
+
 
 	; flush output to the screen
 	call framebuffer_flush
