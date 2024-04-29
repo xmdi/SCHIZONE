@@ -168,7 +168,7 @@ START:
 	jmp .loop
 
 .HUD_ELEMENT_FOR_FPS:
-	dw 1710 ; X start coordinate for all children
+	dw 1740 ; X start coordinate for all children
 	dw 0 ; Y start coordinate for all children
 	dq 0 ; address of cousin (next top-level HUD element)
 	dq .FPS_RECTANGLE ; address of child element
@@ -177,7 +177,7 @@ START:
 	db 0b10000001 ; VISIBLE RECTANGLE
 	dw 0 ; X displacement from parent
 	dw 0 ; Y displacement from parent
-	dw 200 ; width of rectangle
+	dw 178 ; width of rectangle
 	dw 40 ; height of rectangle
 	dd 0xFFFA2DD0 ; color of rectangle
 	db 2 ; border thickness 
@@ -190,8 +190,8 @@ START:
 
 .FPS_TEXT:
 	db 0b10000010 ; VISIBLE TEXT
-	dw 5 ; X displacement from parent
-	dw 5 ; Y displacement from parent
+	dw 10 ; X displacement from parent
+	dw 6 ; Y displacement from parent
 	db 4 ; font scaling
 	dq SCHIZOFONT ; font definition pointer
 	dd 0xFFFFFFFF ; color of text

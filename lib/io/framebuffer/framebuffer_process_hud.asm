@@ -7,24 +7,10 @@
 %include "lib/io/framebuffer/framebuffer_init.asm"
 
 %include "lib/io/bitmap/set_rect.asm"
-; void set_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
-;	Draws rectangle from ({r8d},{r9d}) to ({r10d},{r11d}) (from (0,0)
-;	@ top-left) in ARGB data array starting at {rdi} for an 
-;	{edx}x{ecx} (WxH) image with a border color in the low 32 bits of
-;	{rsi}
 
 %include "lib/io/bitmap/set_filled_rect.asm"
-; void set_filled_rect(void* {rdi}, int {rsi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, int {r11d});
 
 %include "lib/io/bitmap/set_text.asm"
-; void set_text(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, char* {r11}, void* {r12});
-;	Renders null-terminated character array starting at {r11} beginning 
-;	at pixel ({r8d},{r9d}) (from (0,0) @ top-left) in ARGB data array 
-;	starting at {rdi} for an {edx}x{ecx} (WxH) image in the color value
-;	in {esi}. Font defined at {r12} and font scaling in {r10}.
 
 framebuffer_process_hud:
 ; void framebuffer_process_hud(void);
@@ -46,6 +32,9 @@ framebuffer_process_hud:
 
 .iterate_top_level_hud_elements:
 
+	mov r14,[r15+12]
+	push r14	; push current hud element to [rsp+16] (for recursion)
+	
 	movzx rax, word [r15+0]
 	push rax	
 	movzx rax, word [r15+2]
@@ -53,7 +42,6 @@ framebuffer_process_hud:
 	; parent X location always at [rsp+8]
 	; parent Y location always at [rsp+0]
 
-	mov r14,[r15+12]
 	
 .iterate_hud_element:
 	
@@ -64,8 +52,6 @@ framebuffer_process_hud:
 	je .process_text
 
 	jmp .invalid_element_definition
-
-
 
 .process_rectangle:
 
@@ -86,7 +72,23 @@ framebuffer_process_hud:
 	call set_filled_rect
 
 	; if children, recurse on them, TODO
+	cmp qword [r14+30], qword 0
+	je .no_kids
 
+	push r14
+	movzx rax, word [r14+1]
+	push rax	
+	movzx rax, word [r14+3]
+	push rax
+	
+	mov r14,[r14+30]
+
+	call .iterate_hud_element
+	add rsp,24
+	mov r14,[rsp+16]
+	
+
+.no_kids:
 	; goto cousin
 	mov r14,[r14+22]
 	cmp r14,0
@@ -95,14 +97,6 @@ framebuffer_process_hud:
 
 
 .process_text:
-
-	%include "lib/io/bitmap/set_text.asm"
-; void set_text(void* {rdi}, int {esi}, int {edx}, int {ecx},
-;		 int {r8d}, int {r9d}, int {r10d}, char* {r11}, void* {r12});
-;	Renders null-terminated character array starting at {r11} beginning 
-;	at pixel ({r8d},{r9d}) (from (0,0) @ top-left) in ARGB data array 
-;	starting at {rdi} for an {edx}x{ecx} (WxH) image in the color value
-;	in {esi}. Font defined at {r12} and font scaling in {r10}.
 
 	mov esi,[r14+14]
 	mov rax,0x100000000
@@ -130,7 +124,7 @@ framebuffer_process_hud:
 
 .no_cousins:
 
-	add rsp,16
+	add rsp,24
 		
 	mov r15,[r15+4]
 	cmp r15,0
