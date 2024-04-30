@@ -70,8 +70,11 @@ PROGRAM_HEADER:
 
 ;%include "lib/io/print_array_float.asm"
 %include "lib/io/print_float.asm"
+%include "lib/io/print_int_d.asm"
 
 %include "lib/sys/exit.asm"
+
+%include "lib/io/framebuffer/framebuffer_mouse_init.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,70 +140,155 @@ START:
 .loop:
 
 	call framebuffer_3d_render_depth_loop
-	call framerate_poll
 
-%if 1
+	call framerate_poll
+	
 	push rdi
 	push rsi
 	push rdx	
 
+	call print_buffer_reset
+	
+	; framerate counter update
+
 	; reset string
-	mov rdi,.framerate_string
+	mov rdi,.framerate_string+5
 	mov sil,0
 	mov rdx,20
 	call memset	
-
-	call print_buffer_reset
 
 	mov rsi,4
 	movsd xmm0,[framerate_poll.framerate]
 	call print_float
 
-	mov rdi,.framerate_string	
+	mov rdi,.framerate_string+5	
+	call print_buffer_flush_to_memory
+
+	; mouse x position
+
+	; reset string
+	mov rdi,.mouse_x_string+3
+	mov sil,0
+	mov rdx,5
+	call memset	
+
+	mov esi,[framebuffer_mouse_init.mouse_x]
+	call print_int_d
+
+	mov rdi,.mouse_x_string+3	
+	call print_buffer_flush_to_memory
+
+	; mouse y position
+
+	; reset string
+	mov rdi,.mouse_y_string+3
+	mov sil,0
+	mov rdx,5
+	call memset	
+
+	mov esi,[framebuffer_mouse_init.mouse_y]
+	call print_int_d
+
+	mov rdi,.mouse_y_string+3	
 	call print_buffer_flush_to_memory
 
 	pop rdx
 	pop rsi
 	pop rdi
 
-%endif
-
 	jmp .loop
 
 .HUD_ELEMENT_FOR_FPS:
-	dw 1740 ; X start coordinate for all children
-	dw 0 ; Y start coordinate for all children
-	dq 0 ; address of cousin (next top-level HUD element)
+	db 0b10000000 ; VISIBLE TOP LEVEL ELEMENT
+	dq .HUD_ELEMENT_FOR_MOUSE ; address of cousin (next top-level HUD element)
 	dq .FPS_RECTANGLE ; address of child element
+	dw 1580 ; X start coordinate for all children
+	dw 0 ; Y start coordinate for all children
 
 .FPS_RECTANGLE:
 	db 0b10000001 ; VISIBLE RECTANGLE
+	dq 0;.FPS_TEXT ; address of cousin HUD element
+	dq .FPS_TEXT ; address of child HUD element
 	dw 0 ; X displacement from parent
 	dw 0 ; Y displacement from parent
-	dw 178 ; width of rectangle
+	dw 338 ; width of rectangle
 	dw 40 ; height of rectangle
 	dd 0xFFFA2DD0 ; color of rectangle
 	db 2 ; border thickness 
 	dd 0xFF0000FF ; color of rectangle border
 	dd 0xFF00FF00 ; hover color of rectangle
-	dq .FPS_TEXT ; address of cousin HUD element
-	dq 0 ; address of child HUD element
 	dq 0 ; onClick function pointer
 	; space for onClick function input data/params
 
 .FPS_TEXT:
 	db 0b10000010 ; VISIBLE TEXT
+	dq 0 ; address of cousin HUD element
+	dq 0 ; address of child HUD element. NOTE: UNUSED FOR TEXT ELEMENTS
 	dw 10 ; X displacement from parent
 	dw 6 ; Y displacement from parent
 	db 4 ; font scaling
 	dq SCHIZOFONT ; font definition pointer
 	dd 0xFFFFFFFF ; color of text
 	dd 0xFFFF0000 ; hover color
-	dq 0 ; address of cousin HUD element
 	dq .framerate_string ; null-terminated char array to write
 
 .framerate_string:
+	db `FPS: `
 	times 20 db 0
+
+.HUD_ELEMENT_FOR_MOUSE:
+	db 0b10000000 ; VISIBLE TOP LEVEL ELEMENT
+	dq 0 ; address of cousin (next top-level HUD element)
+	dq .MOUSE_RECTANGLE ; address of child element
+	dw 0 ; X start coordinate for all children
+	dw 1040 ; Y start coordinate for all children
+
+.MOUSE_RECTANGLE:
+	db 0b10000001 ; VISIBLE RECTANGLE
+	dq 0 ; address of cousin HUD element
+	dq .MOUSE_TEXT_X ; address of child HUD element
+	dw 0 ; X displacement from parent
+	dw 0 ; Y displacement from parent
+	dw 510 ; width of rectangle
+	dw 40 ; height of rectangle
+	dd 0xFFFFA500 ; color of rectangle
+	db 2 ; border thickness 
+	dd 0xFF0000FF ; color of rectangle border
+	dd 0xFF00FF00 ; hover color of rectangle
+	dq 0 ; onClick function pointer
+	; space for onClick function input data/params
+
+.MOUSE_TEXT_X:
+	db 0b10000010 ; VISIBLE TEXT
+	dq .MOUSE_TEXT_Y ; address of cousin HUD element
+	dq 0 ; address of child HUD element. NOTE: UNUSED FOR TEXT ELEMENTS
+	dw 10 ; X displacement from parent
+	dw 6 ; Y displacement from parent
+	db 4 ; font scaling
+	dq SCHIZOFONT ; font definition pointer
+	dd 0xFF0000FF ; color of text
+	dd 0xFFFF0000 ; hover color
+	dq .mouse_x_string ; null-terminated char array to write
+
+.MOUSE_TEXT_Y:
+	db 0b10000010 ; VISIBLE TEXT
+	dq 0 ; address of cousin HUD element
+	dq 0 ; address of child HUD element. NOTE: UNUSED FOR TEXT ELEMENTS
+	dw 280 ; X displacement from parent
+	dw 6 ; Y displacement from parent
+	db 4 ; font scaling
+	dq SCHIZOFONT ; font definition pointer
+	dd 0xFF0000FF ; color of text
+	dd 0xFFFF0000 ; hover color
+	dq .mouse_y_string ; null-terminated char array to write
+
+.mouse_x_string:
+	db `X: `
+	times 5 db 0
+
+.mouse_y_string:
+	db `Y: `
+	times 5 db 0
 
 .perspective_structure:
 	dq 0.00 ; lookFrom_x	
