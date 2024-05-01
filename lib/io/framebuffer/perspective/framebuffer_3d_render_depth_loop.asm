@@ -13,6 +13,9 @@
 %include "lib/io/framebuffer/framebuffer_mouse_poll.asm"
 ; void framebuffer_mouse_poll(void);
 
+%include "lib/io/framebuffer/framebuffer_hud_process_mouse.asm"
+; void framebuffer_hud_process_mouse(void);
+
 %include "lib/io/framebuffer/framebuffer_flush.asm"
 ; void framebuffer_flush(void);
 
@@ -66,8 +69,23 @@ framebuffer_3d_render_depth_loop:
 
 	; check mouse status	
 	call framebuffer_mouse_poll
+;	xor r14,r14
+;	mov r14b,byte [framebuffer_mouse_init.mouse_state]
+	
+	; if the HUD is even a thing, draw it
+	cmp byte [framebuffer_hud_init.hud_enabled],0
+	je .no_hud1
+
+	call framebuffer_hud_process_mouse
+
+	; draw the HUD onto the HUDbuffer
+	call framebuffer_process_hud
+	
+.no_hud1:
+
 	xor r14,r14
 	mov r14b,byte [framebuffer_mouse_init.mouse_state]
+	
 
 	cmp r14,0
 	jg .drawing
@@ -445,10 +463,10 @@ framebuffer_3d_render_depth_loop:
 
 	; if the HUD is even a thing, draw it
 	cmp byte [framebuffer_hud_init.hud_enabled],0
-	je .no_hud
+	je .no_hud2
 
-	; draw the HUD onto the HUDbuffer
-	call framebuffer_process_hud
+;	; draw the HUD onto the HUDbuffer
+;	call framebuffer_process_hud
 
 	; copy hudbuffer on top of framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
@@ -463,8 +481,7 @@ framebuffer_3d_render_depth_loop:
 	inc r11d
 	call set_foreground
 
-.no_hud:
-
+.no_hud2:
 
 	; then draw the cursor as foreground onto the framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]

@@ -229,7 +229,7 @@ START:
 	db 4 ; font scaling
 	dq SCHIZOFONT ; font definition pointer
 	dd 0xFFFFFFFF ; color of text
-	dd 0xFFFF0000 ; hover color
+	dd 0xFFFF0000 ; hover color ; TODO maybe delete this from text elements?
 	dq .framerate_string ; null-terminated char array to write
 
 .framerate_string:
@@ -247,10 +247,10 @@ START:
 	db 0b10000001 ; VISIBLE RECTANGLE
 	dq 0 ; address of cousin HUD element
 	dq .MOUSE_TEXT_X ; address of child HUD element
-	dw 0 ; X displacement from parent
-	dw 0 ; Y displacement from parent
-	dw 510 ; width of rectangle
-	dw 40 ; height of rectangle
+	dw 0 ; X0 displacement from parent
+	dw 0 ; Y0 displacement from parent
+	dw 510 ; X1 displacement from parent
+	dw 40 ; Y1 displacement from parent
 	dd 0xFFFFA500 ; color of rectangle
 	db 2 ; border thickness 
 	dd 0xFF0000FF ; color of rectangle border
