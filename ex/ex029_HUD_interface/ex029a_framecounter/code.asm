@@ -136,7 +136,6 @@ START:
 	mov rax,.HUD_ELEMENT_FOR_FPS
 	mov [framebuffer_hud_init.hud_tail],rax
 
-
 .loop:
 
 	call framebuffer_3d_render_depth_loop
@@ -209,15 +208,15 @@ START:
 	db 0b10000001 ; VISIBLE RECTANGLE
 	dq 0;.FPS_TEXT ; address of cousin HUD element
 	dq .FPS_TEXT ; address of child HUD element
-	dw 0 ; X displacement from parent
-	dw 0 ; Y displacement from parent
-	dw 338 ; width of rectangle
-	dw 40 ; height of rectangle
+	dw 0 ; X0 displacement from parent
+	dw 0 ; Y0 displacement from parent
+	dw 338 ; X1 displacement from parent
+	dw 40 ; Y1 displacement from parent
 	dd 0xFFFA2DD0 ; color of rectangle
 	db 2 ; border thickness 
 	dd 0xFF0000FF ; color of rectangle border
 	dd 0xFF00FF00 ; hover color of rectangle
-	dq 0 ; onClick function pointer
+	dq exit ; onClick function pointer
 	; space for onClick function input data/params
 
 .FPS_TEXT:
@@ -255,7 +254,7 @@ START:
 	db 2 ; border thickness 
 	dd 0xFF0000FF ; color of rectangle border
 	dd 0xFF00FF00 ; hover color of rectangle
-	dq 0 ; onClick function pointer
+	dq exit ; onClick function pointer
 	; space for onClick function input data/params
 
 .MOUSE_TEXT_X:
@@ -454,9 +453,6 @@ START:
 	dq 2,3,6,0xFFFFFFFF ; back
 	dq 6,3,7,0xFFFFFFFF ; back
 		
-.newline:
-	db `\n`
-
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,

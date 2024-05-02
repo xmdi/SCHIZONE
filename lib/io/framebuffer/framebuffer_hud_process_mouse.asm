@@ -21,7 +21,6 @@ framebuffer_hud_process_mouse:
 	cmp r14,0
 	je .quit
 
-
 	push r14
 	movzx rax, word [r14+17]
 	push rax	
@@ -84,7 +83,7 @@ framebuffer_hud_process_mouse:
 	mov al,[r14+0]
 	test al,0b10000000
 	jz .invisible_rectangle
-	
+
 	; check if our mouse collides with the visible element,
 	
 	movzx rax, word [r14+17]
@@ -98,6 +97,8 @@ framebuffer_hud_process_mouse:
 	mov rbp,[rsp+8]	
 	add rbx,rbp
 	add rdx,rbp
+	mov r9,rdx
+	mov r10,rax
 
 	cmp r12,rax
 	jl .not_within_rectangle
@@ -110,7 +111,7 @@ framebuffer_hud_process_mouse:
 
 	; within rectangle
 
-	call exit
+	call [r14+38]
 
 	jmp .ret
 
@@ -123,7 +124,6 @@ framebuffer_hud_process_mouse:
 	; if children, recurse on them
 	cmp qword [r14+9], qword 0
 	je .no_rectangle_kids
-	mov r13,r14
 
 	push r14
 	movzx rax, word [r14+17]
