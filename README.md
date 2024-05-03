@@ -40,7 +40,7 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | MAR 01, 2024 | [3D Frames FEA](ex/ex026_3d_frames_FEA) | [EP. 026](https://youtu.be/4mKymYT_kP8) |
 | MAR 15, 2024 | [Integration](ex/ex027_integration) | [EP. 027](https://youtu.be/2txsBh5PPJk) |
 | APR 19, 2024 | [Perspective Projections](ex/ex028_perspective_projections) | [EP. 028](https://youtu.be/IZUqEhRMaeg) |
-| MAY 03, 2024 | [HUD Interface](ex/ex029_HUD_interface) | [EP. 029](https://youtu.be/) |
+| MAY 03, 2024 | [HUD Interface](ex/ex029_HUD_interface) | [EP. 029](https://youtu.be/gpkx3gd7ylM) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |

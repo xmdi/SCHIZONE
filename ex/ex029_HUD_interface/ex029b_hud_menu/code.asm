@@ -70,11 +70,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/print_buffer_flush_to_memory.asm"
 
-;%include "lib/io/print_array_float.asm"
 %include "lib/io/print_float.asm"
 %include "lib/io/print_int_d.asm"
-
-%include "lib/io/print_stack.asm"
 
 %include "lib/sys/exit.asm"
 
@@ -172,7 +169,6 @@ QUIT:
 
 CHANGE_SHOW_HIDE_TEXT_AND_TOGGLE_VISIBILITY:
 
-
 	push rdi
 	push rsi
 	push rdx
@@ -199,7 +195,6 @@ CHANGE_SHOW_HIDE_TEXT_AND_TOGGLE_VISIBILITY:
 	mov rdx,4
 	call print_chars
 	call print_buffer_flush_to_memory
-
 
 	pop rdx
 	pop rsi
@@ -260,7 +255,6 @@ TOGGLE_ELEMENT_AND_DESCENDANT_VISIBILITY:
 .ret:
 
 	ret
-
 
 DRAW_CROSS_CURSOR:
 ;	inputs:
@@ -823,9 +817,6 @@ START:
 	dq 2,3,6,0xFFFFFFFF ; back
 	dq 6,3,7,0xFFFFFFFF ; back
 
-.newline:
-	db `\n`
-		
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
