@@ -86,7 +86,6 @@ framebuffer_3d_render_depth_loop:
 	xor r14,r14
 	mov r14b,byte [framebuffer_mouse_init.mouse_state]
 	
-
 	cmp r14,0
 	jg .drawing
 	xor rax,rax

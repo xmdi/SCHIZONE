@@ -82,6 +82,18 @@ PROGRAM_HEADER:
 
 ; NOTE: NEED TO RUN THIS AS SUDO
 
+QUIT:
+	
+	; clear screen
+	xor rdi,rdi	
+	call framebuffer_clear
+	call framebuffer_flush
+
+	; shut down
+	xor dil,dil
+	call exit
+
+
 DRAW_CROSS_CURSOR:
 ;	inputs:
 ; 	{rdi}=framebuffer_address
@@ -206,17 +218,14 @@ START:
 
 .FPS_RECTANGLE:
 	db 0b10000001 ; VISIBLE RECTANGLE
-	dq 0;.FPS_TEXT ; address of cousin HUD element
+	dq 0 ; address of cousin HUD element
 	dq .FPS_TEXT ; address of child HUD element
 	dw 0 ; X0 displacement from parent
 	dw 0 ; Y0 displacement from parent
 	dw 338 ; X1 displacement from parent
 	dw 40 ; Y1 displacement from parent
 	dd 0xFFFA2DD0 ; color of rectangle
-	db 2 ; border thickness 
-	dd 0xFF0000FF ; color of rectangle border
-	dd 0xFF00FF00 ; hover color of rectangle
-	dq exit ; onClick function pointer
+	dq 0 ; onClick function pointer
 	; space for onClick function input data/params
 
 .FPS_TEXT:
@@ -228,7 +237,6 @@ START:
 	db 4 ; font scaling
 	dq SCHIZOFONT ; font definition pointer
 	dd 0xFFFFFFFF ; color of text
-	dd 0xFFFF0000 ; hover color ; TODO maybe delete this from text elements?
 	dq .framerate_string ; null-terminated char array to write
 
 .framerate_string:
@@ -237,7 +245,7 @@ START:
 
 .HUD_ELEMENT_FOR_MOUSE:
 	db 0b10000000 ; VISIBLE TOP LEVEL ELEMENT
-	dq 0 ; address of cousin (next top-level HUD element)
+	dq .HUD_ELEMENT_FOR_QUIT ; address of cousin (next top-level HUD element)
 	dq .MOUSE_RECTANGLE ; address of child element
 	dw 0 ; X start coordinate for all children
 	dw 1040 ; Y start coordinate for all children
@@ -251,10 +259,7 @@ START:
 	dw 510 ; X1 displacement from parent
 	dw 40 ; Y1 displacement from parent
 	dd 0xFFFFA500 ; color of rectangle
-	db 2 ; border thickness 
-	dd 0xFF0000FF ; color of rectangle border
-	dd 0xFF00FF00 ; hover color of rectangle
-	dq exit ; onClick function pointer
+	dq 0 ; onClick function pointer
 	; space for onClick function input data/params
 
 .MOUSE_TEXT_X:
@@ -266,7 +271,6 @@ START:
 	db 4 ; font scaling
 	dq SCHIZOFONT ; font definition pointer
 	dd 0xFF0000FF ; color of text
-	dd 0xFFFF0000 ; hover color
 	dq .mouse_x_string ; null-terminated char array to write
 
 .MOUSE_TEXT_Y:
@@ -278,7 +282,6 @@ START:
 	db 4 ; font scaling
 	dq SCHIZOFONT ; font definition pointer
 	dd 0xFF0000FF ; color of text
-	dd 0xFFFF0000 ; hover color
 	dq .mouse_y_string ; null-terminated char array to write
 
 .mouse_x_string:
@@ -288,6 +291,39 @@ START:
 .mouse_y_string:
 	db `Y: `
 	times 5 db 0
+
+.HUD_ELEMENT_FOR_QUIT:
+	db 0b10000000 ; VISIBLE TOP LEVEL ELEMENT
+	dq 0 ; address of cousin (next top-level HUD element)
+	dq .QUIT_RECTANGLE ; address of child element
+	dw 1400 ; X start coordinate for all children
+	dw 0 ; Y start coordinate for all children
+
+.QUIT_RECTANGLE:
+	db 0b10000001 ; VISIBLE RECTANGLE
+	dq 0 ; address of cousin HUD element
+	dq .QUIT_TEXT ; address of child HUD element
+	dw 0 ; X0 displacement from parent
+	dw 0 ; Y0 displacement from parent
+	dw 170 ; X1 displacement from parent
+	dw 40 ; Y1 displacement from parent
+	dd 0xFFFF0000 ; color of rectangle
+	dq QUIT ; onClick function pointer
+	; space for onClick function input data/params
+
+.QUIT_TEXT:
+	db 0b10000010 ; VISIBLE TEXT
+	dq 0 ; address of cousin HUD element
+	dq 0 ; address of child HUD element. NOTE: UNUSED FOR TEXT ELEMENTS
+	dw 10 ; X displacement from parent
+	dw 6 ; Y displacement from parent
+	db 4 ; font scaling
+	dq SCHIZOFONT ; font definition pointer
+	dd 0xFFFFFFFF ; color of text
+	dq .quit_string ; null-terminated char array to write
+
+.quit_string:
+	db `QUIT!\0`
 
 .perspective_structure:
 	dq 0.00 ; lookFrom_x	

@@ -12,6 +12,19 @@ framebuffer_hud_process_mouse:
 ; void framebuffer_hud_process_mouse(void);
 ; Processes mouse to interact with HUD initialized by framebuffer_hud_init. 
 
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	push rbp
+	push r8
+	push r9
+	push r10
+	push r11
+	push r12
+	push r13
+	push r14
+
 	mov r11b,byte [framebuffer_mouse_init.mouse_state] ; {r11b} has mouse state
 
 	movsxd r12,[framebuffer_mouse_init.mouse_x] ; {r12} has mouse x
@@ -31,6 +44,19 @@ framebuffer_hud_process_mouse:
 	add rsp,24
 
 .quit:
+
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rbp
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
 
 	ret
 
@@ -111,9 +137,26 @@ framebuffer_hud_process_mouse:
 
 	; within rectangle
 
-	call [r14+38]
+	; check if click
 
-	jmp .ret
+	cmp byte [framebuffer_mouse_init.mouse_state],1
+	jne .skip_this_rectangle
+
+	; check if this rectangle has an onClick function pointer
+	cmp qword [r14+29],0
+	je .skip_this_rectangle
+
+	mov r13,r14
+	add r13,37
+	push r13
+
+	call [r14+29]
+
+	add rsp,8
+
+.skip_this_rectangle:
+
+	;jmp .ret
 
 .not_within_rectangle:
 
@@ -164,6 +207,7 @@ framebuffer_hud_process_mouse:
 .invalid_element_definition:
 .no_cousins:
 .ret:
+
 	ret
 
 %endif

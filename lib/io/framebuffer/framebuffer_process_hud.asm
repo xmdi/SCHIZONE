@@ -16,6 +16,17 @@ framebuffer_process_hud:
 ; void framebuffer_process_hud(void);
 ; Processes HUD initialized by framebuffer_hud_init. 
 
+	push rax
+	push rdi
+	push rsi
+	push rdx
+	push r8
+	push r9
+	push r10
+	push r11
+	push r12
+	push r14
+
 	; clear the buffer first
 	mov rdi,[framebuffer_hud_init.hudbuffer_address]
 	xor sil,sil
@@ -40,6 +51,17 @@ framebuffer_process_hud:
 	add rsp,24
 
 .quit:
+
+	pop r14
+	pop r12
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rdx
+	pop rsi
+	pop rdi
+	pop rax
 
 	ret
 
@@ -115,7 +137,7 @@ framebuffer_process_hud:
 	; if children, recurse on them
 	cmp qword [r14+9], qword 0
 	je .no_rectangle_kids
-	mov r13,r14
+;	mov r13,r14
 
 	push r14
 	movzx rax, word [r14+17]
@@ -155,7 +177,7 @@ framebuffer_process_hud:
 	mov rax,[rsp+8]	
 	add r9d,eax
 	movzx r10d, byte [r14+21]
-	mov r11,[r14+38]
+	mov r11,[r14+34]
 	mov r12,[r14+22]
 	call set_text
 
@@ -167,7 +189,11 @@ framebuffer_process_hud:
 	jne .parse_cousins	
 
 .invalid_element_definition:
+
 .no_cousins:
+
+.ret:
+
 	ret
 
 %endif
