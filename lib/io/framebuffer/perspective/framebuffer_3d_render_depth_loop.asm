@@ -464,9 +464,6 @@ framebuffer_3d_render_depth_loop:
 	cmp byte [framebuffer_hud_init.hud_enabled],0
 	je .no_hud2
 
-;	; draw the HUD onto the HUDbuffer
-;	call framebuffer_process_hud
-
 	; copy hudbuffer on top of framebuffer
 	mov rdi,[framebuffer_init.framebuffer_address]
 	mov rsi,[framebuffer_hud_init.hudbuffer_address]
@@ -490,14 +487,6 @@ framebuffer_3d_render_depth_loop:
 	mov r9d,[framebuffer_mouse_init.mouse_y]
 	call [framebuffer_3d_render_depth_init.cursor_function_address]
 
-; ONLY DRAW HUDBUFFER
-;	; first copy intermediate buffer to framebuffer
-;	mov rdi,[framebuffer_init.framebuffer_address]
-;	mov rsi,[framebuffer_hud_init.hudbuffer_address]
-;	mov rdx,[framebuffer_init.framebuffer_size]
-;	call memcopy
-
-
 	; flush output to the screen
 	call framebuffer_flush
 	
@@ -519,7 +508,7 @@ framebuffer_3d_render_depth_loop:
 	pop rdx
 	pop rsi
 	pop rdi
-	
+
 	ret
 
 %endif	

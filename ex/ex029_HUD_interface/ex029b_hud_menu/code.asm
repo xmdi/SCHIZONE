@@ -74,6 +74,8 @@ PROGRAM_HEADER:
 %include "lib/io/print_float.asm"
 %include "lib/io/print_int_d.asm"
 
+%include "lib/io/print_stack.asm"
+
 %include "lib/sys/exit.asm"
 
 %include "lib/io/framebuffer/framebuffer_mouse_init.asm"
@@ -89,6 +91,7 @@ RESET_VIEW:
 	push rdi
 	push rsi
 	push rdx
+	push r15
 
 	mov rdi,START.perspective_structure
 	mov rsi,START.original_perspective_structure
@@ -104,6 +107,25 @@ RESET_VIEW:
 	mov rsi,START.original_view_axes
 	mov rdx,72
 	call memcopy
+
+	mov rdi,framebuffer_3d_render_depth_init.view_axes
+	mov rsi,START.original_view_axes
+	mov rdx,72
+	call memcopy
+	
+	; clear the background first
+	mov rdi,[framebuffer_3d_render_depth_init.intermediate_buffer_address]
+	xor sil,sil
+	mov rdx,[framebuffer_init.framebuffer_size]
+	call memset
+
+	; clear screen
+	xor rdi,rdi	
+	call framebuffer_clear
+	call framebuffer_flush
+
+	mov rdi,.ret_addr
+	push rdi
 
 	push rdi
 	push rsi
@@ -125,11 +147,15 @@ RESET_VIEW:
 	movdqu [rsp+96],xmm15
 
 	mov r15,[framebuffer_3d_render_depth_init.perspective_structure_address]
-	call framebuffer_3d_render_depth_loop.draw_wires
 
+	jmp framebuffer_3d_render_depth_loop.draw_wires
+
+.ret_addr:
+	
+	pop r15
 	pop rdx
 	pop rsi
-	pop rsi
+	pop rdi
 
 	ret
 
@@ -278,7 +304,7 @@ START:
 	call framebuffer_3d_render_depth_init
 
 	mov rdi,.original_view_axes
-	mov rsi,framebuffer_3d_render_depth_init.view_axes_old
+	mov rsi,framebuffer_3d_render_depth_init.view_axes
 	mov rdx,72
 	call memcopy
 
@@ -619,9 +645,9 @@ START:
 	times 5 db 0
 
 .original_perspective_structure:
-	dq 0.00 ; lookFrom_x	
-	dq 10.00 ; lookFrom_y	
-	dq 2.00 ; lookFrom_z	
+	dq 5.00 ; lookFrom_x	
+	dq -10.00 ; lookFrom_y	
+	dq 5.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 2.00 ; lookAt_z	
@@ -631,9 +657,9 @@ START:
 	dq 1.3	; zoom
 
 .perspective_structure:
-	dq 0.00 ; lookFrom_x	
-	dq 10.00 ; lookFrom_y	
-	dq 2.00 ; lookFrom_z	
+	dq 5.00 ; lookFrom_x	
+	dq -10.00 ; lookFrom_y	
+	dq 5.00 ; lookFrom_z	
 	dq 0.00 ; lookAt_x	
 	dq 0.00 ; lookAt_y	
 	dq 2.00 ; lookAt_z	
@@ -796,6 +822,9 @@ START:
 
 	dq 2,3,6,0xFFFFFFFF ; back
 	dq 6,3,7,0xFFFFFFFF ; back
+
+.newline:
+	db `\n`
 		
 END:
 
