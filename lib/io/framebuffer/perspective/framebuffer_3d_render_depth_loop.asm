@@ -42,7 +42,7 @@
 framebuffer_3d_render_depth_loop:
 ; void framebuffer_3d_render_depth_loop(void);
 ;	Query mouse position and redraw the scene initialized by
-;	framebuffer_3d_render_depth_init.
+;	framebuffer_3d_render_depth_init. 
 
 ; No error handling; deal with it.
 
