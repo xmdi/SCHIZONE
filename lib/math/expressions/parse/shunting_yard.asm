@@ -1,6 +1,7 @@
 %ifndef SHUNTING_YARD
 %define SHUNTING_YARD
 
+%include "lib/io/parse_float.asm"
 ; need function to return numeric / aphabetic tokens; maybe embed that here?
 
 shunting_yard:

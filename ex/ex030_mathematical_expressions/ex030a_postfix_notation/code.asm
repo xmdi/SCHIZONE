@@ -52,9 +52,6 @@ PROGRAM_HEADER:
 %include "lib/io/print_float.asm"
 ; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
-%include "lib/io/print_int_d.asm"
-; void print_int_d(int {rdi}, long {rsi});
-
 %include "lib/sys/exit.asm"
 ; void exit(char {dil});
 
