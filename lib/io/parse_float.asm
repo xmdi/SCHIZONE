@@ -2,10 +2,11 @@
 %define PARSE_FLOAT
 
 parse_float:
-; double {xmm0} parse_float(char* {rdi});
+; double {xmm0}, char* {rax} parse_float(char* {rdi});
 ; 	Returns in {xmm0} the value of char array starting at 
 ;	{rdi} and terminating with any non-numerical character 
-;	besides `.`.
+;	besides `.`. Return value in {rax} points to the next
+; 	character in the input array.
 
 	push rdi
 	push rsi
@@ -23,9 +24,16 @@ parse_float:
 	mov rcx,10		; radix for decimal system
 	cmp byte [rdi],43	; check for '+'
 	je .explicitly_positive_integer
+
+	cmp byte [rdi],46	; check for '.'
+	je .explicitly_fractional_integer
+	
 	cmp byte [rdi],45	; check for '-'
 	jne .loop_integer
 	inc r8
+	cmp byte [rdi+1],46 	; check for '.'
+	je .explicitly_fractional_integer_2
+
 .explicitly_positive_integer:
 	inc rdi	
 .loop_integer:
@@ -149,6 +157,8 @@ parse_float:
 .done:
 	movdqu xmm2,[rsp+0]
 	movdqu xmm1,[rsp+16]
+	mov rax,rdi
+
 	add rsp,32
 	pop r8
 	pop rdx
@@ -167,5 +177,14 @@ parse_float:
 .no_negate_scientific_integer:
 	cvtsi2sd xmm0,rax
 	jmp .parse_exponent_go
+
+.explicitly_fractional_integer_2:
+	inc rdi
+.explicitly_fractional_integer:
+	pxor xmm1,xmm1
+	inc rdi
+	xor rax,rax
+	mov rsi,1		; multiplier for fractional denominator
+	jmp .loop_fraction
 
 %endif

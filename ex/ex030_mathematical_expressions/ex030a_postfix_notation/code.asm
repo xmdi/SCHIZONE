@@ -52,17 +52,65 @@ PROGRAM_HEADER:
 %include "lib/io/print_float.asm"
 ; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
+%include "lib/io/print_chars.asm"
+
+%include "lib/io/strlen.asm"
+
+%include "lib/math/expressions/parse/evaluate_postfix_string.asm"
+
 %include "lib/sys/exit.asm"
-; void exit(char {dil});
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 START:
+	
+	cmp byte [SYS_ARGC_START_POINTER],2
+	jne .invalid_inputs
 
-	xor dil,dil
+	mov rdi,[SYS_ARGC_START_POINTER+16]
+	call strlen
+
+	call evaluate_postfix_string
+	test rax,rax
+	jnz .invalid_expression
+	
+	mov rdi,SYS_STDOUT
+	mov rsi,10	
+	call print_float
+	mov rsi,.incorrect_usage+27
+	mov rdx,1
+	call print_chars
+	call print_buffer_flush
+
+	xor rdi,rdi
 	call exit
+
+.invalid_expression:
+	mov rdi,SYS_STDOUT
+	mov rsi,.bogus_expression
+	mov rdx,29
+	jmp .exit
+
+.invalid_inputs:
+	mov rdi,SYS_STDOUT
+	mov rsi,.incorrect_usage
+	mov rdx,28
+
+.exit:
+	call print_chars
+	call print_buffer_flush
+
+	mov dil,1
+	call exit
+
+.incorrect_usage:
+	db `nah, try using 'exe "3 3+"'\n`
+
+.bogus_expression:
+	db `your expression is bogus lol\n`
+
 
 END:
 
