@@ -10,7 +10,7 @@ parse_float:
 
 	push rdi
 	push rsi
-	push rax
+	;push rax
 	push rbx
 	push rcx
 	push rdx		; "imul r64"  messes up {rdx} btw
@@ -164,7 +164,7 @@ parse_float:
 	pop rdx
 	pop rcx
 	pop rbx
-	pop rax	
+;	pop rax	
 	pop rsi
 	pop rdi
 	ret
