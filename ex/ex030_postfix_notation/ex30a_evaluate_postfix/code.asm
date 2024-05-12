@@ -60,6 +60,7 @@ PROGRAM_HEADER:
 
 %include "lib/sys/exit.asm"
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,7 +80,7 @@ START:
 	mov rdi,SYS_STDOUT
 	mov rsi,10	
 	call print_float
-	mov rsi,.incorrect_usage+27
+	mov rsi,.incorrect_usage+24
 	mov rdx,1
 	call print_chars
 	call print_buffer_flush
@@ -96,7 +97,19 @@ START:
 .invalid_inputs:
 	mov rdi,SYS_STDOUT
 	mov rsi,.incorrect_usage
-	mov rdx,28
+	mov rdx,16
+	call print_chars
+
+	mov rdi,[SYS_ARGC_START_POINTER+8]
+	call strlen
+
+	mov rsi,rdi
+	mov rdi,SYS_STDOUT
+	mov rdx,rax
+	call print_chars
+
+	mov rsi,.incorrect_usage+16
+	mov rdx,9
 
 .exit:
 	call print_chars
@@ -106,11 +119,10 @@ START:
 	call exit
 
 .incorrect_usage:
-	db `nah, try using 'exe "3 3+"'\n`
+	db `nah, try using ' "3 3+"'\n`
 
 .bogus_expression:
 	db `your expression is bogus lol\n`
-
 
 END:
 

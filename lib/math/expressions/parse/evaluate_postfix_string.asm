@@ -5,6 +5,12 @@
 
 %include "lib/math/expressions/parse/stack_math_ops.asm"
 
+%include "lib/io/strcmp.asm"
+
+%include "lib/io/strlen.asm"
+
+%include "lib/mem/strsplit.asm"
+
 evaluate_postfix_string:
 ; double {xmm0}, bool {rax} evaluate_postfix_string(char* {rdi});
 ; Evaluates the null-terminated postfix expression string beginning at {rdi}.
@@ -85,13 +91,42 @@ evaluate_postfix_string:
 	jmp .skip	
 .not_division:
 	cmp byte [rdi],47 ; "^"
-	jne .not_exponent
-	call stack_math_ops.exponent
+	jne .not_power
+	call stack_math_ops.power
 	add rsp,8
 	inc rdi
 	jmp .skip
-.not_exponent:
+.not_power:
 
+	; check against table of operators
+	mov cl,[.operator_count]
+	mov rsi,.operator_table
+.string_operator_loop:
+	xor rax,rax
+	mov [.operator_slot],rax
+	push rdi
+	push rsi
+	push rdx
+	mov rsi,rdi
+	mov rdi,.operator_slot
+	mov dl,32
+	call strsplit
+	pop rdx
+	pop rsi
+	call strcmp
+	pop rdi
+	cmp rax,1
+	jne .not_this_string
+	call [rsi+8]
+	push rdi
+	mov rdi,.operator_slot
+	call strlen
+	pop rdi
+	add rdi,rax
+.not_this_string:
+	add rsi,16
+	dec cl
+	jnz .string_operator_loop
 
 .skip:
 	jmp .loop
@@ -114,7 +149,35 @@ evaluate_postfix_string:
 
 	ret
 
+.operator_slot:
+	dq 0
 
-
+.operator_count:
+	db 12
+.operator_table:
+	db `sin`,0,0,0,0,0
+	dq stack_math_ops.sine
+	db `cos`,0,0,0,0,0
+	dq stack_math_ops.cosine
+	db `tan`,0,0,0,0,0
+	dq stack_math_ops.tangent
+	db `atan`,0,0,0,0
+	dq stack_math_ops.arctangent
+	db `sqrt`,0,0,0,0
+	dq stack_math_ops.sqrt
+	db `inv`,0,0,0,0,0
+	dq stack_math_ops.inv
+	db `ln`,0,0,0,0,0,0
+	dq stack_math_ops.ln
+	db `log`,0,0,0,0,0
+	dq stack_math_ops.log
+	db `exp`,0,0,0,0,0
+	dq stack_math_ops.exp
+	db `e`,0,0,0,0,0,0,0
+	dq stack_math_ops.e
+	db `pi`,0,0,0,0,0,0
+	dq stack_math_ops.pi
+	db `tau`,0,0,0,0,0
+	dq stack_math_ops.tau
 
 %endif	
