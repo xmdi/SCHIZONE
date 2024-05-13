@@ -5,6 +5,8 @@
 %include "lib/math/expressions/trig/cosine.asm"
 %include "lib/math/expressions/trig/tangent.asm"
 %include "lib/math/expressions/trig/arctangent.asm"
+%include "lib/math/expressions/log/exp.asm"
+%include "lib/math/expressions/log/pow.asm"
 %include "lib/math/expressions/log/log_e.asm"
 %include "lib/math/expressions/log/log_10.asm"
 
@@ -14,6 +16,34 @@ stack_math_ops:
 ; These sub-labels can be accessed directly for expression evaluation.
 ; Always intentionally clobbers {xmm0}. Not intended for external use.
 ; outside expression parsing.
+
+.operator_count:
+	db 12
+.operator_table:
+	db `sin`,0,0,0,0,0
+	dq .sine
+	db `cos`,0,0,0,0,0
+	dq .cosine
+	db `tan`,0,0,0,0,0
+	dq .tangent
+	db `atan`,0,0,0,0
+	dq .arctangent
+	db `sqrt`,0,0,0,0
+	dq .sqrt
+	db `inv`,0,0,0,0,0
+	dq .inv
+	db `ln`,0,0,0,0,0,0
+	dq .ln
+	db `log`,0,0,0,0,0
+	dq .log
+	db `exp`,0,0,0,0,0
+	dq .exp
+	db `e`,0,0,0,0,0,0,0
+	dq .e
+	db `pi`,0,0,0,0,0,0
+	dq .pi
+	db `tau`,0,0,0,0,0
+	dq .tau
 
 db 8	; post-operation stack adjustment bytecount
 .addition:
@@ -49,15 +79,32 @@ db 0	; post-operation stack adjustment bytecount
 	movsd [rsp+8],xmm0
 	ret
 
-db 0	; post-operation stack adjustment bytecount
-.power: ; TODO implement
-	sqrtsd xmm0,[rsp+8]
-	movsd [rsp+8],xmm0
+db 8	; post-operation stack adjustment bytecount
+.power: 
+	sub rsp,32
+	movdqu [rsp+0],xmm1
+	movdqu [rsp+16],xmm2
+	movsd xmm0,[rsp+48]
+	movsd xmm1,[rsp+40]
+	movsd xmm2,[.tolerance]	
+	call pow
+	movsd [rsp+48],xmm0
+	movdqu xmm1,[rsp+0]
+	movdqu xmm2,[rsp+16]
+	add rsp,32
+	ret
 
 db 0	; post-operation stack adjustment bytecount
-.exp: ; TODO implement
-	sqrtsd xmm0,[rsp+8]
-	movsd [rsp+8],xmm0
+.exp:
+	sub rsp,16
+	movdqu [rsp+0],xmm1
+	movsd xmm0,[rsp+24]
+	movsd xmm1,[.tolerance]	
+	call exp
+	movsd [rsp+24],xmm0
+	movdqu xmm1,[rsp+0]
+	add rsp,16
+	ret
 
 db 0	; post-operation stack adjustment bytecount
 .sine: 

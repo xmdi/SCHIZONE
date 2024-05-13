@@ -14,6 +14,8 @@ strsplit:
 	mov al,[rsi]
 	cmp al,dl
 	je .done
+	cmp al,0
+	je .done
 	mov [rdi], al
 	inc rsi
 	inc rdi

@@ -90,7 +90,7 @@ evaluate_postfix_string:
 	inc rdi
 	jmp .skip	
 .not_division:
-	cmp byte [rdi],47 ; "^"
+	cmp byte [rdi],94 ; "^"
 	jne .not_power
 	call stack_math_ops.power
 	add rsp,8
@@ -99,8 +99,8 @@ evaluate_postfix_string:
 .not_power:
 
 	; check against table of operators
-	mov cl,[.operator_count]
-	mov rsi,.operator_table
+	mov cl,[stack_math_ops.operator_count]
+	mov rsi,stack_math_ops.operator_table
 .string_operator_loop:
 	xor rax,rax
 	mov [.operator_slot],rax
@@ -151,33 +151,5 @@ evaluate_postfix_string:
 
 .operator_slot:
 	dq 0
-
-.operator_count:
-	db 12
-.operator_table:
-	db `sin`,0,0,0,0,0
-	dq stack_math_ops.sine
-	db `cos`,0,0,0,0,0
-	dq stack_math_ops.cosine
-	db `tan`,0,0,0,0,0
-	dq stack_math_ops.tangent
-	db `atan`,0,0,0,0
-	dq stack_math_ops.arctangent
-	db `sqrt`,0,0,0,0
-	dq stack_math_ops.sqrt
-	db `inv`,0,0,0,0,0
-	dq stack_math_ops.inv
-	db `ln`,0,0,0,0,0,0
-	dq stack_math_ops.ln
-	db `log`,0,0,0,0,0
-	dq stack_math_ops.log
-	db `exp`,0,0,0,0,0
-	dq stack_math_ops.exp
-	db `e`,0,0,0,0,0,0,0
-	dq stack_math_ops.e
-	db `pi`,0,0,0,0,0,0
-	dq stack_math_ops.pi
-	db `tau`,0,0,0,0,0
-	dq stack_math_ops.tau
 
 %endif	
