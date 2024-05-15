@@ -50,16 +50,20 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/io/print_float.asm"
-; void print_float(int {rdi}, double {xmm0}, int {rsi});
 
 %include "lib/io/print_chars.asm"
-
-%include "lib/io/strlen.asm"
 
 %include "lib/math/expressions/parse/evaluate_postfix_string.asm"
 
 %include "lib/sys/exit.asm"
 
+%include "lib/io/file_open.asm"
+
+%include "lib/io/read_chars.asm"
+
+%include "lib/io/strlen.asm"
+
+%include "lib/mem/memset.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,32 +71,95 @@ PROGRAM_HEADER:
 
 START:
 	
-	cmp byte [SYS_ARGC_START_POINTER],2
+	cmp byte [SYS_ARGC_START_POINTER],3
 	jne .invalid_inputs
 
+	; open input file, fd in {r14}
 	mov rdi,[SYS_ARGC_START_POINTER+16]
-	call strlen
+	mov rsi,SYS_READ_ONLY
+	mov rdx,SYS_DEFAULT_PERMISSIONS
+	call file_open
+	mov r14,rax
+		
+	; open output file, fd in {r15}
+	mov rdi,[SYS_ARGC_START_POINTER+24]
+	mov rsi,SYS_CREATE_FILE+SYS_READ_WRITE+SYS_TRUNCATE
+	mov rdx,SYS_DEFAULT_PERMISSIONS
+	call file_open
+	mov r15,rax
 
+	mov rdi,r14
+
+.parse_expression:
+	mov rdi,.input_buffer
+	xor sil,sil
+	mov rdx,80
+	call memset
+
+	mov rdi,r14
+	mov rsi,.input_buffer
+	mov rdx,1
+
+.read_character_loop:
+		
+	call read_chars
+	cmp byte [rsi], byte 10
+	je .evaluate_now
+
+	inc rsi
+
+	test rax,rax
+	jz .done
+	jmp .read_character_loop
+
+.evaluate_now:
+
+	xor al,al
+	mov [rsi],al
+
+	mov rdi,.input_buffer
 	call evaluate_postfix_string
 	test rax,rax
 	jnz .invalid_expression
-	
-	mov rdi,SYS_STDOUT
+
+	mov rdi,r15
+	mov rdx,rsi
+	sub rdx,.input_buffer	
+	mov rsi,.input_buffer	
+	call print_chars
+
+	mov rsi,.grammar
+	mov rdx,3
+	call print_chars
+
 	mov rsi,10	
 	call print_float
-	mov rsi,.incorrect_usage+24
+
+	mov rsi,.grammar+3
 	mov rdx,1
 	call print_chars
 	call print_buffer_flush
 
+	jmp .parse_expression
+
+.done:
 	xor rdi,rdi
 	call exit
 
 .invalid_expression:
-	mov rdi,SYS_STDOUT
+
+	mov rdi,r15
+	mov rdx,rsi
+	sub rdx,.input_buffer	
+	mov rsi,.input_buffer	
+	call print_chars
+
 	mov rsi,.bogus_expression
-	mov rdx,29
-	jmp .exit
+	mov rdx,14
+	call print_chars	
+	call print_buffer_flush
+
+	jmp .parse_expression
 
 .invalid_inputs:
 	mov rdi,SYS_STDOUT
@@ -109,7 +176,7 @@ START:
 	call print_chars
 
 	mov rsi,.incorrect_usage+16
-	mov rdx,9
+	mov rdx,19
 
 .exit:
 	call print_chars
@@ -118,11 +185,17 @@ START:
 	mov dil,1
 	call exit
 
+.input_buffer:
+	times 80 db 0
+
 .incorrect_usage:
-	db `nah, try using ' "3 3+"'\n`
+	db `nah, try using ' file.in file.out'\n`
 
 .bogus_expression:
-	db `your expression is bogus lol\n`
+	db ` is bogus lol\n`
+
+.grammar:
+	db ` = \n`
 
 END:
 

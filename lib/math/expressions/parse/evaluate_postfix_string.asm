@@ -17,6 +17,7 @@ evaluate_postfix_string:
 ; Result of calculation in {xmm0} if null {rax}. Otherwise, {rax}=1 on fail.
 
 	push rdi
+	push rsi
 	push rbp
 	mov rbp,rsp
 
@@ -145,6 +146,7 @@ evaluate_postfix_string:
 .quit:
 	mov rsp,rbp
 	pop rbp
+	pop rsi
 	pop rdi
 
 	ret
