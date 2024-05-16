@@ -3,9 +3,11 @@
 %define SYS_WRITE 1
 %define SYS_OPEN 2
 %define SYS_CLOSE 3
+%define SYS_STAT 4
 %define SYS_LSEEK 8
 %define SYS_IOCTL 16
 %define SYS_EXIT 60
+%define SYS_GETDENTS 217;78
 %define SYS_UNLINK 87
 %define SYS_CHMOD 90
 %define SYS_GETTIMEOFDAY 96
