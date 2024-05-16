@@ -1,0 +1,39 @@
+
+- NASM Map file ---------------------------------------------------------------
+
+Source file:  code.asm
+Output file:  binary
+
+-- Program origin -------------------------------------------------------------
+
+00020000
+
+-- Sections (summary) ---------------------------------------------------------
+
+Vstart            Start             Stop              Length    Class     Name
+           20000             20000             2007D  0000007D  progbits  .text
+
+-- Sections (detailed) --------------------------------------------------------
+
+---- Section .text ------------------------------------------------------------
+
+class:     progbits
+length:                  7D
+start:                20000
+align:     not defined
+follows:   not defined
+vstart:               20000
+valign:    not defined
+vfollows:  not defined
+
+-- Symbols --------------------------------------------------------------------
+
+---- Section .text ------------------------------------------------------------
+
+Real              Virtual           Name
+           20000             20000  ELF_HEADER
+           20040             20040  PROGRAM_HEADER
+           20078             20078  START
+           2007D             2007D  END
+           2007D             2007D  PRINT_BUFFER
+
