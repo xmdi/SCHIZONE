@@ -21,3 +21,7 @@ chmod +x bin/nyancat
 nasm -f bin -I lib/sys/`uname` -o bin/countdown lab/lab004_countdown_timer/code.asm
 chmod +x bin/countdown
 
+# generate "list" aka "ls"
+nasm -f bin -I lib/sys/`uname` -o bin/list lab/lab005_ls/code.asm
+chmod +x bin/list
+

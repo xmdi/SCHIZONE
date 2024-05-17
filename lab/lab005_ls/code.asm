@@ -55,6 +55,10 @@ PROGRAM_HEADER:
 
 %include "lib/io/print_int_d.asm"	
 
+%include "lib/io/strlen.asm"	
+
+%include "lib/mem/strcopy_null.asm"
+
 %include "lib/sys/exit.asm"	
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,14 +67,43 @@ PROGRAM_HEADER:
 
 START:
 
+	; no command line input? assume current directory
+	cmp byte [SYS_ARGC_START_POINTER],1
+	jg .multiple_inputs
+	mov rdi,.dot
+	jmp .skip_in
+
+.multiple_inputs:
+	; check for exactly 2 command line inputs
 	cmp byte [SYS_ARGC_START_POINTER],2
 	jne .invalid_inputs
 
+	; copy dir into buffer
+	mov rdi,.buffer
+	mov rsi,[SYS_ARGC_START_POINTER+16]
+	call strcopy_null
+
+	; put slash in buffer
+	call strlen
+	inc rax
+	mov [.buffer_offset],rax
+	dec rax
+	add rax,.buffer
+	mov byte [rax], byte 47
+
 	mov rdi,[SYS_ARGC_START_POINTER+16]
+.skip_in:
 	mov rsi,SYS_READ_ONLY
 	mov rdx,SYS_DEFAULT_PERMISSIONS
 	call file_open
 	mov r15,rax
+
+.outer_loop:
+
+;	mov rdi,.dirent_struct
+;	xor rsi,rsi
+;	mov rdx,276
+;	call memset
 
 	mov rax,SYS_GETDENTS
 	mov rdi,r15
@@ -78,19 +111,36 @@ START:
 	mov rdx,276
 	syscall
 
+	cmp rax,0
+	jle .leave
+
 	mov rbp,rax
-	mov r15,.dirent_struct
+	mov rbx,.dirent_struct
 
 .loop:
 	mov rdi,SYS_STDOUT
-	mov rsi,r15
-	add rsi,18
+	mov rsi,rbx
+	add rsi,19
 	call print_string
 
-	mov rax,SYS_STAT
-	mov rdi,r15
-	add rdi,19
+;	push rsi
+;
+;	mov rdi,.buffer
+;	add rdi,[.buffer_offset]
+;	xor rsi,rsi
+;	mov rdx,514
+;	sub rdx,[.buffer_offset]
+;	call memset
+;
+;	pop rsi
 
+	; copy file into buffer
+	mov rdi,.buffer
+	add rdi,[.buffer_offset]
+	call strcopy_null
+
+	mov rax,SYS_STAT
+	mov rdi,.buffer
 	mov rsi,.stat_struct
 	syscall
 
@@ -108,13 +158,15 @@ START:
 
 	call print_buffer_flush
 
-	movzx rax, word [r15+16]
-	add r15,rax
+	movzx rax, word [rbx+16]
+	add rbx,rax
 	sub rbp,rax
 	jnz .loop
 
-.invalid_inputs:
+	jmp .outer_loop
 
+.invalid_inputs:
+.leave:
 	; exit
 	xor dil,dil
 	call exit	
@@ -124,13 +176,20 @@ START:
 
 
 .stat_struct:
-	times 200 db 0
+	times 160 db 0
 
 .grammar:
 	db `\n - `
 
-.test:
-	db `code.asm`,0
+.dot:
+	db `.`,0
+
+.buffer_offset:
+	dq 2
+
+.buffer:
+	db `./` 
+	times 512 db 0
 
 END:
 
