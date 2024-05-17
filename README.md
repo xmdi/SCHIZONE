@@ -41,6 +41,8 @@ Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/gar
 | MAR 15, 2024 | [Integration](ex/ex027_integration) | [EP. 027](https://youtu.be/2txsBh5PPJk) |
 | APR 19, 2024 | [Perspective Projections](ex/ex028_perspective_projections) | [EP. 028](https://youtu.be/IZUqEhRMaeg) |
 | MAY 03, 2024 | [HUD Interface](ex/ex029_HUD_interface) | [EP. 029](https://youtu.be/gpkx3gd7ylM) |
+| MAY 03, 2024 | [HUD Interface](ex/ex029_HUD_interface) | [EP. 029](https://youtu.be/gpkx3gd7ylM) |
+| MAY 17, 2024 | [Postfix Notation](ex/ex030_postfix_notation) | [EP. 030](https://youtu.be/yO32l7OZ3tU) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
