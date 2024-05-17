@@ -1,6 +1,13 @@
 # create bin directory if it doesn't exist
 mkdir -p bin
 
+echo "'make_executable abc' = 'chmod +x abc'
+'spawn abc' = 'touch abc'
+'recycle abc' = 'rm abc'
+'nyancat abc' = 'cat abc'
+'list' = 'ls'
+'countdown 5' -> 5 sec countdown timer" > bin/bins.md
+
 # generate "make_executable" aka "chmod +x"
 nasm -f bin -I lib/sys/`uname` -o bin/make_executable ex/ex003_command_line_args_and_code_golf/ex003b_chmod_smaller/code.asm
 chmod +x bin/make_executable
