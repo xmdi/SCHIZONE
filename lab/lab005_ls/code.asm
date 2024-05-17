@@ -145,7 +145,7 @@ START:
 	syscall
 
 	mov rdi,SYS_STDOUT
-	mov rsi,.grammar+1
+	mov rsi,.grammar+2
 	mov rdx,3
 	call print_chars
 
@@ -153,7 +153,7 @@ START:
 	call print_int_d
 
 	mov rsi,.grammar
-	mov rdx,1
+	mov rdx,2
 	call print_chars
 
 	call print_buffer_flush
@@ -179,7 +179,7 @@ START:
 	times 160 db 0
 
 .grammar:
-	db `\n - `
+	db `b\n - `
 
 .dot:
 	db `.`,0
