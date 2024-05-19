@@ -10,7 +10,7 @@ Entirely x86-64 assembly (see language breakdown on side panel). NASM is used as
 Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/garden, finance, and maybe some embedded stuff.
 
 ## Installation/Usage Instructions
-```
+```bash
 git clone https://github.com/xmdi/SCHIZONE.git # clone this repo
 cd SCHIZONE
 ./make_bins.sh # this generates some useful binaries (all written in asm)
