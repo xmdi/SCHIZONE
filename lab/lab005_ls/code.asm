@@ -179,7 +179,7 @@ START:
 	times 160 db 0
 
 .grammar:
-	db `b\n - `
+	db `B\n - `
 
 .dot:
 	db `.`,0
