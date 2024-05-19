@@ -6,6 +6,7 @@ echo "'make_executable abc' = 'chmod +x abc'
 'recycle abc' = 'rm abc'
 'nyancat abc' = 'cat abc'
 'list' = 'ls'
+'dump abc' = 'xxd abc' = 'hexdump -C abc'
 'countdown 5' -> 5 sec countdown timer" > bin/bins.md
 
 # generate "make_executable" aka "chmod +x"
@@ -32,3 +33,6 @@ chmod +x bin/countdown
 nasm -f bin -I lib/sys/`uname` -o bin/list lab/lab005_ls/code.asm
 chmod +x bin/list
 
+# generate "dump" aka "xxd" aka "hexdump"
+nasm -f bin -I lib/sys/`uname` -o bin/dump lab/lab006_hexdump/code.asm
+chmod +x bin/dump
