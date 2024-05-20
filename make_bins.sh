@@ -30,9 +30,9 @@ nasm -f bin -I lib/sys/`uname` -o bin/countdown lab/lab004_countdown_timer/code.
 chmod +x bin/countdown
 
 # generate "list" aka "ls"
-nasm -f bin -I lib/sys/`uname` -o bin/list lab/lab005_ls/code.asm
+nasm -f bin -I lib/sys/`uname` -o bin/list lab/lab006_ls/code.asm
 chmod +x bin/list
 
 # generate "dump" aka "xxd" aka "hexdump"
-nasm -f bin -I lib/sys/`uname` -o bin/dump lab/lab006_hexdump/code.asm
+nasm -f bin -I lib/sys/`uname` -o bin/dump lab/lab005_hexdump/code.asm
 chmod +x bin/dump
