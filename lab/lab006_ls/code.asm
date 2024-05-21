@@ -100,11 +100,6 @@ START:
 
 .outer_loop:
 
-;	mov rdi,.dirent_struct
-;	xor rsi,rsi
-;	mov rdx,276
-;	call memset
-
 	mov rax,SYS_GETDENTS
 	mov rdi,r15
 	mov rsi,.dirent_struct
@@ -118,37 +113,62 @@ START:
 	mov rbx,.dirent_struct
 
 .loop:
-	mov rdi,SYS_STDOUT
+
 	mov rsi,rbx
 	add rsi,19
-	call print_string
-
-;	push rsi
-;
-;	mov rdi,.buffer
-;	add rdi,[.buffer_offset]
-;	xor rsi,rsi
-;	mov rdx,514
-;	sub rdx,[.buffer_offset]
-;	call memset
-;
-;	pop rsi
-
+	mov r12,rsi
+	
 	; copy file into buffer
 	mov rdi,.buffer
 	add rdi,[.buffer_offset]
 	call strcopy_null
 
+	; get stat.h
 	mov rax,SYS_STAT
 	mov rdi,.buffer
 	mov rsi,.stat_struct
 	syscall
+
+	mov al, byte [.stat_struct+25]
+	test al,byte 0b01000000
+	jnz .dir
+	test al,byte 0b10000000
+	jz .continue_printing
+	mov al, byte [.stat_struct+24]
+	test al,byte 0b01000000
+	jz .continue_printing
+
+.exec:
+	mov rdi,SYS_STDOUT
+	mov rsi,.red
+	mov rdx,5
+	call print_chars
+	jmp .continue_printing
+
+.dir:
+	mov rdi,SYS_STDOUT
+	mov rsi,.yellow
+	mov rdx,5
+	call print_chars
+
+.continue_printing:
+
+	; print filename
+	mov rdi,SYS_STDOUT
+	mov rsi,r12
+	call print_string
+
+	; reset color
+	mov rsi,.reset
+	mov rdx,4
+	call print_chars
 
 	mov rdi,SYS_STDOUT
 	mov rsi,.grammar+2
 	mov rdx,3
 	call print_chars
 
+	; byte count
 	mov rsi,[.stat_struct+48]
 	call print_int_d
 
@@ -190,6 +210,15 @@ START:
 .buffer:
 	db `./` 
 	times 512 db 0
+
+.yellow:
+	db `\e[93m`
+
+.red:
+	db `\e[31m`
+
+.reset:
+	db `\e[0m`
 
 END:
 
