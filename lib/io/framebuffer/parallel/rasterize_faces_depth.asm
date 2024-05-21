@@ -2,7 +2,7 @@
 %define RASTERIZE_FACES_DEPTH
 
 ; dependencies
-%include "lib/io/framebuffer/set_triangle_depth.asm"
+%include "lib/io/framebuffer/parallel/set_triangle_depth.asm"
 %include "lib/math/vector/triangle_normal.asm"
 %include "lib/math/vector/dot_product_3.asm"
 
