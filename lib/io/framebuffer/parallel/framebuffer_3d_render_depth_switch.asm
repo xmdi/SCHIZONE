@@ -8,7 +8,7 @@
 
 framebuffer_3d_render_depth_switch:
 ; void framebuffer_3d_render_depth_switch(void* {rdi});
-;	Processes objects for the 3D rendering setup with perspective and 
+;	Processes objects for the 3D rendering setup with  
 ;	depth located at {rdi}.
 
 ; No error handling; deal with it.

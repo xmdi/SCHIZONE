@@ -1,7 +1,7 @@
 %ifndef FRAMEBUFFER_3D_RENDER_DEPTH_LOOP
 %define FRAMEBUFFER_3D_RENDER_DEPTH_LOOP
 
-%include "lib/io/framebuffer/perspective/framebuffer_3d_render_depth_init.asm"
+%include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_init.asm"
 ; void framebuffer_3d_render_depth_init(struct* {rdi}, struct* {rsi}, void* {rdx});
 
 %include "lib/mem/memset.asm"
@@ -376,8 +376,9 @@ framebuffer_3d_render_depth_loop:
 	; Uy = (upDir)
 	; Ux = (upDir)x(lookFrom-lookAt)
 
-	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
-	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
+	; rasterized pt x = (Pt).(Ux)*zoom*width/2+width/2
+	; rasterized pt y = -(Pt).(Uy)*zoom*height/2+height/2
+
 
 	; precompute Ux*zoom 
 

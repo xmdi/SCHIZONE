@@ -170,13 +170,12 @@ framebuffer_3d_render_depth_init:
 	; Uy = (upDir)
 	; Ux = (upDir)x(lookFrom-lookAt)
 
-	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
-	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
+	; rasterized pt x = (Pt).(Ux)*zoom*width/2+width/2
+	; rasterized pt y = -(Pt).(Uy)*zoom*height/2+height/2
 
 	; precompute Ux*zoom and Uy*zoom
 
 	; upDir
-
 	movsd xmm0,[r15+48]
 	movsd xmm1,[r15+56]
 	movsd xmm2,[r15+64]
@@ -206,7 +205,7 @@ framebuffer_3d_render_depth_init:
 	movsd xmm8,[r15+16]
 	subsd xmm8,[r15+40]
 
-
+	; normalize lookFrom-lookAt
 
 	movsd [.look_vector],xmm6
 	movsd [.look_vector+8],xmm7
@@ -279,7 +278,7 @@ framebuffer_3d_render_depth_init:
 	movsd [.Uxzoom+8],xmm14
 	movsd [.Uxzoom+16],xmm15
 
-	; scale Uy by focal length
+	; scale Uy by zoom length
 	mulsd xmm3,[r15+72]
 	mulsd xmm4,[r15+72]
 	mulsd xmm5,[r15+72]
@@ -297,6 +296,9 @@ framebuffer_3d_render_depth_init:
 	shr rax,1
 	cvtsi2sd xmm10,rax
 	movsd [.half_height],xmm10
+
+
+	;; everything above should work
 
 	; process objects
 	mov rdi,[framebuffer_init.framebuffer_address]

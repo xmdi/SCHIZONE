@@ -2,13 +2,13 @@
 %define RASTERIZE_FACES_DEPTH
 
 ; dependencies
-%include "lib/io/framebuffer/parallel/set_triangle_depth.asm"
+%include "lib/io/framebuffer/set_triangle_depth.asm"
 %include "lib/math/vector/triangle_normal.asm"
 %include "lib/math/vector/dot_product_3.asm"
 
 rasterize_faces_depth:
 ; void rasterize_faces_depthbuffer(void* {rdi}, int {rsi}, int {edx}, 
-;		int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, long {r11});
+;	int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, long {r11});
 ;	Rasterizes a set of faces described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
 ;	image using the color value in the low 32 bits of {rsi} to the bitmap
@@ -128,8 +128,8 @@ rasterize_faces_depth:
 
 	; used to cull faces here LOL, nah bro
 
-	; rasterized pt x = (((Pt).(Ux)*f)/((Pt).Uz))*width/2+width/2
-	; rasterized pt y = -(((Pt).(Uy)*f)/((Pt).Uz))*height/2+height/2
+	; rasterized pt x = ((Pt).(Ux)*zoom)*width/2+width/2
+	; rasterized pt y = -((Pt).(Uy)*zoom)*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
 
 	xor r13,r13
@@ -199,8 +199,8 @@ rasterize_faces_depth:
 	addsd xmm7,xmm8
 	addsd xmm7,xmm9		; Pt.Uy*f in {xmm7}
 
-	divsd xmm0,xmm6
-	divsd xmm7,xmm6
+;	divsd xmm0,xmm6
+;	divsd xmm7,xmm6
 
 	;;;; confirmed!
 	mulsd xmm0,[.neg]
@@ -211,7 +211,6 @@ rasterize_faces_depth:
 	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
 	addsd xmm7,[.one]
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
-
 
 	movsd [r13+.triangle_points+0],xmm0 ; projected x
 	movsd [r13+.triangle_points+8],xmm7 ; projected y
