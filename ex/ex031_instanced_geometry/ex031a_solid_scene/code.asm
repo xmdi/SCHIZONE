@@ -105,6 +105,8 @@ START:
 
 .loop:
 
+	[map all myfile.map]
+
 	call framebuffer_3d_render_depth_loop
 	jmp .loop
 
@@ -118,7 +120,7 @@ START:
 	dq 0.0 ; upDir_x	
 	dq 0.0 ; upDir_y	
 	dq 1.0 ; upDir_z	
-	dq 1.3	; zoom
+	dq 0.2	; zoom
 
 .cross_geometry:
 	dq .cube_geometry ; next geometry in linked list

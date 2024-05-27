@@ -752,7 +752,7 @@ START:
 
 align 16
 .displacement_scale_factor:
-	dq 500.0
+	dq 1.0
 .number_rungs:
 	dq 8
 .number_elements_per_rung:
@@ -774,7 +774,7 @@ align 16
 .G:
 	dq 1000000.0
 .ladder_angle_deg:
-	dq 30.0
+	dq 15.0
 
 align 16
 

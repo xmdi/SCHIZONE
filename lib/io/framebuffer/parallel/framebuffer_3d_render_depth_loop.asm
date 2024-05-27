@@ -385,6 +385,7 @@ framebuffer_3d_render_depth_loop:
 	cvtsi2sd xmm0,[framebuffer_init.framebuffer_width]
 	cvtsi2sd xmm2,[framebuffer_init.framebuffer_height]
 	divsd xmm2,xmm0
+;	mulsd xmm2,[framebuffer_3d_render_depth_init.neg_one]
 
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+0]
 	mulsd xmm0,[r15+72]
@@ -402,12 +403,15 @@ framebuffer_3d_render_depth_loop:
 	; precompute Uy*zoom
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+24]
 	mulsd xmm0,[r15+72]
+;	mulsd xmm0,[framebuffer_3d_render_depth_init.neg_one]
 	movsd [framebuffer_3d_render_depth_init.Uyzoom+0],xmm0
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+32]
 	mulsd xmm0,[r15+72]
+;	mulsd xmm0,[framebuffer_3d_render_depth_init.neg_one]
 	movsd [framebuffer_3d_render_depth_init.Uyzoom+8],xmm0
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+40]
 	mulsd xmm0,[r15+72]
+;	mulsd xmm0,[framebuffer_3d_render_depth_init.neg_one]
 	movsd [framebuffer_3d_render_depth_init.Uyzoom+16],xmm0
 
 	; process objects

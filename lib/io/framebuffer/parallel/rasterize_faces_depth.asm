@@ -199,12 +199,9 @@ rasterize_faces_depth:
 	addsd xmm7,xmm8
 	addsd xmm7,xmm9		; Pt.Uy*f in {xmm7}
 
-;	divsd xmm0,xmm6
-;	divsd xmm7,xmm6
-
 	;;;; confirmed!
-	mulsd xmm0,[.neg]
-	mulsd xmm7,[.neg]
+;	mulsd xmm0,[.neg]
+;	mulsd xmm7,[.neg]
 	
 	;TODO parallelize
 	addsd xmm0,[.one]

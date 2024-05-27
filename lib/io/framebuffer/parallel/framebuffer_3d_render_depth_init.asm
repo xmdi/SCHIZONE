@@ -400,6 +400,8 @@ framebuffer_3d_render_depth_init:
 	dq 0.0
 .one:
 	dq 1.0
+.neg_one:
+	dq -1.0
 .look_vector:
 	times 3 dq 0
 .look_distance:
