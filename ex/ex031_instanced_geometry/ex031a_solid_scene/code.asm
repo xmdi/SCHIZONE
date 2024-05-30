@@ -123,7 +123,7 @@ START:
 	dq 0.2	; zoom
 
 .cross_geometry:
-	dq .cube_geometry ; next geometry in linked list
+	dq .cube_wire_geometry ; next geometry in linked list
 	dq .cross_structure ; address of point/edge/face structure
 	dq 0x1000000FF ; color (0xARGB)
 	db 0b00000101 ; type of structure to render
@@ -149,6 +149,21 @@ START:
 	dq .cube_faces ; starting address of face array 
 		;	(3M elements if no colors)
 		;	(4M elements if colors)
+
+.cube_wire_geometry:
+	dq 0 ; next geometry in linked list
+	dq .cube_wire_structure ; address of point/edge/face structure
+	dq 0x100FFFFFF ; color (0xARGB)
+	db 0b00000010 ; type of structure to render
+
+.cube_wire_structure:
+	dq 8 ; number of points (N)
+	dq 12 ; number of faces (M)
+	dq .cube_points ; starting address of point array (3N elements, 4N if colors)
+	dq .cube_edges ; starting address of edge array 
+		;	(2M elements if no colors)
+		;	(3M elements if colors)
+
 
 .cross_points:
 	; base of vertical beam
@@ -272,8 +287,26 @@ START:
 	dq 4,1,5,0xFF00FF00 ; front
 
 	dq 2,3,6,0xFFFFFFFF ; back
-	dq 6,3,7,0xFFFFFFFF ; back
+	dq 6,3,7,0xFFFFFFFF ; bac
+
+.cube_edges:
+	dq 0,1,0xFFFF0000 ; bottom
+	dq 1,2,0xFFFF0000 ; bottom
+	dq 2,3,0xFFFF0000 ; bottom
+	dq 3,0,0xFFFF0000 ; bottom
+	
+	dq 4,5,0xFFFF0000 ; top
+	dq 5,6,0xFFFF0000 ; top
+	dq 6,7,0xFFFF0000 ; top
+	dq 7,4,0xFFFF0000 ; top
+	
+	dq 0,4,0xFFFF0000 ; sides
+	dq 1,5,0xFFFF0000 ; sides
+	dq 2,6,0xFFFF0000 ; sides
+	dq 3,7,0xFFFF0000 ; sides
 		
+	[map all myfile.map]
+
 END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,

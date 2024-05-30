@@ -20,7 +20,7 @@
 ; void framebuffer_3d_render_depth_switch(void);
 
 %include "lib/io/framebuffer/parallel/rasterize_faces_depth.asm"
-; void rasterize_faces(void* {rdi}, int {rsi}, int {edx}, int {ecx},
+; void rasterize_faces_depth(void* {rdi}, int {rsi}, int {edx}, int {ecx},
 ;		 struct* {r8}, struct* {r9});
 
 %include "lib/math/vector/distance_3.asm"

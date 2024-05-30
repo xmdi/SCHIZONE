@@ -6,6 +6,8 @@
 
 %include "lib/io/framebuffer/parallel/rasterize_faces_depth.asm"
 
+%include "lib/io/framebuffer/parallel/rasterize_edges_depth.asm"
+
 framebuffer_3d_render_depth_switch:
 ; void framebuffer_3d_render_depth_switch(void* {rdi});
 ;	Processes objects for the 3D rendering setup with  
@@ -59,12 +61,12 @@ framebuffer_3d_render_depth_switch:
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
-;	call rasterize_pointcloud	
+;	call rasterize_pointcloud_depth
 
 	jmp .geometry_type_unsupported
 
 .is_wireframe:
-;	call rasterize_edges	
+	call rasterize_edges_depth
 
 	jmp .geometry_type_unsupported
 
