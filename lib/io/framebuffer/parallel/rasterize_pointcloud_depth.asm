@@ -1,22 +1,20 @@
-%ifndef RASTERIZE_FACES_DEPTH
-%define RASTERIZE_FACES_DEPTH
+%ifndef RASTERIZE_POINTCLOUD_DEPTH
+%define RASTERIZE_POINTCLOUD_DEPTH
 
 ; dependencies
-%include "lib/io/framebuffer/set_triangle_depth.asm"
-%include "lib/math/vector/triangle_normal.asm"
-%include "lib/math/vector/dot_product_3.asm"
+%include "lib/io/framebuffer/set_line_depth.asm"
 
-rasterize_faces_depth:
-; void rasterize_faces_depthbuffer(void* {rdi}, int {rsi}, int {edx}, 
+rasterize_pointcloud_depth:
+; void rasterize_pointcloud_depth(void* {rdi}, int {rsi}, int {edx}, 
 ;	int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, long {r11});
-;	Rasterizes a set of faces described by the structure at {r9} from the
+;	Rasterizes a cloud of points described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
 ;	image using the color value in the low 32 bits of {rsi} to the bitmap
 ;	starting at address {rdi}. The 32nd bit of {rsi} indicates the stacking
 ;	direction of the bitmap rows. If {r11}=2, colors stored alongside vertex 
 ;	information in 32-byte chunks of (x,y,z,ARGB). If {r11}=1, colors stored
-;	alongside face information in 32-byte chunks (v0,v1,v2,ARGB). If {r11}=0,
-;	solid face color stored in {rsi}. Depthbuffer at {r10} 
+;	alongside vertex information in 32-byte chunks (v0,v1,v2,ARGB). If {r11}=0,
+;	solid point color stored in {rsi}. Depthbuffer at {r10} 
 ;	(4*{ecx}*{edx} bytes).
 
 %if 0
@@ -61,72 +59,11 @@ rasterize_faces_depth:
 	movdqu [rsp+128],xmm8
 	movdqu [rsp+144],xmm9
 
-	mov r15,[r9+8]	; number of faces in r15
+	mov r15,[r9+8]	; number of points in r15
 	mov rax,[r9+24]
-	;loop thru all faces
+	;loop thru all points
 
-.loop_faces:
-
-	; first check if normal is pointing opposite the view direction
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-
-	; normal buffer
-	mov rdi,.triangle_normal
-	
-	cmp r11,2
-	je .ARGB_yes
-
-.ARGB_no:
-	;;; no ARGB color alongside vtx positions
-	
-	; vertex A	
-	mov rsi,[rax]
-	shl rsi,3
-	imul rsi,rsi,3
-	add rsi,[r9+16]
-	; vertex B
-	mov rdx,[rax+8]
-	shl rdx,3
-	imul rdx,rdx,3
-	add rdx,[r9+16]
-	; vertex C
-	mov rcx,[rax+16]
-	shl rcx,3
-	imul rcx,rcx,3
-	add rcx,[r9+16]
-	jmp .eval_triangle_normal
-
-.ARGB_yes:
-	;;; yes ARGB color alongside vtx positions
-
-	; vertex A	
-	mov rsi,[rax]
-	shl rsi,3
-	imul rsi,rsi,4
-	add rsi,[r9+16]
-	; vertex B
-	mov rdx,[rax+8]
-	shl rdx,3
-	imul rdx,rdx,4
-	add rdx,[r9+16]
-	; vertex C
-	mov rcx,[rax+16]
-	shl rcx,3
-	imul rcx,rcx,4
-	add rcx,[r9+16]
-
-.eval_triangle_normal:
-	call triangle_normal
-	
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
-
-	; used to cull faces here LOL, nah bro
+.loop_points:
 
 	; rasterized pt x = ((Pt).(Ux)*zoom)*width/2+width/2
 	; rasterized pt y = -((Pt).(Uy)*zoom)*height/2+height/2
@@ -251,33 +188,6 @@ rasterize_faces_depth:
 	pop r8
 	pop rax
 	pop rsi
-
-%if 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	push r10
-	mov rdi,SYS_STDOUT
-	mov rsi,.triangle_points
-	mov rdx,3
-	mov rcx,3
-	xor r8,r8
-	mov r9,print_float
-	mov r10,8
-	call print_array_float
-	call print_buffer_flush
-	pop r10
-	pop r9
-	pop r8
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
-
-%endif
 
 	add rax,8
 

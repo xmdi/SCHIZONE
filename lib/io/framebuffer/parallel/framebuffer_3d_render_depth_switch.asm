@@ -61,7 +61,7 @@ framebuffer_3d_render_depth_switch:
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
-;	call rasterize_pointcloud_depth
+	call rasterize_pointcloud_depth
 
 	jmp .geometry_type_unsupported
 

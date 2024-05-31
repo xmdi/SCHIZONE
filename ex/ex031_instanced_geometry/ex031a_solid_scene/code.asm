@@ -137,7 +137,7 @@ START:
 		;	(4M elements if colors)
 
 .cube_geometry:
-	dq 0 ; next geometry in linked list
+	dq .cube_wire_geometry ; next geometry in linked list
 	dq .cube_structure ; address of point/edge/face structure
 	dq 0x1000000FF ; color (0xARGB)
 	db 0b00000101 ; type of structure to render
@@ -151,7 +151,7 @@ START:
 		;	(4M elements if colors)
 
 .cube_wire_geometry:
-	dq 0 ; next geometry in linked list
+	dq .cube_point_geometry ; next geometry in linked list
 	dq .cube_wire_structure ; address of point/edge/face structure
 	dq 0x100FFFFFF ; color (0xARGB)
 	db 0b00000010 ; type of structure to render
@@ -164,6 +164,17 @@ START:
 		;	(2M elements if no colors)
 		;	(3M elements if colors)
 
+.cube_point_geometry:
+	dq 0 ; next geometry in linked list
+	dq .cube_point_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (0xARGB)
+	db 0b00000001 ; type of structure to render
+
+.cube_point_structure:
+	dq 8 ; number of points (N)
+	dq .cube_points ; starting address of point array (3N elements)
+	dq 1 ; point render type (1=O,2=X,3=[],4=tri)
+	dq 15 ; characteristic size of each point
 
 .cross_points:
 	; base of vertical beam

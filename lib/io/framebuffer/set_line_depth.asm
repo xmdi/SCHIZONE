@@ -7,6 +7,9 @@
 %include "lib/math/vector/triangle_normal.asm"
 %include "lib/mem/memcopy.asm"
 
+%include "lib/io/print_int_d.asm"
+%include "lib/io/print_float.asm"
+
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8}, bool {r9}, single* {r10})
@@ -49,6 +52,8 @@ set_line_depth:
 	movdqu [rsp+240],xmm15
 
 	mov rbp,r9	; save color boolean from clobberin'
+
+	mov [.depth_buffer_address],r10
 
 	mov r15,rsi
 	
@@ -226,11 +231,38 @@ set_line_depth:
 
 
 .process_pixel:
-
 	push rax
 	push rbx
 	push rbp
 
+%if 0
+	push rdi
+	push rsi
+	push rdx
+
+	mov rdi,SYS_STDOUT
+	mov rsi,r8
+	call print_int_d
+	mov rsi,.gram
+	mov rdx,1
+	call print_chars
+	mov rsi,r9
+	call print_int_d
+	mov rsi,.gram+2
+	mov rdx,1
+	call print_chars
+	call print_buffer_flush
+
+
+	pop rdx
+	pop rsi
+	pop rdi
+
+	jmp .k
+.gram:
+	db `,<\n`
+.k:
+	%endif
 	; x in {r8}
 	cvtsi2sd xmm0,r8
 	subsd xmm0,[.x0]
@@ -243,11 +275,14 @@ set_line_depth:
 	mov rax,r8 ; x coord
 	mov rbx,r9 ; y coord
 
+	inc rax
+	inc rbx
+
 	mov rbp,rbx
 	imul rbp,rdx
 	add rbp,rax
 	shl rbp,2 ; {rbp} contains byte number for pixel of interest
-	add rbp,r10	; {rbp} points to depth for pixel of interest
+	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
 	movss xmm1,[rbp]
 
 	comiss xmm0,xmm1
@@ -352,7 +387,8 @@ set_line_depth:
 	dq 0.0
 .z0:
 	dq 0.0
-
+.depth_buffer_address:
+	dq 0
 
 %if 0
 	; compute color at this point
