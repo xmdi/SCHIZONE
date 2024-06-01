@@ -7,19 +7,20 @@
 %include "lib/math/vector/triangle_normal.asm"
 %include "lib/mem/memcopy.asm"
 
-%include "lib/io/print_int_d.asm"
-%include "lib/io/print_float.asm"
+
+%include "lib/sys/exit.asm"
 
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
-;		 double* {r8}, bool {r9}, single* {r10})
+;		 double* {r8},[6x0B,char,bool] {r9}, single* {r10})
 ;	Plots line with vertices described by 6 double-precision floats
 ;	starting at {r8} (projected x, projected y, projected depth)
 ;	in ARGB data array starting at {rdi} for an {edx}x{ecx} (WxH) image. 
 ;	{r9} contains color interpolation flag. If low bit of {r9} is high, 
 ;	{rsi} points to 3x1 ARGB color array (32 bpp). If low bit of {r9} 
 ;	is low, {rsi} contains solid line color (32 bpp). Pointer to 
-;	single-precision depth buffer at {r10} (4*{ecx}*{edx} bytes). 
+;	single-precision depth buffer at {r10} (4*{ecx}*{edx} bytes). Line
+; 	thickness in second-lowest byte of {r9}.
 
 	push rax
 	push rbx
@@ -52,6 +53,11 @@ set_line_depth:
 	movdqu [rsp+240],xmm15
 
 	mov rbp,r9	; save color boolean from clobberin'
+
+	;TODO remove hardcoded val
+	mov rbp,0b111000000001
+;	mov rbp,0b001000000001
+
 
 	mov [.depth_buffer_address],r10
 
@@ -90,18 +96,71 @@ set_line_depth:
 
 	;;;;;; todo, adjust line endpoints to be within screen boundary
 	;;;;;; oops nvm for gradient
+
+	mov rax,rbp
+	shr rax,8
+	test rax,0x1
+	jnz .odd_no
+
+	movsd xmm5,[r8+32]; y1
+	movsd xmm2,[r8+24]; x1
+	movsd xmm4,[r8+8]; y0
+	movsd xmm0,[r8]; x0
 	
+	subsd xmm5,xmm4
+	mulsd xmm5,xmm5
+	subsd xmm2,xmm0
+	mulsd xmm2,xmm2
+	addsd xmm5,xmm2
+	sqrtsd xmm5,xmm5 ; L in xmm5
+	
+	movsd xmm6,[r8+32]; y1
+	subsd xmm6,[r8+8] ; y0
+	pslld xmm6,1
+	psrld xmm6,1
+	divsd xmm6,xmm5
+	mulsd xmm6,[.half]
+	
+	movsd xmm7,[r8+24]; x1
+	subsd xmm7,[r8+0] ; x0
+	pslld xmm7,1
+	psrld xmm7,1
+	divsd xmm7,xmm5
+	mulsd xmm7,[.half]
+	
+.odd_no:
+
 	movsd xmm1,[r8+16]; z0
 	movsd xmm3,[r8+40]; z1
-	movsd xmm0,[r8+32]; y1
+
+	movsd xmm15,[r8+32]; y1
 	cvtsd2si r11,xmm0
-	movsd xmm2,[r8+24]; x1
+
+	movsd xmm14,[r8+24]; x1
 	cvtsd2si r10,xmm2
-	movsd xmm0,[r8+8]; y0
+	
+	movsd xmm13,[r8+8]; y0
 	cvtsd2si r9,xmm0
-	movsd xmm0,[r8]; x0
+	
+	movsd xmm12,[r8]; x0
 	cvtsd2si r8,xmm0
 	
+	test rax,0x1
+	jz .even_no
+
+	; correction offset for even line thicknesses
+	addsd xmm12,xmm6
+	addsd xmm14,xmm6
+	addsd xmm13,xmm7
+	addsd xmm15,xmm7
+
+.even_no:
+
+	cvtsd2si r11,xmm15
+	cvtsd2si r10,xmm14
+	cvtsd2si r9,xmm13
+	cvtsd2si r8,xmm12
+
 	movsd [.x0],xmm0
 	movsd [.z0],xmm1
 	
@@ -119,22 +178,24 @@ set_line_depth:
 	sub r12,r8
 	test r12,r12
 	jns .abs_dx
-	neg r12
+	neg r12		; {r12} is x-width of line segment (abs)
 .abs_dx:
 	mov r13,r11
 	sub r13,r9
 	test r13,r13
 	jns .abs_dy
-	neg r13
+	neg r13		; {r13} is y-width of line segment (abs)
 .abs_dy:
 	
 	cmp r13,r12
 	jge .plot_line_up
 
-.plot_line_down:
+; these labels preprocess lines to ensure they are increasing in their coords
+
+.plot_line_down: ; not steep
 	cmp r8,r10
 	jle .plot_down	; plot line down forwards
-	mov r12,r10
+	mov r12,r10	
 	mov r10,r8
 	mov r8,r12
 	mov r12,r11
@@ -142,8 +203,7 @@ set_line_depth:
 	mov r9,r12
 	jmp .plot_down	; plot line down backwards
 
-.plot_line_up:
-
+.plot_line_up: ; steep
 	cmp r9,r11
 	jle .plot_up	; plot line up forwards
 	mov r12,r10
@@ -175,9 +235,42 @@ set_line_depth:
 	neg r15		; 2dx-2dy
 	
 .loop_up:
-;	call set_pixel	; draw the current pixel
-	call .process_pixel
 
+	call .process_pixel
+	
+	push rax
+
+	mov rax,rbp
+	shr rax,8
+	and rax,0xFF
+	cmp rax,1
+	jle .loop_up_no_extra_thickness
+	test rax,0b1
+	jnz .loop_up_odd_thickness
+	shr rax,1
+	sub r8,rax
+	call .process_pixel
+	add r8,rax
+	shl rax,1
+
+.loop_up_odd_thickness:
+	dec rax
+	shr rax,1
+	test rax,0x7F
+	jz .loop_up_no_extra_thickness
+
+.loop_up_line_thickness_loop:
+	add r8,rax
+	call .process_pixel
+	sub r8,rax
+	sub r8,rax
+	call .process_pixel	
+	add r8,rax
+	dec rax
+	jnz .loop_up_line_thickness_loop
+
+.loop_up_no_extra_thickness:
+	pop rax
 
 	cmp r9,r11	; if we're done, return
 	je .ret
@@ -216,6 +309,41 @@ set_line_depth:
 	;call set_pixel	; draw the current pixel
 	call .process_pixel
 	
+	push rax
+
+	mov rax,rbp
+	shr rax,8
+	and rax,0xFF
+	cmp rax,1
+	jle .loop_down_no_extra_thickness
+	test rax,0b1
+	jnz .loop_down_odd_thickness
+	shr rax,1
+	sub r9,rax
+	call .process_pixel
+	add r9,rax
+	shl rax,1
+
+.loop_down_odd_thickness:
+	dec rax
+	shr rax,1
+	test rax,0x7F
+	jz .loop_down_no_extra_thickness
+
+.loop_down_line_thickness_loop:
+	add r9,rax
+	call .process_pixel
+	sub r9,rax
+	sub r9,rax
+	call .process_pixel	
+	add r9,rax
+	dec rax
+	jnz .loop_down_line_thickness_loop
+
+.loop_down_no_extra_thickness:
+	pop rax
+
+
 	cmp r8,r10	; if we're done, return
 	je .ret
 	cmp rbx,0	; if D <= 0, don't adjust y
@@ -229,40 +357,11 @@ set_line_depth:
 	inc r8		; x++
 	jmp .loop_down
 
-
 .process_pixel:
 	push rax
 	push rbx
 	push rbp
 
-%if 0
-	push rdi
-	push rsi
-	push rdx
-
-	mov rdi,SYS_STDOUT
-	mov rsi,r8
-	call print_int_d
-	mov rsi,.gram
-	mov rdx,1
-	call print_chars
-	mov rsi,r9
-	call print_int_d
-	mov rsi,.gram+2
-	mov rdx,1
-	call print_chars
-	call print_buffer_flush
-
-
-	pop rdx
-	pop rsi
-	pop rdi
-
-	jmp .k
-.gram:
-	db `,<\n`
-.k:
-	%endif
 	; x in {r8}
 	cvtsi2sd xmm0,r8
 	subsd xmm0,[.x0]
@@ -275,7 +374,7 @@ set_line_depth:
 	mov rax,r8 ; x coord
 	mov rbx,r9 ; y coord
 
-	inc rax
+	inc rax ; TODO do we delete this?
 	inc rbx
 
 	mov rbp,rbx
@@ -387,6 +486,8 @@ set_line_depth:
 	dq 0.0
 .z0:
 	dq 0.0
+.half:	; half a pixel
+	dq 0.5
 .depth_buffer_address:
 	dq 0
 

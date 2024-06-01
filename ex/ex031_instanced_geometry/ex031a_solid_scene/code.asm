@@ -155,10 +155,11 @@ START:
 	dq .cube_wire_structure ; address of point/edge/face structure
 	dq 0x100FFFFFF ; color (0xARGB)
 	db 0b00000010 ; type of structure to render
+	db 3 ; line thickness
 
 .cube_wire_structure:
 	dq 8 ; number of points (N)
-	dq 12 ; number of faces (M)
+	dq 12 ; number of edges (M)
 	dq .cube_points ; starting address of point array (3N elements, 4N if colors)
 	dq .cube_edges ; starting address of edge array 
 		;	(2M elements if no colors)
