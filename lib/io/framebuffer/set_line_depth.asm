@@ -5,10 +5,6 @@
 %include "lib/io/bitmap/set_pixel.asm"
 %include "lib/math/vector/dot_product_3.asm"
 %include "lib/math/vector/triangle_normal.asm"
-%include "lib/mem/memcopy.asm"
-
-
-%include "lib/sys/exit.asm"
 
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
@@ -17,7 +13,7 @@ set_line_depth:
 ;	starting at {r8} (projected x, projected y, projected depth)
 ;	in ARGB data array starting at {rdi} for an {edx}x{ecx} (WxH) image. 
 ;	{r9} contains color interpolation flag. If low bit of {r9} is high, 
-;	{rsi} points to 3x1 ARGB color array (32 bpp). If low bit of {r9} 
+;	{rsi} points to 2x1 ARGB color array (32 bpp). If low bit of {r9} 
 ;	is low, {rsi} contains solid line color (32 bpp). Pointer to 
 ;	single-precision depth buffer at {r10} (4*{ecx}*{edx} bytes). Line
 ; 	thickness in second-lowest byte of {r9}.
@@ -52,16 +48,13 @@ set_line_depth:
 	movdqu [rsp+224],xmm14
 	movdqu [rsp+240],xmm15
 
-	mov rbp,r9	; save color boolean from clobberin'
+	mov rbp,r9	; save color boolean & line thickness from clobberin'
 
-	;TODO remove hardcoded val
-	mov rbp,0b111000000001
-;	mov rbp,0b001000000001
-
-
+	and r9,0x1
+	mov byte [.color_interp_flag],r9b
 	mov [.depth_buffer_address],r10
-
-	mov r15,rsi
+	
+	mov [.colors_array],rsi
 	
 	movsd xmm12,[r8+0]	; min vtx 1 x
 	minsd xmm12,[r8+24]	; min vtx 2 x
@@ -89,9 +82,6 @@ set_line_depth:
 	comisd xmm14,xmm0 ; min y
 	ja .ret
 
-	pxor xmm9,xmm9
-	movsd xmm11,xmm14
-
 	; pt to check/plot at ({xmm10},{xmm11}) ; could be ints and constantly converted via cvtsi2sd
 
 	;;;;;; todo, adjust line endpoints to be within screen boundary
@@ -114,6 +104,9 @@ set_line_depth:
 	addsd xmm5,xmm2
 	sqrtsd xmm5,xmm5 ; L in xmm5
 	
+	; quickly save length of line segment to memory
+	movq [.line_segment_length],xmm5
+
 	movsd xmm6,[r8+32]; y1
 	subsd xmm6,[r8+8] ; y0
 	pslld xmm6,1
@@ -146,7 +139,7 @@ set_line_depth:
 	cvtsd2si r8,xmm0
 	
 	test rax,0x1
-	jz .even_no
+	jnz .odd_no2
 
 	; correction offset for even line thicknesses
 	addsd xmm12,xmm6
@@ -154,7 +147,7 @@ set_line_depth:
 	addsd xmm13,xmm7
 	addsd xmm15,xmm7
 
-.even_no:
+.odd_no2:
 
 	cvtsd2si r11,xmm15
 	cvtsd2si r10,xmm14
@@ -215,6 +208,10 @@ set_line_depth:
 	; plot line up backwards
 
 .plot_up:
+	; save x0,y0 to memory
+	mov [.init_x0],r8
+	mov [.init_y0],r9
+
 	mov r12,r10
 	sub r12,r8	; dx = x1-x0
 	mov r13,r11
@@ -286,6 +283,10 @@ set_line_depth:
 	jmp .loop_up
 
 .plot_down:
+	; save x0,y0 to memory
+	mov [.init_x0],r8
+	mov [.init_y0],r9
+
 	mov r12,r10
 	sub r12,r8	; dx = x1-x0
 	mov r13,r11
@@ -343,7 +344,6 @@ set_line_depth:
 .loop_down_no_extra_thickness:
 	pop rax
 
-
 	cmp r8,r10	; if we're done, return
 	je .ret
 	cmp rbx,0	; if D <= 0, don't adjust y
@@ -384,18 +384,93 @@ set_line_depth:
 	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
 	movss xmm1,[rbp]
 
-	comiss xmm0,xmm1
-	jbe .too_deep_to_put_pixel
+	movss xmm2,xmm0
+
+	subss xmm2,xmm1
+	comiss xmm2,dword [.wireframe_depth_threshold]
+
+	jb .too_deep_to_put_pixel
 	
 	; overwrite depth
 	movss [rbp],xmm0
 
 	; compute color at this point
-	cmp r9,0 ; TODO should be a test instruction tbh, not cmp
+
+	cmp byte [.color_interp_flag],byte 0 
 	je .color_computed
 
-	; todo some processing for gradient colors
+	push r13
+	push r14
+	push r15
 
+	mov r15,[.colors_array]
+	xor r13,r13
+
+	mov r14,r8
+	sub r14,[.init_x0]
+	cvtsi2sd xmm4,r14
+	mulsd xmm4,xmm4
+	mov r14,r9
+	sub r14,[.init_y0]
+	cvtsi2sd xmm5,r14
+	mulsd xmm5,xmm5
+	addsd xmm4,xmm5
+	sqrtsd xmm4,xmm4
+	divsd xmm4,[.line_segment_length]  ; potentially pull out of loop TODO
+	; {xmm4} is 0->1 along line segment
+	.aaa:
+	; interpolation of A
+	movzx r14,byte [r15+3]
+	cvtsi2sd xmm0,r14
+	movzx r14,byte [r15+7]
+	cvtsi2sd xmm1,r14
+	subsd xmm1,xmm0
+	mulsd xmm1,xmm4
+	addsd xmm0,xmm1
+	cvtsd2si r14,xmm0
+	shl r14,24
+	add r13,r14
+	.bbb:
+	; interpolation of R
+	movzx r14,byte [r15+2]
+	cvtsi2sd xmm0,r14
+	movzx r14,byte [r15+6]
+	cvtsi2sd xmm1,r14
+	subsd xmm1,xmm0
+	mulsd xmm1,xmm4
+	addsd xmm0,xmm1
+	cvtsd2si r14,xmm0
+	shl r14,16
+	add r13,r14
+	.ccc:
+	; interpolation of G
+	movzx r14,byte [r15+1]
+	cvtsi2sd xmm0,r14
+	movzx r14,byte [r15+5]
+	cvtsi2sd xmm1,r14
+	subsd xmm1,xmm0
+	mulsd xmm1,xmm4
+	addsd xmm0,xmm1
+	cvtsd2si r14,xmm0
+	shl r14,8
+	add r13,r14
+	.ddd:
+	; interpolation of B
+	movzx r14,byte [r15+0]
+	cvtsi2sd xmm0,r14
+	movzx r14,byte [r15+4]
+	cvtsi2sd xmm1,r14
+	subsd xmm1,xmm0
+	mulsd xmm1,xmm4
+	addsd xmm0,xmm1
+	cvtsd2si r14,xmm0
+	add r13,r14
+
+	mov rsi,r13 ; color of pixel of interest in {rsi}
+
+	pop r15
+	pop r14
+	pop r13
 
 .color_computed:
 	
@@ -405,6 +480,7 @@ set_line_depth:
 	mov r8,rax
 	mov r9,rbx
 	call set_pixel
+
 	pop r9
 	pop r8
 
@@ -416,7 +492,6 @@ set_line_depth:
 
 	ret
 
-
 .vertical_line:
 	cmp r9,r11
 	jl .loop_vertical
@@ -425,6 +500,41 @@ set_line_depth:
 	mov r11,rax
 .loop_vertical:
 	call .process_pixel
+
+	push rax
+
+	mov rax,rbp
+	shr rax,8
+	and rax,0xFF
+	cmp rax,1
+	jle .loop_vertical_no_extra_thickness
+	test rax,0b1
+	jnz .loop_vertical_odd_thickness
+	shr rax,1
+	sub r8,rax
+	call .process_pixel
+	add r8,rax
+	shl rax,1
+
+.loop_vertical_odd_thickness:
+	dec rax
+	shr rax,1
+	test rax,0x7F
+	jz .loop_vertical_no_extra_thickness
+
+.loop_vertical_line_thickness_loop:
+	add r8,rax
+	call .process_pixel
+	sub r8,rax
+	sub r8,rax
+	call .process_pixel	
+	add r8,rax
+	dec rax
+	jnz .loop_vertical_line_thickness_loop
+
+.loop_vertical_no_extra_thickness:
+	pop rax
+
 	inc r9
 	cmp r9,r11
 	jle .loop_vertical
@@ -440,6 +550,41 @@ set_line_depth:
 	mov r10,rax
 .loop_horizontal:
 	call .process_pixel
+
+	push rax
+
+	mov rax,rbp
+	shr rax,8
+	and rax,0xFF
+	cmp rax,1
+	jle .loop_horizontal_no_extra_thickness
+	test rax,0b1
+	jnz .loop_horizontal_odd_thickness
+	shr rax,1
+	sub r9,rax
+	call .process_pixel
+	add r9,rax
+	shl rax,1
+
+.loop_horizontal_odd_thickness:
+	dec rax
+	shr rax,1
+	test rax,0x7F
+	jz .loop_horizontal_no_extra_thickness
+
+.loop_horizontal_line_thickness_loop:
+	add r9,rax
+	call .process_pixel
+	sub r9,rax
+	sub r9,rax
+	call .process_pixel	
+	add r9,rax
+	dec rax
+	jnz .loop_horizontal_line_thickness_loop
+
+.loop_horizontal_no_extra_thickness:
+	pop rax
+	
 	inc r8
 	cmp r8,r10
 	jle .loop_horizontal
@@ -490,97 +635,19 @@ set_line_depth:
 	dq 0.5
 .depth_buffer_address:
 	dq 0
+.wireframe_depth_threshold:
+	dd 1.0
+.colors_array:
+	dq 0
+.line_segment_length:
+	dq 0.0	
+.init_x0:
+	dq 0
+.init_y0:
+	dq 0
+.color_interp_flag:
+	db 0
 
-%if 0
-	; compute color at this point
-	cmp r9,0 ; TODO should be a test instruction tbh, not cmp
-	je .color_computed
-
-;	mov r13,0x100000000
-	xor r13,r13
-
-	; {xmm4}*[r8+16] + {xmm5}*[r8+40] + {xmm6}*[r8+64]
-	mov r14,[r15+0]
-	shr r14,24
-	and r14,0xFF
-	cvtsi2sd xmm0,r14
-	mov r14,[r15+8]
-	shr r14,24
-	and r14,0xFF
-	cvtsi2sd xmm1,r14
-	mov r14,[r15+16]
-	shr r14,24
-	and r14,0xFF
-	cvtsi2sd xmm2,r14
-	mulsd xmm0,xmm4
-	mulsd xmm1,xmm5	
-	mulsd xmm2,xmm6
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2
-	cvtsd2si r14,xmm0
-	shl r14,24
-	add r13,r14
-
-	mov r14,[r15+0]
-	shr r14,16
-	and r14,0xFF
-	cvtsi2sd xmm0,r14
-	mov r14,[r15+8]
-	shr r14,16
-	and r14,0xFF
-	cvtsi2sd xmm1,r14
-	mov r14,[r15+16]
-	shr r14,16
-	and r14,0xFF
-	cvtsi2sd xmm2,r14
-	mulsd xmm0,xmm4
-	mulsd xmm1,xmm5	
-	mulsd xmm2,xmm6
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2
-	cvtsd2si r14,xmm0
-	shl r14,16
-	add r13,r14
-
-	mov r14,[r15+0]
-	shr r14,8
-	and r14,0xFF
-	cvtsi2sd xmm0,r14
-	mov r14,[r15+8]
-	shr r14,8
-	and r14,0xFF
-	cvtsi2sd xmm1,r14
-	mov r14,[r15+16]
-	shr r14,8
-	and r14,0xFF
-	cvtsi2sd xmm2,r14
-	mulsd xmm0,xmm4
-	mulsd xmm1,xmm5	
-	mulsd xmm2,xmm6
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2
-	cvtsd2si r14,xmm0
-	shl r14,8
-	add r13,r14
-
-	mov r14,[r15+0]
-	and r14,0xFF
-	cvtsi2sd xmm0,r14
-	mov r14,[r15+8]
-	and r14,0xFF
-	cvtsi2sd xmm1,r14
-	mov r14,[r15+16]
-	and r14,0xFF
-	cvtsi2sd xmm2,r14
-	mulsd xmm0,xmm4
-	mulsd xmm1,xmm5	
-	mulsd xmm2,xmm6
-	addsd xmm0,xmm1
-	addsd xmm0,xmm2
-	cvtsd2si r14,xmm0
-	add r13,r14
-
-	mov rsi,r13 ; color of pixel of interest in {rsi}
-%endif	
-
+.grammar:
+	db `\n`
 %endif

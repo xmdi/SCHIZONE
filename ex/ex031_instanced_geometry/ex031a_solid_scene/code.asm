@@ -153,17 +153,17 @@ START:
 .cube_wire_geometry:
 	dq .cube_point_geometry ; next geometry in linked list
 	dq .cube_wire_structure ; address of point/edge/face structure
-	dq 0x100FFFFFF ; color (0xARGB)
-	db 0b00000010 ; type of structure to render
-	db 3 ; line thickness
+	dq 0xFF00FFFF ; color (0xARGB)
+	db 0b00001010 ; type of structure to render
 
 .cube_wire_structure:
 	dq 8 ; number of points (N)
 	dq 12 ; number of edges (M)
-	dq .cube_points ; starting address of point array (3N elements, 4N if colors)
+	dq .cube_points2 ; starting address of point array (3N elements, 4N if colors)
 	dq .cube_edges ; starting address of edge array 
 		;	(2M elements if no colors)
 		;	(3M elements if colors)
+	db 10 ; line thickness
 
 .cube_point_geometry:
 	dq 0 ; next geometry in linked list
@@ -281,6 +281,19 @@ START:
 	dq -0.5,-4.5,1.0
 	dq -0.5,-5.5,1.0
 	dq 0.5,-5.5,1.0
+
+.cube_points2:
+	; base
+	dq 0.5,-4.5,0.0,0xFF0000FF
+	dq -0.5,-4.5,0.0,0xFF00FF00
+	dq -0.5,-5.5,0.0,0xFFFF0000
+	dq 0.5,-5.5,0.0,0xFFFF00FF
+
+	; top
+	dq 0.5,-4.5,1.0,0xFF0000FF
+	dq -0.5,-4.5,1.0,0xFF00FF00
+	dq -0.5,-5.5,1.0,0xFFFF0000
+	dq 0.5,-5.5,1.0,0xFFFF00FF
 
 .cube_faces:
 	dq 0,2,1,0xFFFF0000 ; bottom

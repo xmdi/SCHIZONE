@@ -3,6 +3,8 @@
 
 ; dependencies
 %include "lib/io/framebuffer/set_line_depth.asm"
+%include "lib/sys/exit.asm"
+
 
 rasterize_edges_depth:
 ; void rasterize_edges_depth(void* {rdi}, int {rsi}, int {edx}, 
@@ -44,6 +46,7 @@ rasterize_edges_depth:
 	push rax
 	push rbx
 	push rcx
+	push r12
 	push r13
 	push r14
 	push r15
@@ -58,6 +61,10 @@ rasterize_edges_depth:
 	movdqu [rsp+112],xmm7
 	movdqu [rsp+128],xmm8
 	movdqu [rsp+144],xmm9
+
+	; save line thickness in {r12}
+	movzx r12, byte [r9+32]
+	shl r12,8
 
 	mov r15,[r9+8]	; number of edges in r15
 	mov rax,[r9+24]
@@ -95,8 +102,10 @@ rasterize_edges_depth:
 	jne .no_vtx_colors
 
 	mov rbx,[r14+24]
-	mov [rbp],rbx
-	add rbp,8
+	mov dword [rbp],ebx
+	;mov [rbp],rbx
+
+	add rbp,4
 
 .no_vtx_colors:
 
@@ -178,6 +187,8 @@ rasterize_edges_depth:
 
 .set_line_depth:
 
+	or r9,r12	; bring in the line thickness
+
 	call set_line_depth
 	
 	pop r9
@@ -205,6 +216,7 @@ rasterize_edges_depth:
 	pop r15
 	pop r14
 	pop r13
+	pop r12
 	pop rcx
 	pop rbx
 	pop rax
@@ -219,7 +231,5 @@ rasterize_edges_depth:
 .line_points:	; store x and y and depth of 2 vertices as a float 
 	times 6 dq 0.0
 .line_colors:
-	times 3 dq 0
-.working:
-	times 3 dq 0
+	times 2 dq 0
 %endif

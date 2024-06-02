@@ -43,8 +43,14 @@ framebuffer_3d_render_depth_switch:
 	cmp byte [r14+24],0b00000001
 	je .is_pointcloud
 
-	cmp byte [r14+24],0b00000010
-	je .is_wireframe
+	cmp byte [r14+24],0b00001000
+	je .is_wireframe_from_solid_color
+
+	cmp byte [r14+24],0b00001001
+	je .is_wireframe_from_edge_color
+
+	cmp byte [r14+24],0b00001010
+	je .is_wireframe_interpolated_color
 
 	cmp byte [r14+24],0b00000100
 	je .is_face_from_solid_color
@@ -55,7 +61,7 @@ framebuffer_3d_render_depth_switch:
 	cmp byte [r14+24],0b00000110
 	je .is_face_interpolated_color
 
-	cmp byte [r14+24],0b00001000
+	cmp byte [r14+24],0b00000010
 	je .is_text
 
 	jmp .geometry_type_unsupported
@@ -65,7 +71,20 @@ framebuffer_3d_render_depth_switch:
 
 	jmp .geometry_type_unsupported
 
-.is_wireframe:
+.is_wireframe_from_solid_color:
+	xor r11,r11
+	call rasterize_edges_depth
+
+	jmp .geometry_type_unsupported
+
+.is_wireframe_from_edge_color:
+	mov r11,1
+	call rasterize_edges_depth
+
+	jmp .geometry_type_unsupported
+
+.is_wireframe_interpolated_color:
+	mov r11,2
 	call rasterize_edges_depth
 
 	jmp .geometry_type_unsupported
