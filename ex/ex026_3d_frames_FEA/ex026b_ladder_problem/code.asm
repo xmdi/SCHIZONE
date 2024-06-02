@@ -752,7 +752,7 @@ START:
 
 align 16
 .displacement_scale_factor:
-	dq 1.0
+	dq 500.0
 .number_rungs:
 	dq 8
 .number_elements_per_rung:
