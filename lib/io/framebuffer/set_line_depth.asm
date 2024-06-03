@@ -467,6 +467,7 @@ set_line_depth:
 	add r13,r14
 
 	mov rsi,r13 ; color of pixel of interest in {rsi}
+	and rsi,0xFFFFFFFF
 
 	pop r15
 	pop r14
