@@ -53,9 +53,10 @@ set_line_depth:
 	and r9,0x1
 	mov byte [.color_interp_flag],r9b
 	mov [.depth_buffer_address],r10
-	
-	mov [.colors_array],rsi
-	
+
+	mov rax,[rsi]
+	mov [.init_colors],rax
+
 	movsd xmm12,[r8+0]	; min vtx 1 x
 	minsd xmm12,[r8+24]	; min vtx 2 x
 	roundsd xmm12,xmm12,0b0001
@@ -154,6 +155,11 @@ set_line_depth:
 	cvtsd2si r9,xmm13
 	cvtsd2si r8,xmm12
 
+	test rbp,0x1	
+	jz .skip_color_interp
+	mov [.colors_array],rsi
+.skip_color_interp:
+
 	movsd [.x0],xmm0
 	movsd [.z0],xmm1
 	
@@ -194,9 +200,19 @@ set_line_depth:
 	mov r12,r11
 	mov r11,r9
 	mov r9,r12
+
+	test rbp,0x1		; if we swapped points, also swap colors 
+	jz .skip_color_interp_down
+	mov eax,[.init_colors]
+	mov [rsi+4],eax	
+	mov eax,[.init_colors+4]
+	mov [rsi],eax
+.skip_color_interp_down:
+
 	jmp .plot_down	; plot line down backwards
 
 .plot_line_up: ; steep
+
 	cmp r9,r11
 	jle .plot_up	; plot line up forwards
 	mov r12,r10
@@ -205,6 +221,15 @@ set_line_depth:
 	mov r12,r11
 	mov r11,r9
 	mov r9,r12
+
+	test rbp,0x1		; if we swapped points, also swap colors 
+	jz .skip_color_interp_up	
+	mov eax,[.init_colors]
+	mov [rsi+4],eax	
+	mov eax,[.init_colors+4]
+	mov [rsi],eax
+.skip_color_interp_up:
+
 	; plot line up backwards
 
 .plot_up:
@@ -216,9 +241,11 @@ set_line_depth:
 	sub r12,r8	; dx = x1-x0
 	mov r13,r11
 	sub r13,r9	; dy = y1-y0
-	mov rax,1	; x_step = 1
+	mov rax,1	; x_step = 1	
+
 	test r12,r12
 	jns .plot_abs_dx
+
 	neg r12		; dx = -dx
 	neg rax		; x_step = -1
 .plot_abs_dx:
@@ -233,41 +260,8 @@ set_line_depth:
 	
 .loop_up:
 
+	mov byte [.direction_byte],0b0 ; x-dir thickness
 	call .process_pixel
-	
-	push rax
-
-	mov rax,rbp
-	shr rax,8
-	and rax,0xFF
-	cmp rax,1
-	jle .loop_up_no_extra_thickness
-	test rax,0b1
-	jnz .loop_up_odd_thickness
-	shr rax,1
-	sub r8,rax
-	call .process_pixel
-	add r8,rax
-	shl rax,1
-
-.loop_up_odd_thickness:
-	dec rax
-	shr rax,1
-	test rax,0x7F
-	jz .loop_up_no_extra_thickness
-
-.loop_up_line_thickness_loop:
-	add r8,rax
-	call .process_pixel
-	sub r8,rax
-	sub r8,rax
-	call .process_pixel	
-	add r8,rax
-	dec rax
-	jnz .loop_up_line_thickness_loop
-
-.loop_up_no_extra_thickness:
-	pop rax
 
 	cmp r9,r11	; if we're done, return
 	je .ret
@@ -292,8 +286,10 @@ set_line_depth:
 	mov r13,r11
 	sub r13,r9	; dy = y1-y0
 	mov rax,1	; y_step = 1
+	
 	test r13,r13
 	jns .plot_abs_dy
+
 	neg r13		; dy = -dy
 	neg rax		; y_step = -1
 .plot_abs_dy:
@@ -308,41 +304,10 @@ set_line_depth:
 	
 .loop_down:
 	;call set_pixel	; draw the current pixel
+
+	mov byte [.direction_byte],byte 0b1 ; y-dir thickness
+
 	call .process_pixel
-	
-	push rax
-
-	mov rax,rbp
-	shr rax,8
-	and rax,0xFF
-	cmp rax,1
-	jle .loop_down_no_extra_thickness
-	test rax,0b1
-	jnz .loop_down_odd_thickness
-	shr rax,1
-	sub r9,rax
-	call .process_pixel
-	add r9,rax
-	shl rax,1
-
-.loop_down_odd_thickness:
-	dec rax
-	shr rax,1
-	test rax,0x7F
-	jz .loop_down_no_extra_thickness
-
-.loop_down_line_thickness_loop:
-	add r9,rax
-	call .process_pixel
-	sub r9,rax
-	sub r9,rax
-	call .process_pixel	
-	add r9,rax
-	dec rax
-	jnz .loop_down_line_thickness_loop
-
-.loop_down_no_extra_thickness:
-	pop rax
 
 	cmp r8,r10	; if we're done, return
 	je .ret
@@ -361,6 +326,7 @@ set_line_depth:
 	push rax
 	push rbx
 	push rbp
+	push rsi
 
 	; x in {r8}
 	cvtsi2sd xmm0,r8
@@ -374,8 +340,8 @@ set_line_depth:
 	mov rax,r8 ; x coord
 	mov rbx,r9 ; y coord
 
-	inc rax ; TODO do we delete this?
-	inc rbx
+;	inc rax ; TODO do we delete this?
+;	inc rbx
 
 	mov rbp,rbx
 	imul rbp,rdx
@@ -418,7 +384,7 @@ set_line_depth:
 	sqrtsd xmm4,xmm4
 	divsd xmm4,[.line_segment_length]  ; potentially pull out of loop TODO
 	; {xmm4} is 0->1 along line segment
-	.aaa:
+	
 	; interpolation of A
 	movzx r14,byte [r15+3]
 	cvtsi2sd xmm0,r14
@@ -430,7 +396,7 @@ set_line_depth:
 	cvtsd2si r14,xmm0
 	shl r14,24
 	add r13,r14
-	.bbb:
+	
 	; interpolation of R
 	movzx r14,byte [r15+2]
 	cvtsi2sd xmm0,r14
@@ -442,7 +408,7 @@ set_line_depth:
 	cvtsd2si r14,xmm0
 	shl r14,16
 	add r13,r14
-	.ccc:
+	
 	; interpolation of G
 	movzx r14,byte [r15+1]
 	cvtsi2sd xmm0,r14
@@ -454,7 +420,7 @@ set_line_depth:
 	cvtsd2si r14,xmm0
 	shl r14,8
 	add r13,r14
-	.ddd:
+	
 	; interpolation of B
 	movzx r14,byte [r15+0]
 	cvtsi2sd xmm0,r14
@@ -467,7 +433,8 @@ set_line_depth:
 	add r13,r14
 
 	mov rsi,r13 ; color of pixel of interest in {rsi}
-	and rsi,0xFFFFFFFF
+	and rsi,0x00FFFFFF
+;	or rsi,0x100000000 ;;; todo check
 
 	pop r15
 	pop r14
@@ -475,18 +442,97 @@ set_line_depth:
 
 .color_computed:
 	
+	mov rbp,[rsp+8]
+
 	; put the pixel
 	push r8
 	push r9
 	mov r8,rax
 	mov r9,rbx
+
+	cmp byte [.direction_byte],byte 0b1
+	je .ydir
+
+.xdir:
+;;;
+	mov rax,rbp
+	shr rax,8
+	and rax,0xFF
+	cmp rax,1
+	jle .loop_process_no_extra_thickness
+	test rax,0b1
+	jnz .loop_process_odd_thickness
+	shr rax,1
+	sub r8,rax
+	call set_pixel
+	add r8,rax
+	shl rax,1
+
+.loop_process_odd_thickness:
+	dec rax
+	shr rax,1
+	test rax,0x7F
+	jz .loop_process_no_extra_thickness
+
+.loop_process_line_thickness_loop:
+	add r8,rax
+	call set_pixel
+	sub r8,rax
+	sub r8,rax
+	call set_pixel
+	add r8,rax
+	dec rax
+	jnz .loop_process_line_thickness_loop
+
+.loop_process_no_extra_thickness:
+;;;
+
+	call set_pixel
+	jmp .done_dir
+
+.ydir:
+;;;
+	mov rax,rbp
+	shr rax,8
+	and rax,0xFF
+	cmp rax,1
+	jle .loop_process_no_extra_thickness2
+	test rax,0b1
+	jnz .loop_process_odd_thickness2
+	shr rax,1
+	sub r9,rax
+	call set_pixel
+	add r9,rax
+	shl rax,1
+
+.loop_process_odd_thickness2:
+	dec rax
+	shr rax,1
+	test rax,0x7F
+	jz .loop_process_no_extra_thickness2
+
+.loop_process_line_thickness_loop2:
+	add r9,rax
+	call set_pixel
+	sub r9,rax
+	sub r9,rax
+	call set_pixel
+	add r9,rax
+	dec rax
+	jnz .loop_process_line_thickness_loop2
+
+.loop_process_no_extra_thickness2:
+;;;
+
 	call set_pixel
 
+.done_dir:
 	pop r9
 	pop r8
 
 .too_deep_to_put_pixel:
 
+	pop rsi
 	pop rbp
 	pop rbx
 	pop rax
@@ -498,42 +544,30 @@ set_line_depth:
 	jl .loop_vertical
 	mov rax,r9
 	mov r9,r11
-	mov r11,rax
-.loop_vertical:
-	call .process_pixel
+	mov r11,rax	
+
+	test rbp,0x1		; if we swapped points, also swap colors 
+	jz .skip_color_interp_vertical
+	mov rsi,[.colors_array]	
+	mov eax,[.init_colors]
+	mov [rsi+4],eax	
+	mov eax,[.init_colors+4]
+	mov [rsi],eax
+.skip_color_interp_vertical:
+	
+.loop_vertical:	
 
 	push rax
-
-	mov rax,rbp
-	shr rax,8
-	and rax,0xFF
-	cmp rax,1
-	jle .loop_vertical_no_extra_thickness
-	test rax,0b1
-	jnz .loop_vertical_odd_thickness
-	shr rax,1
-	sub r8,rax
+	push rsi
+	push rbp
+	
+	mov byte [.direction_byte],0b0 ; x-dir thickness
+	
 	call .process_pixel
-	add r8,rax
-	shl rax,1
-
-.loop_vertical_odd_thickness:
-	dec rax
-	shr rax,1
-	test rax,0x7F
-	jz .loop_vertical_no_extra_thickness
-
-.loop_vertical_line_thickness_loop:
-	add r8,rax
-	call .process_pixel
-	sub r8,rax
-	sub r8,rax
-	call .process_pixel	
-	add r8,rax
-	dec rax
-	jnz .loop_vertical_line_thickness_loop
 
 .loop_vertical_no_extra_thickness:
+	pop rbp
+	pop rsi
 	pop rax
 
 	inc r9
@@ -548,42 +582,29 @@ set_line_depth:
 	jl .loop_horizontal
 	mov rax,r8
 	mov r8,r10
-	mov r10,rax
+	mov r10,rax	
+	
+	test rbp,0x1		; if we swapped points, also swap colors 
+	jz .skip_color_interp_horizontal
+	mov rsi,[.colors_array]	
+	mov eax,[.init_colors]
+	mov [rsi+4],eax	
+	mov eax,[.init_colors+4]
+	mov [rsi],eax
+.skip_color_interp_horizontal:
+	
 .loop_horizontal:
-	call .process_pixel
 
 	push rax
+	push rsi
+	push rbp
 
-	mov rax,rbp
-	shr rax,8
-	and rax,0xFF
-	cmp rax,1
-	jle .loop_horizontal_no_extra_thickness
-	test rax,0b1
-	jnz .loop_horizontal_odd_thickness
-	shr rax,1
-	sub r9,rax
+	mov byte [.direction_byte],0b1 ; y-dir thickness
+
 	call .process_pixel
-	add r9,rax
-	shl rax,1
-
-.loop_horizontal_odd_thickness:
-	dec rax
-	shr rax,1
-	test rax,0x7F
-	jz .loop_horizontal_no_extra_thickness
-
-.loop_horizontal_line_thickness_loop:
-	add r9,rax
-	call .process_pixel
-	sub r9,rax
-	sub r9,rax
-	call .process_pixel	
-	add r9,rax
-	dec rax
-	jnz .loop_horizontal_line_thickness_loop
-
-.loop_horizontal_no_extra_thickness:
+	
+	pop rbp
+	pop rsi
 	pop rax
 	
 	inc r8
@@ -640,6 +661,8 @@ set_line_depth:
 	dd 1.0
 .colors_array:
 	dq 0
+.init_colors:
+	times 2 dd 0
 .line_segment_length:
 	dq 0.0	
 .init_x0:
@@ -648,7 +671,6 @@ set_line_depth:
 	dq 0
 .color_interp_flag:
 	db 0
-
-.grammar:
-	db `\n`
+.direction_byte:
+	db 0
 %endif
