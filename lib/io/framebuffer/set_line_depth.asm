@@ -155,8 +155,8 @@ set_line_depth:
 	cvtsd2si r9,xmm13
 	cvtsd2si r8,xmm12
 
-	test rbp,0x1	
-	jz .skip_color_interp
+;	test rbp,0x1	
+;	jz .skip_color_interp
 	mov [.colors_array],rsi
 .skip_color_interp:
 
@@ -337,30 +337,10 @@ set_line_depth:
 
 	cvtsd2ss xmm0,xmm0 ; does work LOL
 
+	movss xmm15,xmm0	
+
 	mov rax,r8 ; x coord
 	mov rbx,r9 ; y coord
-
-;	inc rax ; TODO do we delete this?
-;	inc rbx
-
-	mov rbp,rbx
-	imul rbp,rdx
-	add rbp,rax
-	shl rbp,2 ; {rbp} contains byte number for pixel of interest
-	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
-	movss xmm1,[rbp]
-
-	movss xmm2,xmm0
-
-	subss xmm2,xmm1
-	comiss xmm2,dword [.wireframe_depth_threshold]
-
-	jb .too_deep_to_put_pixel
-	
-	; overwrite depth
-	movss [rbp],xmm0
-
-	; compute color at this point
 
 	cmp byte [.color_interp_flag],byte 0 
 	je .color_computed
@@ -393,9 +373,15 @@ set_line_depth:
 	subsd xmm1,xmm0
 	mulsd xmm1,xmm4
 	addsd xmm0,xmm1
-	cvtsd2si r14,xmm0
+	cvtsd2si r14,xmm0	
+	cmp r14,0xFF
+	jbe .A_skip
+	mov r14,0xFF
+.A_skip:
+
+;	and r14,0xFF
 	shl r14,24
-	add r13,r14
+	or r13,r14
 	
 	; interpolation of R
 	movzx r14,byte [r15+2]
@@ -405,9 +391,16 @@ set_line_depth:
 	subsd xmm1,xmm0
 	mulsd xmm1,xmm4
 	addsd xmm0,xmm1
-	cvtsd2si r14,xmm0
+	cvtsd2si r14,xmm0	
+	
+	cmp r14,0xFF
+	jbe .R_skip
+	mov r14,0xFF
+.R_skip:
+
+;	and r14,0xFF
 	shl r14,16
-	add r13,r14
+	or r13,r14
 	
 	; interpolation of G
 	movzx r14,byte [r15+1]
@@ -417,9 +410,15 @@ set_line_depth:
 	subsd xmm1,xmm0
 	mulsd xmm1,xmm4
 	addsd xmm0,xmm1
-	cvtsd2si r14,xmm0
+	cvtsd2si r14,xmm0	
+	cmp r14,0xFF
+	jbe .G_skip
+	mov r14,0xFF
+.G_skip:
+
+;	and r14,0xFF
 	shl r14,8
-	add r13,r14
+	or r13,r14
 	
 	; interpolation of B
 	movzx r14,byte [r15+0]
@@ -430,7 +429,12 @@ set_line_depth:
 	mulsd xmm1,xmm4
 	addsd xmm0,xmm1
 	cvtsd2si r14,xmm0
-	add r13,r14
+	cmp r14,0xFF
+	jbe .B_skip
+	mov r14,0xFF
+.B_skip:
+;	and r14,0xFF
+	or r13,r14
 
 	mov rsi,r13 ; color of pixel of interest in {rsi}
 	and rsi,0x00FFFFFF
@@ -440,8 +444,9 @@ set_line_depth:
 	pop r14
 	pop r13
 
+
 .color_computed:
-	
+
 	mov rbp,[rsp+8]
 
 	; put the pixel
@@ -464,7 +469,7 @@ set_line_depth:
 	jnz .loop_process_odd_thickness
 	shr rax,1
 	sub r8,rax
-	call set_pixel
+	call .set_pixel_and_depth
 	add r8,rax
 	shl rax,1
 
@@ -476,18 +481,17 @@ set_line_depth:
 
 .loop_process_line_thickness_loop:
 	add r8,rax
-	call set_pixel
+	call .set_pixel_and_depth
 	sub r8,rax
 	sub r8,rax
-	call set_pixel
+	call .set_pixel_and_depth
 	add r8,rax
 	dec rax
 	jnz .loop_process_line_thickness_loop
 
 .loop_process_no_extra_thickness:
 ;;;
-
-	call set_pixel
+	call .set_pixel_and_depth
 	jmp .done_dir
 
 .ydir:
@@ -501,7 +505,7 @@ set_line_depth:
 	jnz .loop_process_odd_thickness2
 	shr rax,1
 	sub r9,rax
-	call set_pixel
+	call .set_pixel_and_depth
 	add r9,rax
 	shl rax,1
 
@@ -513,10 +517,10 @@ set_line_depth:
 
 .loop_process_line_thickness_loop2:
 	add r9,rax
-	call set_pixel
+	call .set_pixel_and_depth
 	sub r9,rax
 	sub r9,rax
-	call set_pixel
+	call .set_pixel_and_depth
 	add r9,rax
 	dec rax
 	jnz .loop_process_line_thickness_loop2
@@ -524,7 +528,7 @@ set_line_depth:
 .loop_process_no_extra_thickness2:
 ;;;
 
-	call set_pixel
+	call .set_pixel_and_depth
 
 .done_dir:
 	pop r9
@@ -540,6 +544,9 @@ set_line_depth:
 	ret
 
 .vertical_line:
+	
+	mov byte [.direction_byte],0b0 ; x-dir thickness
+	
 	cmp r9,r11
 	jl .loop_vertical
 	mov rax,r9
@@ -549,10 +556,18 @@ set_line_depth:
 	test rbp,0x1		; if we swapped points, also swap colors 
 	jz .skip_color_interp_vertical
 	mov rsi,[.colors_array]	
+
 	mov eax,[.init_colors]
 	mov [rsi+4],eax	
 	mov eax,[.init_colors+4]
 	mov [rsi],eax
+;
+
+;	mov eax,[rsi]
+;	mov ebx,[rsi+4]
+;	mov [rsi+4],eax	
+;	mov [rsi],ebx
+	
 .skip_color_interp_vertical:
 	
 .loop_vertical:	
@@ -578,6 +593,8 @@ set_line_depth:
 
 .horizontal_line:
 
+	mov byte [.direction_byte],0b1 ; y-dir thickness
+	
 	cmp r8,r10
 	jl .loop_horizontal
 	mov rax,r8
@@ -591,6 +608,11 @@ set_line_depth:
 	mov [rsi+4],eax	
 	mov eax,[.init_colors+4]
 	mov [rsi],eax
+;
+;	mov eax,[rsi]
+;	mov ebx,[rsi+4]
+;	mov [rsi+4],eax	
+;	mov [rsi],ebx
 .skip_color_interp_horizontal:
 	
 .loop_horizontal:
@@ -644,6 +666,33 @@ set_line_depth:
 	
 	ret
 
+.set_pixel_and_depth:
+
+	push rbp
+
+	mov rbp,r9
+	imul rbp,rdx
+	add rbp,r8
+	shl rbp,2 ; {rbp} contains byte number for pixel of interest
+	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
+	movss xmm1,[rbp]
+
+	movss xmm2,xmm15
+
+	subss xmm2,xmm1
+	comiss xmm2,dword [.wireframe_depth_threshold]
+
+	jb .too_deep
+
+	call set_pixel
+	movss [rbp],xmm15
+
+.too_deep:
+
+	pop rbp
+
+	ret
+
 .vertices_copy:
 	times 6 dq 0.0
 
@@ -658,7 +707,7 @@ set_line_depth:
 .depth_buffer_address:
 	dq 0
 .wireframe_depth_threshold:
-	dd 1.0
+	dd 0.1;	dd 1.0
 .colors_array:
 	dq 0
 .init_colors:
