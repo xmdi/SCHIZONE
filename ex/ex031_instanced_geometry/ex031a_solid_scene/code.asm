@@ -158,7 +158,7 @@ START:
 
 .cube_wire_structure:
 	dq 8 ; number of points (N)
-	dq 1;2 ; number of edges (M)
+	dq 12 ; number of edges (M)
 	dq .cube_points2 ; starting address of point array (3N elements, 4N if colors)
 	dq .cube_edges ; starting address of edge array 
 		;	(2M elements if no colors)

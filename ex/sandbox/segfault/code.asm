@@ -55,7 +55,12 @@ PROGRAM_HEADER:
 
 START:
 
-	jmp 0
+	[map all myfile.map]
+
+	push rax
+	pop rax
+
+	mov rax,[0]
 
 END:
 

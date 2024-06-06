@@ -6,6 +6,8 @@
 %include "lib/math/vector/dot_product_3.asm"
 %include "lib/math/vector/triangle_normal.asm"
 
+%include "lib/debug/debug.asm"
+
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},[6x0B,char,bool] {r9}, single* {r10})
