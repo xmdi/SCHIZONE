@@ -64,6 +64,11 @@ cd ex/ex018_LU_decomposition/ex018d_plu_decomposition # try a random example
 | MAY 24, 2024 | [Binary Dump](lab/lab005_hexdump) | [LAB 005](https://youtu.be/6UT0XYfi610) |
 | MAY 31, 2024 | [LS](lab/lab006_ls) | [LAB 006](https://youtu.be/) |
 
+## Bonus
+| DATE | TOPIC | VIDEO |
+| :---: | :---: | :---: |
+| JUN 06, 2024 | Debugging Tools/Strategies | [VIDEO ONLY](https://youtu.be/N3OMTrl4k-Q) |
+
 ### NOTE 0: 
 As part of this project we created some DIY versions of common utilities (see [EP. 003](ex/ex003_command_line_args_and_code_golf)). Later examples use "SCHIZONE/bin/make_executable" in place of "chmod +x". You can generate these binaries by running "./make_bins.sh" in the root directory.
 
