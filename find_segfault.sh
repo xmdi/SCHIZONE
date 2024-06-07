@@ -1,9 +1,9 @@
-N=$(sudo dmesg | grep -E segfault | tail -1 | cut -f8 -d' ')
+N=$(sudo dmesg | grep -E segfault | tail -1 | awk '{for(i=1;i<=NF;i++) if ($i=="ip") print $(i+1)}')
 
 next_addr=0;
 next_label=0;
 
-tail -n +34 "myfile.map" | while read line;
+tail -n +34 "mem.map" | while read line;
 	do 
 		prev_addr=$next_addr
 		prev_label=$next_label

@@ -49,18 +49,61 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/io/print_float.asm"
+
+%include "lib/sys/exit.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+	[map all mem.map]
+
 START:
 
-	[map all myfile.map]
 
-	push rax
-	pop rax
+	mov rdi,SYS_STDOUT
+	mov rcx,8
+	mov r8,.array
 
-	mov rax,[0]
+.print_loop:
+
+.print_float:	
+
+	movsd xmm0,[r8]
+	mulsd xmm0,[.scale]
+	mov rsi,8
+	call print_float
+
+.print_newline:
+
+	mov rsi,.newline
+	mov rdx,1
+	call print_chars
+
+.check_loop_cond:
+
+	add r8,8
+	dec rcx
+	jnz .print_loop
+
+.fall_out:
+
+	call print_buffer_flush
+
+.exit:
+
+	xor dil,dil
+	call exit
+
+.array:
+	dq 1.2, 2.3, 3.4, 4.5, 5.6, 6.7, 7.8, 8.9
+
+.scale:
+	dq 2.0
+
+.newline:
+	db `\n`
 
 END:
 
