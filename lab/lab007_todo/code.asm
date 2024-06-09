@@ -124,39 +124,18 @@ START:
 
 	jmp INVALID_INPUTS
 
-
-%if 0
-	mov rdi,.dot
-	jmp .skip_in
-
-.multiple_inputs:
-	; check for exactly 2 command line inputs
-	cmp byte [SYS_ARGC_START_POINTER],2
-	jne .invalid_inputs
-
-	; copy dir into buffer
-	mov rdi,.buffer
-	mov rsi,[SYS_ARGC_START_POINTER+16]
-	call strcopy_null
-
-	; put slash in buffer
-	call strlen
-	inc rax
-	mov [.buffer_offset],rax
-	dec rax
-	add rax,.buffer
-	mov byte [rax], byte 47
-
-	mov rdi,[SYS_ARGC_START_POINTER+16]
-.skip_in:
-	mov rsi,SYS_READ_ONLY
-	mov rdx,SYS_DEFAULT_PERMISSIONS
-	call file_open
-	mov r15,rax
-%endif
-
-
 ADD_COMMAND:
+	cmp cl,3
+	jne INVALID_INPUTS
+
+	mov rdi,r15
+	mov rsi,[SYS_ARGC_START_POINTER+24]
+	call print_string
+	call print_buffer_flush
+
+	jmp LEAVE
+
+
 DONE_COMMAND:
 COMMENT_COMMAND:
 LIST_COMMAND:
