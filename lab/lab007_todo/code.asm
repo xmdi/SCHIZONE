@@ -53,6 +53,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/print_chars.asm"	
 
+%include "lib/io/read_chars.asm"	
+
 %include "lib/io/strlen.asm"	
 
 %include "lib/io/print_string.asm"
@@ -139,6 +141,32 @@ ADD_COMMAND:
 DONE_COMMAND:
 COMMENT_COMMAND:
 LIST_COMMAND:
+
+
+FIND_TASK:	; loop thru lines, searching for a task, pointed to by r14
+	mov rdi,r15
+	mov rsi,.buffer
+	mov rdx,1
+
+.loop:
+	call read_chars
+	cmp byte [rsi],`\n`
+	je .line_complete
+	inc rsi
+	jmp .loop
+
+.line_complete:
+	mov rdi,r14
+	inc rsi
+	mov byte [rsi],0
+	mov rsi,.buffer
+	call strcmp
+	cmp rax,0
+	je ;TODO
+
+.buffer:
+	times 128 db 0
+
 
 LEAVE:
 	; exit
