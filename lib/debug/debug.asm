@@ -1,6 +1,9 @@
 %ifndef DEBUG
 %define DEBUG
 
+; debug memmap
+	[map all mem.map]
+
 ; dependency
 %include "lib/io/print_chars.asm"
 %include "lib/io/print_int_b.asm"
