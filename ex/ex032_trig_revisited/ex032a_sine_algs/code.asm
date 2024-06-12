@@ -67,6 +67,9 @@ PROGRAM_HEADER:
 
 %include "lib/debug/debug.asm"
 
+
+%include "sine_lookup.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -80,6 +83,28 @@ START:
 	movsd xmm0,[.bounds]
 	movsd xmm1,[.bounds+8]
 	call rand_float_array
+
+	mov r14,.rands
+
+.input_loop:
+
+	movsd xmm0,[r14]
+
+	mov rdi,SYS_STDOUT
+	mov rsi,6
+	call print_float
+
+	mov rsi,.grammar
+	mov rdx,3
+	call print_chars
+
+	add r14,8
+	cmp r14,.rands_end
+	jl .input_loop
+
+	mov rsi,.grammar+5
+	mov rdx,1
+	call print_chars
 
 	mov r15,.func_table
 
@@ -126,7 +151,6 @@ START:
 	dec rcx
 	jnz .time_loop
 
-
 	call tock_time
 	mov rdi,SYS_STDOUT
 	mov rsi,rax
@@ -153,10 +177,10 @@ align 8
 .rands_end:
 
 .bounds:
-	dq -5.0,5.0
+	dq -10.00,10.00
 
 .n_funcs:
-	db 2
+	db 3
 .n_calls:
 	dq 10000
 
@@ -166,6 +190,8 @@ align 8
 	dq SINE_FUNC_1
 	db `Tseries`,0
 	dq SINE_FUNC_2
+	db `lookupC`,0
+	dq SINE_FUNC_3
 .func_table_end:
 
 .grammar:
@@ -188,6 +214,11 @@ SINE_FUNC_2:
 .tol:
 	dq 0.000001
 
+align 64
+SINE_FUNC_3:
+
+	call sine_lookup
+	ret
 
 END:
 
