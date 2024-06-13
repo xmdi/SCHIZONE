@@ -69,6 +69,7 @@ PROGRAM_HEADER:
 
 
 %include "sine_lookup.asm"
+%include "sine_bhaskara.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -85,6 +86,11 @@ START:
 	call rand_float_array
 
 	mov r14,.rands
+
+	mov rdi,SYS_STDOUT
+	mov rsi,.more_grammar
+	mov rdx,10
+	call print_chars
 
 .input_loop:
 
@@ -179,10 +185,11 @@ align 8
 .bounds:
 	dq -10.00,10.00
 
-.n_funcs:
-	db 3
 .n_calls:
-	dq 10000
+	dq 1000000
+
+.n_funcs:
+	db 4
 
 align 8
 .func_table:
@@ -190,12 +197,17 @@ align 8
 	dq SINE_FUNC_1
 	db `Tseries`,0
 	dq SINE_FUNC_2
-	db `lookupC`,0
+	db `lookup `,0
 	dq SINE_FUNC_3
+	db `Bhaskra`,0
+	dq SINE_FUNC_4
 .func_table_end:
 
 .grammar:
 	db ` | us\n`
+
+.more_grammar:
+	db `x=      | `
 
 align 64
 SINE_FUNC_1:
@@ -218,6 +230,12 @@ align 64
 SINE_FUNC_3:
 
 	call sine_lookup
+	ret
+
+align 64
+SINE_FUNC_4:
+
+	call sine_bhaskara
 	ret
 
 END:

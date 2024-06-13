@@ -1,6 +1,7 @@
 %ifndef SINE
 %define SINE
 
+align 64
 sine:
 ; double {xmm0} sine(double {xmm0}, double {xmm1});
 ; computes Taylor series polynomial approximation of sine({xmm0})

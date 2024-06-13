@@ -1,12 +1,11 @@
-%ifndef SINE_LOOKUP
-%define SINE_LOOKUP
+%ifndef SINE_CHEBYSHEV
+%define SINE_CHEBYSHEV
 
-; double {xmm0} sine_lookup(double {xmm0});
-;	Returns approximation of sine({xmm0}) in {xmm0} using coarse lookup
-;	table.
+; double {xmm0} sine_chebyshev(double {xmm0});
+;	Returns approximation of sine({xmm0}) in {xmm0} using cringe math thing.
 
 align 64
-sine_lookup:
+sine_chebyshev:
 
 	push rax
 	push rbx
@@ -45,22 +44,14 @@ sine_lookup:
 	
 .reduced2:				; xmm0 is now within [0,pi]
 
-	cvtsd2ss xmm0,xmm0
-	mulss xmm0,[.scalar]
-	cvtss2si eax,xmm0
 
-	add eax,3
-	and eax,0xFFFFFFFC
 
-	movss xmm0,[eax+.lookup_table]
 
-	cvtss2sd xmm0,xmm0
 
-	test rbx,rbx
-	jz .no_neg
-	mulsd xmm0,[.neg]
 
-.no_neg:
+
+
+
 	pop rbx
 	pop rax
 
