@@ -62,7 +62,7 @@ cd ex/ex018_LU_decomposition/ex018d_plu_decomposition # try a random example
 | JAN 26, 2024 | [Password Generation](lab/lab003_password_generator) | [LAB 003](https://youtu.be/JJ1dbJ4a09k) |
 | MAR 22, 2024 | [Countdown Timer](lab/lab004_countdown_timer) | [LAB 004](https://youtu.be/_ElYsWY4xss) |
 | MAY 24, 2024 | [Binary Dump](lab/lab005_hexdump) | [LAB 005](https://youtu.be/6UT0XYfi610) |
-| MAY 31, 2024 | [LS](lab/lab006_ls) | [LAB 006](https://youtu.be/) |
+| JUN 14, 2024 | [LS](lab/lab006_ls) | [LAB 006](https://youtu.be/GbsKzOtA7Lg) |
 
 ## Bonus
 | DATE | TOPIC | VIDEO |
