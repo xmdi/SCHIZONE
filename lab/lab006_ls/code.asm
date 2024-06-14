@@ -40,7 +40,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE+512+276+160 ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+512+280+144 ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,7 +106,7 @@ START:
 	mov rax,SYS_GETDENTS
 	mov rdi,r15
 	mov rsi,DIRENT_STRUCT
-	mov rdx,276
+	mov rdx,280
 	syscall
 
 	cmp rax,0
@@ -136,8 +136,8 @@ START:
 	mov al, byte [STAT_STRUCT+25]
 	test al,byte 0b01000000
 	jnz .dir
-	test al,byte 0b10000000
-	jz .continue_printing
+;	test al,byte 0b10000000
+;	jz .continue_printing
 	mov al, byte [STAT_STRUCT+24]
 	test al,byte 0b01000000
 	jz .continue_printing
@@ -218,5 +218,5 @@ BUFFER equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)
 
 DIRENT_STRUCT equ (BUFFER+512)
 
-STAT_STRUCT equ (DIRENT_STRUCT+276)
+STAT_STRUCT equ (DIRENT_STRUCT+280)
 
