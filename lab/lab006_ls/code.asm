@@ -40,7 +40,7 @@ PROGRAM_HEADER:
 	dq LOAD_ADDRESS+0x78 ; virtual address of segment in memory
 	dq 0x0000000000000000 ; physical address of segment in memory (ignored?)
 	dq CODE_SIZE ; size (bytes) of segment in file image
-	dq CODE_SIZE+PRINT_BUFFER_SIZE ; size (bytes) of segment in memory
+	dq CODE_SIZE+PRINT_BUFFER_SIZE+512+276+160 ; size (bytes) of segment in memory
 	dq 0x0000000000000000 ; alignment (doesn't matter, only 1 segment)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,6 +67,9 @@ PROGRAM_HEADER:
 
 START:
 
+	mov ax,"./"
+	mov [BUFFER],ax
+
 	; no command line input? assume current directory
 	cmp byte [SYS_ARGC_START_POINTER],1
 	jg .multiple_inputs
@@ -79,16 +82,16 @@ START:
 	jne .invalid_inputs
 
 	; copy dir into buffer
-	mov rdi,.buffer
+	mov rdi,BUFFER
 	mov rsi,[SYS_ARGC_START_POINTER+16]
 	call strcopy_null
 
 	; put slash in buffer
 	call strlen
 	inc rax
-	mov [.buffer_offset],rax
+	mov [.buffer_offset],ax
 	dec rax
-	add rax,.buffer
+	add rax,BUFFER
 	mov byte [rax], byte 47
 
 	mov rdi,[SYS_ARGC_START_POINTER+16]
@@ -102,7 +105,7 @@ START:
 
 	mov rax,SYS_GETDENTS
 	mov rdi,r15
-	mov rsi,.dirent_struct
+	mov rsi,DIRENT_STRUCT
 	mov rdx,276
 	syscall
 
@@ -110,7 +113,7 @@ START:
 	jle .leave
 
 	mov rbp,rax
-	mov rbx,.dirent_struct
+	mov rbx,DIRENT_STRUCT
 
 .loop:
 
@@ -119,34 +122,33 @@ START:
 	mov r12,rsi
 	
 	; copy file into buffer
-	mov rdi,.buffer
-	add rdi,[.buffer_offset]
+	mov rdi,BUFFER
+	add di, word [.buffer_offset]
 	call strcopy_null
 
-	; get stat.h
+	; get stat struct
 	mov rax,SYS_STAT
-	mov rdi,.buffer
-	mov rsi,.stat_struct
+	mov rdi,BUFFER
+	mov rsi,STAT_STRUCT
 	syscall
 
-	mov al, byte [.stat_struct+25]
+	mov rdi,SYS_STDOUT
+	mov al, byte [STAT_STRUCT+25]
 	test al,byte 0b01000000
 	jnz .dir
 	test al,byte 0b10000000
 	jz .continue_printing
-	mov al, byte [.stat_struct+24]
+	mov al, byte [STAT_STRUCT+24]
 	test al,byte 0b01000000
 	jz .continue_printing
 
 .exec:
-	mov rdi,SYS_STDOUT
 	mov rsi,.red
 	mov rdx,5
 	call print_chars
 	jmp .continue_printing
 
 .dir:
-	mov rdi,SYS_STDOUT
 	mov rsi,.yellow
 	mov rdx,5
 	call print_chars
@@ -154,7 +156,6 @@ START:
 .continue_printing:
 
 	; print filename
-	mov rdi,SYS_STDOUT
 	mov rsi,r12
 	call print_string
 
@@ -163,13 +164,12 @@ START:
 	mov rdx,4
 	call print_chars
 
-	mov rdi,SYS_STDOUT
 	mov rsi,.grammar+2
 	mov rdx,3
 	call print_chars
 
 	; byte count
-	mov rsi,[.stat_struct+48]
+	mov rsi,[STAT_STRUCT+48]
 	call print_int_d
 
 	mov rsi,.grammar
@@ -191,13 +191,6 @@ START:
 	xor dil,dil
 	call exit	
 
-.dirent_struct:
-	times 276 db 0
-
-
-.stat_struct:
-	times 160 db 0
-
 .grammar:
 	db `B\n - `
 
@@ -205,11 +198,7 @@ START:
 	db `.`,0
 
 .buffer_offset:
-	dq 2
-
-.buffer:
-	db `./` 
-	times 512 db 0
+	dw 2
 
 .yellow:
 	db `\e[93m`
@@ -224,3 +213,10 @@ END:
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
+
+BUFFER equ (PRINT_BUFFER+PRINT_BUFFER_SIZE)
+
+DIRENT_STRUCT equ (BUFFER+512)
+
+STAT_STRUCT equ (DIRENT_STRUCT+276)
+
