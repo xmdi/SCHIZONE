@@ -56,6 +56,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_loop.asm"
 
+;%include "lib/debug/debug.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,8 +106,6 @@ START:
 	call framebuffer_3d_render_depth_init
 
 .loop:
-
-	[map all myfile.map]
 
 	call framebuffer_3d_render_depth_loop
 	jmp .loop
@@ -329,8 +329,6 @@ START:
 	dq 1,5,0xFFFF0000 ; sides
 	dq 2,6,0xFFFF0000 ; sides
 	dq 3,7,0xFFFF0000 ; sides
-		
-	[map all myfile.map]
 
 END:
 

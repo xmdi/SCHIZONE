@@ -6,8 +6,6 @@
 %include "lib/math/vector/dot_product_3.asm"
 %include "lib/math/vector/triangle_normal.asm"
 
-%include "lib/debug/debug.asm"
-
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},[6x0B,char,bool] {r9}, single* {r10})
@@ -358,16 +356,24 @@ set_line_depth:
 	sub r14,[.init_x0]
 	cvtsi2sd xmm4,r14
 	mulsd xmm4,xmm4
+	
 	mov r14,r9
 	sub r14,[.init_y0]
 	cvtsi2sd xmm5,r14
 	mulsd xmm5,xmm5
+	
 	addsd xmm4,xmm5
 	sqrtsd xmm4,xmm4
 	divsd xmm4,[.line_segment_length]  ; potentially pull out of loop TODO
-	; {xmm4} is 0->1 along line segment
-	
+	comisd xmm4,[.one]
+	jbe .no_round
+	movsd xmm4,[.one]
+
+.no_round:
+	; {xmm4} is 0->1 along line segmenti
+
 	; interpolation of A
+%if 0
 	movzx r14,byte [r15+3]
 	cvtsi2sd xmm0,r14
 	movzx r14,byte [r15+7]
@@ -376,15 +382,11 @@ set_line_depth:
 	mulsd xmm1,xmm4
 	addsd xmm0,xmm1
 	cvtsd2si r14,xmm0	
-	cmp r14,0xFF
-	jbe .A_skip
-	mov r14,0xFF
-.A_skip:
 
-;	and r14,0xFF
 	shl r14,24
 	or r13,r14
-	
+%endif
+
 	; interpolation of R
 	movzx r14,byte [r15+2]
 	cvtsi2sd xmm0,r14
@@ -395,30 +397,19 @@ set_line_depth:
 	addsd xmm0,xmm1
 	cvtsd2si r14,xmm0	
 	
-	cmp r14,0xFF
-	jbe .R_skip
-	mov r14,0xFF
-.R_skip:
-
-;	and r14,0xFF
 	shl r14,16
 	or r13,r14
 	
 	; interpolation of G
 	movzx r14,byte [r15+1]
-	cvtsi2sd xmm0,r14
-	movzx r14,byte [r15+5]
+	cvtsi2sd xmm0,r14			; 0xFF
+	movzx r14,byte [r15+5]			; 0x00
 	cvtsi2sd xmm1,r14
-	subsd xmm1,xmm0
-	mulsd xmm1,xmm4
-	addsd xmm0,xmm1
-	cvtsd2si r14,xmm0	
-	cmp r14,0xFF
-	jbe .G_skip
-	mov r14,0xFF
-.G_skip:
-
-;	and r14,0xFF
+	subsd xmm1,xmm0				; -255.0
+	mulsd xmm1,xmm4				; -255.0*1.01
+	addsd xmm0,xmm1				; 0xFF-0x100
+	cvtsd2si r14,xmm0			; 0x100->256.0
+	
 	shl r14,8
 	or r13,r14
 	
@@ -431,16 +422,11 @@ set_line_depth:
 	mulsd xmm1,xmm4
 	addsd xmm0,xmm1
 	cvtsd2si r14,xmm0
-	cmp r14,0xFF
-	jbe .B_skip
-	mov r14,0xFF
-.B_skip:
-;	and r14,0xFF
+	
 	or r13,r14
 
 	mov rsi,r13 ; color of pixel of interest in {rsi}
 	and rsi,0x00FFFFFF
-;	or rsi,0x100000000 ;;; todo check
 
 	pop r15
 	pop r14
@@ -550,7 +536,7 @@ set_line_depth:
 	mov byte [.direction_byte],0b0 ; x-dir thickness
 	
 	cmp r9,r11
-	jl .loop_vertical
+	jl .pre_loop_vertical
 	mov rax,r9
 	mov r9,r11
 	mov r11,rax	
@@ -563,15 +549,14 @@ set_line_depth:
 	mov [rsi+4],eax	
 	mov eax,[.init_colors+4]
 	mov [rsi],eax
-;
-
-;	mov eax,[rsi]
-;	mov ebx,[rsi+4]
-;	mov [rsi+4],eax	
-;	mov [rsi],ebx
 	
 .skip_color_interp_vertical:
-	
+
+.pre_loop_vertical:
+
+	mov [.init_x0],r8
+	mov [.init_y0],r9
+
 .loop_vertical:	
 
 	push rax
@@ -598,11 +583,11 @@ set_line_depth:
 	mov byte [.direction_byte],0b1 ; y-dir thickness
 	
 	cmp r8,r10
-	jl .loop_horizontal
+	jl .pre_loop_horizontal
 	mov rax,r8
 	mov r8,r10
 	mov r10,rax	
-	
+
 	test rbp,0x1		; if we swapped points, also swap colors 
 	jz .skip_color_interp_horizontal
 	mov rsi,[.colors_array]	
@@ -610,13 +595,14 @@ set_line_depth:
 	mov [rsi+4],eax	
 	mov eax,[.init_colors+4]
 	mov [rsi],eax
-;
-;	mov eax,[rsi]
-;	mov ebx,[rsi+4]
-;	mov [rsi+4],eax	
-;	mov [rsi],ebx
+
 .skip_color_interp_horizontal:
-	
+
+.pre_loop_horizontal:
+
+	mov [.init_x0],r8
+	mov [.init_y0],r9
+
 .loop_horizontal:
 
 	push rax
@@ -697,7 +683,8 @@ set_line_depth:
 
 .vertices_copy:
 	times 6 dq 0.0
-
+.one:
+	dq 1.0
 .depth_slope: ; (z1-z0)/(x1-x0)
 	dq 0.0
 .x0:
