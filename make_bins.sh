@@ -36,3 +36,7 @@ chmod +x bin/list
 # generate "dump" aka "xxd" aka "hexdump"
 nasm -f bin -I lib/sys/`uname` -o bin/dump lab/lab005_hexdump/code.asm
 chmod +x bin/dump
+
+# generate "rpn" aka a calculator
+nasm -f bin -I lib/sys/`uname` -o bin/rpn ex/ex030_postfix_notation/ex30a_evaluate_postfix/code.asm
+chmod +x bin/rpn
