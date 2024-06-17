@@ -52,7 +52,7 @@ cd ex/ex018_LU_decomposition/ex018d_plu_decomposition # try a random example
 | MAY 03, 2024 | [HUD Interface](ex/ex029_HUD_interface) | [EP. 029](https://youtu.be/gpkx3gd7ylM) |
 | MAY 03, 2024 | [HUD Interface](ex/ex029_HUD_interface) | [EP. 029](https://youtu.be/gpkx3gd7ylM) |
 | MAY 17, 2024 | [Postfix Notation](ex/ex030_postfix_notation) | [EP. 030](https://youtu.be/yO32l7OZ3tU) |
-| MAY 31, 2024 | [Instanced Geometry](ex/ex031_instanced_geometry) | [EP. 031](https://youtu.be/) |
+| JUN 21, 2024 | [Trig Algs Revisited](ex/ex031_trig_revisited) | [EP. 031](https://youtu.be/) |
 
 ## Labs
 | DATE | TOPIC | VIDEO |
