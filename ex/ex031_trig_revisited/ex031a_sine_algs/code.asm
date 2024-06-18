@@ -67,9 +67,9 @@ PROGRAM_HEADER:
 
 %include "lib/debug/debug.asm"
 
-
 %include "sine_lookup.asm"
 %include "sine_bhaskara.asm"
+%include "sine_x87.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -80,7 +80,7 @@ START:
 	; populate our random numbers
 	mov rdi,.rands
 	xor rsi,rsi
-	mov rdx,5
+	mov rdx,[.n_calls]
 	movsd xmm0,[.bounds]
 	movsd xmm1,[.bounds+8]
 	call rand_float_array
@@ -105,7 +105,7 @@ START:
 	call print_chars
 
 	add r14,8
-	cmp r14,.rands_end
+	cmp r14,.rands+40
 	jl .input_loop
 
 	mov rsi,.grammar+5
@@ -126,6 +126,7 @@ START:
 
 	mov r14,.rands
 	add r15,8
+	mov rcx,5
 
 .value_loop:
 
@@ -142,18 +143,22 @@ START:
 	call print_chars
 
 	add r14,8
-	cmp r14,.rands_end
-	jl .value_loop
+;	cmp r14,.rands_end
+	dec rcx
+	jnz .value_loop
 
 	call tick_time
 	mov rcx,[.n_calls]
+	sub rcx,5
 
 .time_loop:
 
 ;	movsd xmm0,[.bounds]
 ;	movsd xmm1,[.bounds+8]
 ;	call rand_float
+	movsd xmm0,[r14]
 	call [r15]
+	add r14,8
 	dec rcx
 	jnz .time_loop
 
@@ -179,17 +184,17 @@ START:
 
 align 8
 .rands:
-	times 5 dq 0.0
+	times 500005 dq 0.0
 .rands_end:
 
 .bounds:
 	dq -10.00,10.00
 
 .n_calls:
-	dq 1000000
+	dq 500005
 
 .n_funcs:
-	db 4
+	db 5
 
 align 8
 .func_table:
@@ -201,6 +206,10 @@ align 8
 	dq SINE_FUNC_3
 	db `Bhaskra`,0
 	dq SINE_FUNC_4
+	db `hrdware`,0
+	dq SINE_FUNC_5
+.func_table_end:
+
 .func_table_end:
 
 .grammar:
@@ -236,6 +245,12 @@ align 64
 SINE_FUNC_4:
 
 	call sine_bhaskara
+	ret
+
+align 64
+SINE_FUNC_5:
+
+	call sine_x87
 	ret
 
 END:
