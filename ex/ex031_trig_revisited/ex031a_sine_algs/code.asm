@@ -70,6 +70,7 @@ PROGRAM_HEADER:
 %include "sine_lookup.asm"
 %include "sine_bhaskara.asm"
 %include "sine_x87.asm"
+%include "sine_chebyshev.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -208,6 +209,9 @@ align 8
 	dq SINE_FUNC_4
 	db `hrdware`,0
 	dq SINE_FUNC_5
+	db `chbshev`,0
+	dq SINE_FUNC_6
+
 .func_table_end:
 
 .func_table_end:
@@ -254,6 +258,15 @@ SINE_FUNC_5:
 	ret
 
 END:
+
+align 64
+SINE_FUNC_6:
+
+	call sine_chebyshev
+	ret
+
+END:
+
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
