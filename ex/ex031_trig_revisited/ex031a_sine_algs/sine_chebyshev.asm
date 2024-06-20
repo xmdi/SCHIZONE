@@ -42,7 +42,7 @@ sine_chebyshev:
 	subsd xmm0,xmm1
 	mulsd xmm0,[.neg]
 	
-.reduced2:				; xmm0 is now within [0,pi]
+.reduced2:				; xmm0 is now within [0,pi/2]
 
 
 
