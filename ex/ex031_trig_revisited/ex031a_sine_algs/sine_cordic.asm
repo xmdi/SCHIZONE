@@ -1,11 +1,16 @@
 %ifndef SINE_CORDIC
 %define SINE_CORDIC
 
-; double {xmm0} sine_cordic(double {xmm0});
-;	Returns approximation of sine({xmm0}) in {xmm0} using CORDIC approx.
+; double {xmm0}, double {xmm1} sine_cordic(double {xmm0});
+;	Returns approximation of sine({xmm0}) and cosine({xmm1}) in {xmm0} and 
+;	{xmm1} respectively using CORDIC approx.
 
 align 64
 sine_cordic:
+
+	push rdi
+	push rsi
+	push rcx
 
 	movsd xmm1,xmm0
 	pslld xmm1,1
@@ -32,7 +37,7 @@ sine_cordic:
 	subsd xmm0,[.two_pi]
 	jmp .plus_minus_pi
 .less_than_neg_pi:	
-	addsd xmm0.[.two_pi]
+	addsd xmm0,[.two_pi]
 
 .plus_minus_pi:
 
@@ -51,43 +56,80 @@ sine_cordic:
 	movsd xmm1,[.pi]
 	subsd xmm1,xmm0
 
-.in_range: ; xmm0 in range [-pi/2,pi/2]
+.in_range: ; xmm0 in range [-pi0/2,pi/2]
 
-;	sine(x)~=(16x*(pi-x))/(5pi^2-4x*(pi-x))
+	pxor xmm1,xmm1			; theta
+	movsd xmm2,[.P_table+0]		; x
+	pxor xmm3,xmm3			; y
+	pxor xmm4,xmm4			; zero
+	; xmm5 temp for x
+	; xmm6 temp
 
-	movsd xmm1,[.pi]
-	subsd xmm1,xmm0
-	movsd xmm2,xmm0
-	mulsd xmm0,[.sixteen]
-	mulsd xmm0,xmm1
+	mov rdi,.atan_table
+	mov rsi,.P_table
 
-	mulsd xmm2,[.four]
-	mulsd xmm2,xmm1
-	movsd xmm1,[.five_pi_squared]
-	subsd xmm1,xmm2
+	mov rcx,16
+.loop:
+	
+	comisd xmm1,xmm4
+	jb .add
+.subtract:
+	subsd xmm1,[rdi]
+	
+	addsd xmm1,[rdi]
+	movsd xmm5,xmm2
+	movsd xmm6,xmm3
+	mulsd xmm6,[rsi]
+	subsd xmm2,xmm6
 
-	divsd xmm0,xmm1
+	mulsd xmm5,[rsi]
+	addsd xmm3,xmm5
 
+.add:
+	addsd xmm1,[rdi]
 
+	movsd xmm5,xmm2
+	movsd xmm6,xmm3
+	mulsd xmm6,[rsi]
+	subsd xmm2,xmm6
+
+	mulsd xmm5,[rsi]
+	addsd xmm3,xmm5
+
+	add rdi,8
+	add rsi,8
+
+	dec rcx	
+	jnz .loop
+
+	mulsd xmm2,[.k_factor]
+	mulsd xmm3,[.k_factor]
+
+	movsd xmm0,xmm2
+	movsd xmm1,xmm3
+
+	pop rcx
+	pop rsi
+	pop rdi
 
 	ret 
 
 align 8
 
-.neg:		; -1
-	dq 0xBFF0000000000000
+.k_factor:
+	dq 0x3FE36E9DB5156034
+
+.half_pi:	; ~3.1/2
+	dq 0x3FF921FB54442D18
+
+.neg_half_pi:	; ~-3.1/2
+	dq 0xBFF921FB54442D18
 
 .pi:	; ~3.1
 	dq 0x400921FB54442D18
 
-.four:
-	dq 0x4010000000000000
-
-.sixteen:
-	dq 0x4030000000000000
-	
-.five_pi_squared:
-	dq 0x4048AC8BFC2DD756
+.neg_pi:	; -~3.1
+	dq 0xC00921FB54442D18
 
 .two_pi:	; ~6.3
 	dq 0x401921FB54442D18
@@ -112,5 +154,23 @@ align 8
 	dq 0x3f1ffffffd555556
 	dq 0x3f0fffffff555555
 	dq 0x3effffffffd55555
+
+.P_table:
+	dq 0x3ff0000000000000
+	dq 0x3fe0000000000000
+	dq 0x3fd0000000000000
+	dq 0x3fc0000000000000
+	dq 0x3fb0000000000000
+	dq 0x3fa0000000000000
+	dq 0x3f90000000000000
+	dq 0x3f80000000000000
+	dq 0x3f70000000000000
+	dq 0x3f60000000000000
+	dq 0x3f50000000000000
+	dq 0x3f40000000000000
+	dq 0x3f30000000000000
+	dq 0x3f20000000000000
+	dq 0x3f10000000000000
+	dq 0x3f00000000000000
 
 %endif

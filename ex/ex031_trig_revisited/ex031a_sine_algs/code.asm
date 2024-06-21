@@ -71,6 +71,7 @@ PROGRAM_HEADER:
 %include "sine_bhaskara.asm"
 %include "sine_x87.asm"
 %include "sine_chebyshev.asm"
+%include "sine_cordic.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -195,7 +196,7 @@ align 8
 	dq 500005
 
 .n_funcs:
-	db 5
+	db 6
 
 align 8
 .func_table:
@@ -209,10 +210,10 @@ align 8
 	dq SINE_FUNC_4
 	db `hrdware`,0
 	dq SINE_FUNC_5
-	db `chbshev`,0
-	dq SINE_FUNC_6
-
-.func_table_end:
+;	db `chbshev`,0
+;	dq SINE_FUNC_6
+	db `cordic `,0
+	dq SINE_FUNC_7
 
 .func_table_end:
 
@@ -257,12 +258,16 @@ SINE_FUNC_5:
 	call sine_x87
 	ret
 
-END:
-
 align 64
 SINE_FUNC_6:
 
 	call sine_chebyshev
+	ret
+
+align 64
+SINE_FUNC_7:
+
+	call sine_cordic
 	ret
 
 END:
