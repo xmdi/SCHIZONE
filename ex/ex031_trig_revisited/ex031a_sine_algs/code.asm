@@ -154,7 +154,6 @@ START:
 	sub rcx,5
 
 .time_loop:
-
 ;	movsd xmm0,[.bounds]
 ;	movsd xmm1,[.bounds+8]
 ;	call rand_float
@@ -172,7 +171,7 @@ START:
 	mov rsi,.grammar+2
 	mov rdx,4
 	call print_chars
-
+	
 	call print_buffer_flush
 
 	add r15,8	
@@ -268,6 +267,7 @@ align 64
 SINE_FUNC_7:
 
 	call sine_cordic
+	movsd xmm0,xmm1
 	ret
 
 END:

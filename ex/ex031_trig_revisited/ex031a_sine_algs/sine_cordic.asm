@@ -49,19 +49,20 @@ sine_cordic:
 
 	movsd xmm1,[.neg_pi]
 	subsd xmm1,xmm0
+	movsd xmm0,xmm1
 	jmp .in_range
 	
 .over_half_pi:
 
 	movsd xmm1,[.pi]
 	subsd xmm1,xmm0
+	movsd xmm0,xmm1
 
-.in_range: ; xmm0 in range [-pi0/2,pi/2]
+.in_range: ; xmm0 in range [-pi/2,pi/2]
 
 	pxor xmm1,xmm1			; theta
 	movsd xmm2,[.P_table+0]		; x
 	pxor xmm3,xmm3			; y
-	pxor xmm4,xmm4			; zero
 	; xmm5 temp for x
 	; xmm6 temp
 
@@ -69,14 +70,31 @@ sine_cordic:
 	mov rsi,.P_table
 
 	mov rcx,16
+;	debug_reg_f xmm0
+;	debug_line
 .loop:
-	
-	comisd xmm1,xmm4
-	jb .add
-.subtract:
+
+;	debug_reg_f xmm1
+;	debug_reg_f xmm0
+;	debug_line
+
+	comisd xmm1,xmm0
+	jb .pos_sigma
+.neg_sigma:
 	subsd xmm1,[rdi]
 	
+	movsd xmm5,xmm2
+	movsd xmm6,xmm3
+	mulsd xmm6,[rsi]
+	addsd xmm2,xmm6
+
+	mulsd xmm5,[rsi]
+	subsd xmm3,xmm5
+
+	jmp .skip
+.pos_sigma:
 	addsd xmm1,[rdi]
+
 	movsd xmm5,xmm2
 	movsd xmm6,xmm3
 	mulsd xmm6,[rsi]
@@ -85,16 +103,7 @@ sine_cordic:
 	mulsd xmm5,[rsi]
 	addsd xmm3,xmm5
 
-.add:
-	addsd xmm1,[rdi]
-
-	movsd xmm5,xmm2
-	movsd xmm6,xmm3
-	mulsd xmm6,[rsi]
-	subsd xmm2,xmm6
-
-	mulsd xmm5,[rsi]
-	addsd xmm3,xmm5
+.skip:
 
 	add rdi,8
 	add rsi,8
@@ -108,9 +117,13 @@ sine_cordic:
 	movsd xmm0,xmm2
 	movsd xmm1,xmm3
 
+;	debug_reg_f xmm2
+.ret:
 	pop rcx
 	pop rsi
 	pop rdi
+
+;	debug_exit 5
 
 	ret 
 
