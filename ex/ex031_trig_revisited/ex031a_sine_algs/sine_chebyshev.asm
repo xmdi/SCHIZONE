@@ -1,16 +1,27 @@
 %ifndef SINE_CHEBYSHEV
 %define SINE_CHEBYSHEV
 
-; double {xmm0} sine_chebyshev(double {xmm0});
-;	Returns approximation of sine({xmm0}) in {xmm0} using cringe math thing.
+; double {xmm0} sine_chebyshev(double {xmm0}, int {rdi});
+;	Returns approximation of sine({xmm0}) in {xmm0} using cringe math thing;
+;  	thing with number of terms in {rdi}.
 
 align 64
 sine_chebyshev:
+	
+	cmp rdi,0
+	jle .error
 
-	push rax
+	push rdi
+	push rsi
 	push rbx
+	sub rsp,96
+	movdqu [rsp+0],xmm1
+	movdqu [rsp+16],xmm2
+	movdqu [rsp+32],xmm3
+	movdqu [rsp+48],xmm4
+	movdqu [rsp+64],xmm5
+	movdqu [rsp+80],xmm6
 
-	xor rax,rax
 	xor rbx,rbx	; negate flag
 
 	pxor xmm1,xmm1
@@ -44,20 +55,103 @@ sine_chebyshev:
 	
 .reduced2:				; xmm0 is now within [0,pi/2]
 
+	movsd xmm1,xmm0 		; t for T(t) in {xmm1}
+	mulsd xmm1,xmm1
+	mulsd xmm1,[.conversion]
+	addsd xmm1,[.neg]
 
+	movsd xmm2,[.one] 		; T(n-1)
+	movsd xmm3,xmm1 		; T(n)
+					; T(n+1) = 2x*T(n)-T(n-1)
+	cmp rdi,1
+	je .single_term
+	cmp rdi,2
+	je .two_terms
 
+	movsd xmm5,xmm2
+	movsd xmm6,xmm3
+	mulsd xmm5,[.cheby_coefficients]
+	mulsd xmm6,[.cheby_coefficients+8]
+	addsd xmm5,xmm6
+	movsd xmm4,xmm5
+	
+	mov rsi,.cheby_coefficients+16
+	sub rdi,2
 
+.loop:	
+	
+	; compute next T(t)
+	movsd xmm5,xmm3
+	mulsd xmm5,xmm1
+	mulsd xmm5,[.two]
+	subsd xmm5,xmm2
 
+	; shift T(t)s down
+	movsd xmm2,xmm3
+	movsd xmm3,xmm5
 
+	; current term contribution to running sum
+	movsd xmm6,[rsi]
 
+	mulsd xmm6,xmm3
+	addsd xmm4,xmm6
 
+	; next term
+	add rsi,8
+	dec rdi
+	jnz .loop
 
+.ret:
+
+	mulsd xmm0,xmm4
+
+	; TODO SIGN THING
+	test rbx,rbx
+	jz .no_neg
+	mulsd xmm0,[.neg]
+
+.no_neg:
+
+	movdqu xmm1,[rsp+0]
+	movdqu xmm2,[rsp+16]
+	movdqu xmm3,[rsp+32]
+	movdqu xmm4,[rsp+48]
+	movdqu xmm5,[rsp+64]
+	movdqu xmm6,[rsp+80]
+	add rsp,96
 	pop rbx
-	pop rax
+	pop rsi
+	pop rdi
 
+.error:
 	ret 
 
+.single_term:
+
+	movsd xmm4,[.cheby_coefficients]
+	jmp .ret
+
+.two_terms:
+
+	mulsd xmm2,[.cheby_coefficients]
+	mulsd xmm3,[.cheby_coefficients+8]
+	addsd xmm2,xmm3
+	movsd xmm4,xmm2
+	jmp .ret
+
 align 8
+
+.test:
+	dq 0.25
+
+.conversion: ; 8/pi^2
+	dq 0x3fe9f02f6222c720
+
+.one:		; +1
+	dq 0x3FF0000000000000
+
+.two:		; +2
+	dq 0x4000000000000000
 
 .neg:		; -1
 	dq 0xBFF0000000000000
@@ -74,110 +168,23 @@ align 8
 .recip_two_pi:	; 1/6.3
 	dq 0x3FC45F306DC9C883
 
-.scalar:	; 800/pi
-	dd 0x437ea5dd
-
-.lookup_table:
-	dd 0x00000000
-	dd 0x3c80aca2
-	dd 0x3d00a891
-	dd 0x3d40f2b2
-	dd 0x3d809851
-	dd 0x3da0af2a
-	dd 0x3dc0bbdc
-	dd 0x3de0bc62
-	dd 0x3e00575b
-	dd 0x3e10486a
-	dd 0x3e20305b
-	dd 0x3e300e2f
-	dd 0x3e3fe0e3
-	dd 0x3e4fa779
-	dd 0x3e5f60f1
-	dd 0x3e6f0c4d
-	dd 0x3e7ea890
-	dd 0x3e871a5e
-	dd 0x3e8ed7ec
-	dd 0x3e968c74
-	dd 0x3e9e377a
-	dd 0x3ea5d881
-	dd 0x3ead6f0f
-	dd 0x3eb4faa8
-	dd 0x3ebc7ad2
-	dd 0x3ec3ef15
-	dd 0x3ecb56f8
-	dd 0x3ed2b203
-	dd 0x3ed9ffbe
-	dd 0x3ee13fb5
-	dd 0x3ee87171
-	dd 0x3eef947f
-	dd 0x3ef6a86b
-	dd 0x3efdacc2
-	dd 0x3f02508a
-	dd 0x3f05c277
-	dd 0x3f092bf2
-	dd 0x3f0c8cc2
-	dd 0x3f0fe4b2
-	dd 0x3f13338b
-	dd 0x3f167918
-	dd 0x3f19b524
-	dd 0x3f1ce77a
-	dd 0x3f200fe7
-	dd 0x3f232e38
-	dd 0x3f26423a
-	dd 0x3f294bbc
-	dd 0x3f2c4a8c
-	dd 0x3f2f3e7b
-	dd 0x3f322757
-	dd 0x3f3504f3
-	dd 0x3f37d720
-	dd 0x3f3a9db0
-	dd 0x3f3d5877
-	dd 0x3f400747
-	dd 0x3f42a9f7
-	dd 0x3f45405b
-	dd 0x3f47ca4a
-	dd 0x3f4a4799
-	dd 0x3f4cb822
-	dd 0x3f4f1bbd
-	dd 0x3f517243
-	dd 0x3f53bb8d
-	dd 0x3f55f779
-	dd 0x3f5825e0
-	dd 0x3f5a46a0
-	dd 0x3f5c5997
-	dd 0x3f5e5ea3
-	dd 0x3f6055a2
-	dd 0x3f623e77
-	dd 0x3f641901
-	dd 0x3f65e523
-	dd 0x3f67a2bf
-	dd 0x3f6951ba
-	dd 0x3f6af1f8
-	dd 0x3f6c835e
-	dd 0x3f6e05d5
-	dd 0x3f6f7943
-	dd 0x3f70dd90
-	dd 0x3f7232a6
-	dd 0x3f737871
-	dd 0x3f74aeda
-	dd 0x3f75d5cf
-	dd 0x3f76ed3c
-	dd 0x3f77f511
-	dd 0x3f78ed3c
-	dd 0x3f79d5ae
-	dd 0x3f7aae59
-	dd 0x3f7b772d
-	dd 0x3f7c3020
-	dd 0x3f7cd925
-	dd 0x3f7d7231
-	dd 0x3f7dfb3b
-	dd 0x3f7e743a
-	dd 0x3f7edd26
-	dd 0x3f7f35f9
-	dd 0x3f7f7eae
-	dd 0x3f7fb73f
-	dd 0x3f7fdfa9
-	dd 0x3f7ff7ea
-	dd 0x3f800000
+.cheby_coefficients:
+	dq 0x3fea00094652cdda
+	dq 0xbfc73ec5ae4c1553
+	dq 0x3f77c6adc7f47c78
+	dq 0xbf16cb67b38bec9b
+	dq 0x3ea94ffd7fbaa2d6
+	dq 0xbe3253c2391c9f0c
+	dq 0x3db2ab906c56b957
+	dq 0xbd2c3722fbb436b3
+	dq 0x3ca07195ba656098
+	dq 0xbc0e76fd08acd8d8
+	dq 0x3b76f7a088b7acc0
+	dq 0xbadcbb7f6b1d0b7f
+	dq 0x3a3e4dbd7f04bb99
+	dq 0xb99b4f60eb2bd21e
+	dq 0x38f546117af26189
+	dq 0xb84cf46268b07c8d
+	dq 0x37a2d0f601a9d980
 
 %endif

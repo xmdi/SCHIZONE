@@ -10,6 +10,9 @@ sine_lookup:
 
 	push rax
 	push rbx
+	sub rsp,32
+	movdqu [rsp+0],xmm1
+	movdqu [rsp+16],xmm2
 
 	xor rax,rax
 	xor rbx,rbx	; negate flag
@@ -61,6 +64,11 @@ sine_lookup:
 	mulsd xmm0,[.neg]
 
 .no_neg:
+
+	movdqu xmm1,[rsp+0]
+	movdqu xmm2,[rsp+16]
+	add rsp,32
+
 	pop rbx
 	pop rax
 

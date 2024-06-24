@@ -273,7 +273,7 @@ align 8
 	dq 500005
 
 .n_funcs:
-	db 6
+	db 7
 
 align 8
 .func_table:
@@ -287,8 +287,8 @@ align 8
 	dq SINE_FUNC_4
 	db `hardwre`,0
 	dq SINE_FUNC_5
-;	db `chbshev`,0
-;	dq SINE_FUNC_6
+	db `chbshev`,0
+	dq SINE_FUNC_6
 	db `CORDIC `,0
 	dq SINE_FUNC_7
 
@@ -357,6 +357,7 @@ SINE_FUNC_5:
 align 64
 SINE_FUNC_6:
 
+	mov rdi,10
 	call sine_chebyshev
 	ret
 

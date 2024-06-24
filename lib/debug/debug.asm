@@ -27,15 +27,17 @@
 	push rdi
 	push rsi
 	push rdx
+	push %1
 
 	mov rdi,SYS_STDOUT
-	mov rsi,%1
+	mov rsi,[rsp+0]
 	call print_int_b
 	mov rsi,debug.grammar
 	mov rdx,1
 	call print_chars
 	call print_buffer_flush
 
+	add rsp,8
 	pop rdx
 	pop rsi
 	pop rdi
@@ -46,15 +48,17 @@
 	push rdi
 	push rsi
 	push rdx
+	push %1
 
 	mov rdi,SYS_STDOUT
-	mov rsi,%1
+	mov rsi,[rsp+0]
 	call print_int_o
 	mov rsi,debug.grammar
 	mov rdx,1
 	call print_chars
 	call print_buffer_flush
 
+	add rsp,8
 	pop rdx
 	pop rsi
 	pop rdi
@@ -65,15 +69,17 @@
 	push rdi
 	push rsi
 	push rdx
+	push %1
 
 	mov rdi,SYS_STDOUT
-	mov rsi,%1
+	mov rsi,[rsp+0]
 	call print_int_d
 	mov rsi,debug.grammar
 	mov rdx,1
 	call print_chars
 	call print_buffer_flush
 
+	add rsp,8
 	pop rdx
 	pop rsi
 	pop rdi
@@ -84,15 +90,17 @@
 	push rdi
 	push rsi
 	push rdx
+	push %1
 
 	mov rdi,SYS_STDOUT
-	mov rsi,%1
+	mov rsi,[rsp+0]
 	call print_int_h
 	mov rsi,debug.grammar
 	mov rdx,1
 	call print_chars
 	call print_buffer_flush
 
+	add rsp,8
 	pop rdx
 	pop rsi
 	pop rdi
@@ -144,7 +152,7 @@
 	push rdi
 	push rsi
 	push rdx
-	
+
 	push %1
 	push SYS_STDOUT
 	call print_registers
@@ -295,5 +303,4 @@ debug.line:
 debug.grammar:	
 	db `\n`
 
-	
 %endif

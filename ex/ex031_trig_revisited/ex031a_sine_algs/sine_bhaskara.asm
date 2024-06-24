@@ -11,6 +11,8 @@ sine_bhaskara:
 
 	push rax
 	push rbx
+	sub rsp,16
+	movdqu [rsp+0],xmm1
 
 	xor rax,rax
 	xor rbx,rbx	; negate flag
@@ -59,6 +61,10 @@ sine_bhaskara:
 	mulsd xmm0,[.neg]
 
 .no_neg:
+	
+	movdqu xmm1,[rsp+0]
+	add rsp,16
+
 	pop rbx
 	pop rax
 
