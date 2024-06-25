@@ -1,22 +1,16 @@
-%ifndef SINE_CORDIC2
-%define SINE_CORDIC2
+%ifndef COSINE_CORDIC
+%define COSINE_CORDIC
 
-; double {xmm0}, double {xmm1} sine_cordic2(double {xmm0});
+; double {xmm0}, double {xmm1} cosine_cordic(double {xmm0});
 ;	Returns approximation of sine({xmm0}) and cosine({xmm1}) in {xmm0} and 
 ;	{xmm1} respectively using CORDIC approx.
 
 align 64
-sine_cordic2:
+cosine_cordic:
 
 	push rdi
 	push rsi
 	push rcx
-	sub rsp,80
-	movdqu [rsp+0],xmm2
-	movdqu [rsp+16],xmm3
-	movdqu [rsp+32],xmm4
-	movdqu [rsp+48],xmm5
-	movdqu [rsp+64],xmm6
 
 	movsd xmm1,xmm0
 	pslld xmm1,1
@@ -76,7 +70,13 @@ sine_cordic2:
 	mov rsi,.P_table
 
 	mov rcx,16
+;	debug_reg_f xmm0
+;	debug_line
 .loop:
+
+;	debug_reg_f xmm1
+;	debug_reg_f xmm0
+;	debug_line
 
 	comisd xmm1,xmm0
 	jb .pos_sigma
@@ -117,18 +117,13 @@ sine_cordic2:
 	movsd xmm0,xmm2
 	movsd xmm1,xmm3
 
+;	debug_reg_f xmm2
 .ret:
-
-	movdqu xmm2,[rsp+0]
-	movdqu xmm3,[rsp+16]
-	movdqu xmm4,[rsp+32]
-	movdqu xmm5,[rsp+48]
-	movdqu xmm6,[rsp+64]
-	add rsp,80
-
 	pop rcx
 	pop rsi
 	pop rdi
+
+;	debug_exit 5
 
 	ret 
 
