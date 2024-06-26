@@ -70,13 +70,8 @@ sine_cordic:
 	mov rsi,.P_table
 
 	mov rcx,16
-;	debug_reg_f xmm0
-;	debug_line
-.loop:
 
-;	debug_reg_f xmm1
-;	debug_reg_f xmm0
-;	debug_line
+.loop:
 
 	comisd xmm1,xmm0
 	jb .pos_sigma
@@ -117,13 +112,10 @@ sine_cordic:
 	movsd xmm0,xmm2
 	movsd xmm1,xmm3
 
-;	debug_reg_f xmm2
 .ret:
 	pop rcx
 	pop rsi
 	pop rdi
-
-;	debug_exit 5
 
 	ret 
 

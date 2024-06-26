@@ -133,7 +133,7 @@ START:
 .exact_loop:
 
 	movsd xmm0,[r14]
-	call sine
+	call cosine
 	movsd [r13],xmm0
 
 	mov rdi,SYS_STDOUT
@@ -365,7 +365,6 @@ align 64
 COSINE_FUNC_7:
 
 	call cosine_cordic
-	movsd xmm0,xmm1
 	ret
 
 END:

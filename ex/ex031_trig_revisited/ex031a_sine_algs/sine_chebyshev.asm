@@ -141,9 +141,6 @@ sine_chebyshev:
 
 align 8
 
-.test:
-	dq 0.25
-
 .conversion: ; 8/pi^2
 	dq 0x3fe9f02f6222c720
 

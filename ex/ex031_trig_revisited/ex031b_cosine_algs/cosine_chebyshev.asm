@@ -7,7 +7,7 @@
 
 align 64
 cosine_chebyshev:
-	
+
 	cmp rdi,0
 	jle .error
 
@@ -24,14 +24,8 @@ cosine_chebyshev:
 
 	xor rbx,rbx	; negate flag
 
-	pxor xmm1,xmm1
-	comisd xmm0,xmm1
-	jae .no_negate
 	pslld xmm0,1
 	psrld xmm0,1
-	mov rbx,1
-
-.no_negate:
 
 	movsd xmm1,xmm0
 	mulsd xmm1,[.recip_two_pi]
@@ -43,16 +37,20 @@ cosine_chebyshev:
 	movsd xmm1,[.pi]
 	comisd xmm0,xmm1
 	jbe .reduced
-	subsd xmm0,xmm1
-	xor rbx,1
+	movsd xmm1,[.two_pi]
+	subsd xmm1,xmm0
+	movsd xmm0,xmm1
+
 .reduced:				; xmm0 is now within [0,pi]
 
-	movsd xmm2,[.half_pi]
-	comisd xmm0,xmm2
+	movsd xmm1,[.half_pi]
+	comisd xmm0,xmm1
 	jbe .reduced2
-	subsd xmm0,xmm1
-	mulsd xmm0,[.neg]
-	
+	movsd xmm1,[.pi]
+	subsd xmm1,xmm0
+	movsd xmm0,xmm1
+	mov rbx,1
+
 .reduced2:				; xmm0 is now within [0,pi/2]
 
 	movsd xmm1,xmm0 		; t for T(t) in {xmm1}
@@ -103,7 +101,7 @@ cosine_chebyshev:
 
 .ret:
 
-	mulsd xmm0,xmm4
+	movsd xmm0,xmm4
 
 	; TODO SIGN THING
 	test rbx,rbx
@@ -141,9 +139,6 @@ cosine_chebyshev:
 
 align 8
 
-.test:
-	dq 0.25
-
 .conversion: ; 8/pi^2
 	dq 0x3fe9f02f6222c720
 
@@ -169,22 +164,22 @@ align 8
 	dq 0x3FC45F306DC9C883
 
 .cheby_coefficients:
-	dq 0x3fea00094652cdda
-	dq 0xbfc73ec5ae4c1553
-	dq 0x3f77c6adc7f47c78
-	dq 0xbf16cb67b38bec9b
-	dq 0x3ea94ffd7fbaa2d6
-	dq 0xbe3253c2391c9f0c
-	dq 0x3db2ab906c56b957
-	dq 0xbd2c3722fbb436b3
-	dq 0x3ca07195ba656098
-	dq 0xbc0e76fd08acd8d8
-	dq 0x3b76f7a088b7acc0
-	dq 0xbadcbb7f6b1d0b7f
-	dq 0x3a3e4dbd7f04bb99
-	dq 0xb99b4f60eb2bd21e
-	dq 0x38f546117af26189
-	dq 0xb84cf46268b07c8d
-	dq 0x37a2d0f601a9d980
+	dq 0x3fde35449659654d
+	dq 0xbfdff63915726224
+	dq 0x3f9ca9f4aa04802d
+	dq 0xbf438d712d6bf933
+	dq 0x3edc1eca07779bcc
+	dq 0xbe68fb599ced7f4e
+	dq 0x3dee258b04e4232e
+	dq 0xbd6a52debc4792a5
+	dq 0x3ce1679352a198d4
+	dq 0xbc520850679fc82b
+	dq 0x3bbe114779083911
+	dq 0xbb249b6933684702
+	dq 0x3a87a1a61f199f40
+	dq 0xb9e701acd0964843
+	dq 0x394340b8caf10094
+	dq 0xb89bfec146c6799d
+	dq 0x37f1f78758b31259
 
 %endif

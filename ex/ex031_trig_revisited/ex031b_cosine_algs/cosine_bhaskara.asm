@@ -4,7 +4,7 @@
 ; double {xmm0} cosine_bhaskara(double {xmm0});
 ;	Returns approximation of sine({xmm0}) in {xmm0} using approximation
 ;	below:
-;		sine(x)~=(16x*(pi-x))/(5pi^2-4x*(pi-x))
+;		cosine(x)~=(pi^2-4x^2)/(pi^2+x^2)
 
 align 64
 cosine_bhaskara:
@@ -17,14 +17,8 @@ cosine_bhaskara:
 	xor rax,rax
 	xor rbx,rbx	; negate flag
 
-	pxor xmm1,xmm1
-	comisd xmm0,xmm1
-	jae .no_negate
 	pslld xmm0,1
 	psrld xmm0,1
-	mov rbx,1
-
-.no_negate:
 
 	movsd xmm1,xmm0
 	mulsd xmm1,[.recip_two_pi]
@@ -36,25 +30,32 @@ cosine_bhaskara:
 	movsd xmm1,[.pi]
 	comisd xmm0,xmm1
 	jbe .reduced
-	subsd xmm0,xmm1
-	xor rbx,1
+	movsd xmm1,[.two_pi]
+	subsd xmm1,xmm0
+	movsd xmm0,xmm1
+
 .reduced:				; xmm0 is now within [0,pi]
 
-
-;	sine(x)~=(16x*(pi-x))/(5pi^2-4x*(pi-x))
-
+	movsd xmm1,[.half_pi]
+	comisd xmm0,xmm1
+	jbe .reduced2
 	movsd xmm1,[.pi]
 	subsd xmm1,xmm0
-	movsd xmm2,xmm0
-	mulsd xmm0,[.sixteen]
-	mulsd xmm0,xmm1
+	movsd xmm0,xmm1
+	mov rbx,1
 
-	mulsd xmm2,[.four]
-	mulsd xmm2,xmm1
-	movsd xmm1,[.five_pi_squared]
-	subsd xmm1,xmm2
+.reduced2:				; xmm0 is now within [0,pi/2]
 
-	divsd xmm0,xmm1
+	mulsd xmm0,xmm0
+	movsd xmm1,xmm0
+	mulsd xmm1,[.four]
+	movsd xmm2,[.pi_squared]
+
+	addsd xmm0,xmm2
+	subsd xmm2,xmm1
+
+	divsd xmm2,xmm0
+	movsd xmm0,xmm2
 
 	test rbx,rbx
 	jz .no_neg
@@ -80,12 +81,12 @@ align 8
 
 .four:
 	dq 0x4010000000000000
-
-.sixteen:
-	dq 0x4030000000000000
 	
-.five_pi_squared:
-	dq 0x4048AC8BFC2DD756
+.half_pi:
+	dq 0x3FF921FB54442D18
+
+.pi_squared:
+	dq 0x4023bd3cc9be45de
 
 .two_pi:	; ~6.3
 	dq 0x401921FB54442D18
