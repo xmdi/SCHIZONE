@@ -365,7 +365,6 @@ align 64
 SINE_FUNC_7:
 
 	call sine_cordic
-	movsd xmm0,xmm1
 	ret
 
 END:

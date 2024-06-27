@@ -1,9 +1,8 @@
 %ifndef COSINE_CORDIC
 %define COSINE_CORDIC
 
-; double {xmm0}, double {xmm1} cosine_cordic(double {xmm0});
-;	Returns approximation of sine({xmm0}) and cosine({xmm1}) in {xmm0} and 
-;	{xmm1} respectively using CORDIC approx.
+; double {xmm0} cosine_cordic(double {xmm0});
+;	Returns approximation of cosine({xmm0}) in {xmm0} using CORDIC approx.
 
 align 64
 cosine_cordic:
@@ -11,6 +10,9 @@ cosine_cordic:
 	push rdi
 	push rsi
 	push rcx
+	push rbx
+
+	xor rbx,rbx
 
 	movsd xmm1,xmm0
 	pslld xmm1,1
@@ -47,16 +49,14 @@ cosine_cordic:
 	comisd xmm0,[.neg_half_pi]
 	ja .in_range
 
-	movsd xmm1,[.neg_pi]
-	subsd xmm1,xmm0
-	movsd xmm0,xmm1
+	addsd xmm0,[.pi]
+	mov rbx,1
 	jmp .in_range
 	
 .over_half_pi:
 
-	movsd xmm1,[.pi]
-	subsd xmm1,xmm0
-	movsd xmm0,xmm1
+	mov rbx,1
+	subsd xmm0,[.pi]
 
 .in_range: ; xmm0 in range [-pi/2,pi/2]
 
@@ -109,10 +109,16 @@ cosine_cordic:
 	mulsd xmm2,[.k_factor]
 	mulsd xmm3,[.k_factor]
 
+	cmp rbx,1
+	jne .pos
+	mulsd xmm2,[.neg]
+
+.pos:
+
 	movsd xmm0,xmm2
-	movsd xmm1,xmm3
 	
 .ret:
+	pop rbx
 	pop rcx
 	pop rsi
 	pop rdi
@@ -120,6 +126,9 @@ cosine_cordic:
 	ret 
 
 align 8
+
+.neg:		; -1
+	dq 0xBFF0000000000000
 
 .k_factor:
 	dq 0x3FE36E9DB5156034

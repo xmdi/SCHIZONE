@@ -1,9 +1,8 @@
 %ifndef SINE_CORDIC
 %define SINE_CORDIC
 
-; double {xmm0}, double {xmm1} sine_cordic(double {xmm0});
-;	Returns approximation of sine({xmm0}) and cosine({xmm1}) in {xmm0} and 
-;	{xmm1} respectively using CORDIC approx.
+; double {xmm0} sine_cordic(double {xmm0});
+;	Returns approximation of sine({xmm0}) in {xmm0} using CORDIC approx.
 
 align 64
 sine_cordic:
@@ -109,8 +108,7 @@ sine_cordic:
 	mulsd xmm2,[.k_factor]
 	mulsd xmm3,[.k_factor]
 
-	movsd xmm0,xmm2
-	movsd xmm1,xmm3
+	movsd xmm0,xmm3
 
 .ret:
 	pop rcx
