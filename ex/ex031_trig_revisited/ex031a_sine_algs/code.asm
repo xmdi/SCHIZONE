@@ -76,6 +76,7 @@ PROGRAM_HEADER:
 %include "sine_x87.asm"
 %include "sine_chebyshev.asm"
 %include "sine_cordic.asm"
+%include "cosine_sine_cordic_int.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -267,13 +268,14 @@ align 8
 .rands_end:
 
 .bounds:
-	dq -10.00,10.00
+	dq 0.00,1.57
+	;dq -10.00,10.00
 
 .n_calls:
 	dq 500005
 
 .n_funcs:
-	db 7
+	db 8
 
 align 8
 .func_table:
@@ -291,6 +293,8 @@ align 8
 	dq SINE_FUNC_6
 	db `CORDIC `,0
 	dq SINE_FUNC_7
+	db `CORDICI`,0
+	dq SINE_FUNC_8
 
 .func_table_end:
 
@@ -367,7 +371,15 @@ SINE_FUNC_7:
 	call sine_cordic
 	ret
 
+align 64
+SINE_FUNC_8:
+
+	call cosine_sine_cordic_int
+	movsd xmm0,xmm1
+	ret
+
 END:
+
 
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
