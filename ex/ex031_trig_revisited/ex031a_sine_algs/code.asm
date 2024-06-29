@@ -51,7 +51,6 @@ PROGRAM_HEADER:
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
 %include "lib/math/rand/rand_float_array.asm" 
-%include "lib/math/rand/rand_float.asm" 
 
 %include "lib/time/tick_time.asm" 
 %include "lib/time/tock_time.asm" 
@@ -60,7 +59,12 @@ PROGRAM_HEADER:
 %include "lib/time/tock_cycles.asm" 
 
 %include "lib/math/expressions/trig/sine.asm"
-%include "lib/math/expressions/trig/cosine.asm"
+%include "lib/math/expressions/trig/sine_lookup.asm"
+%include "lib/math/expressions/trig/sine_bhaskara.asm"
+%include "lib/math/expressions/trig/sine_x87.asm"
+%include "lib/math/expressions/trig/sine_chebyshev.asm"
+%include "lib/math/expressions/trig/sine_cordic.asm"
+%include "lib/math/expressions/trig/cosine_sine_cordic_int.asm"
 
 %include "lib/io/print_string.asm"
 %include "lib/io/print_float.asm"
@@ -70,13 +74,6 @@ PROGRAM_HEADER:
 %include "lib/sys/exit.asm"
 
 %include "lib/debug/debug.asm"
-
-%include "sine_lookup.asm"
-%include "sine_bhaskara.asm"
-%include "sine_x87.asm"
-%include "sine_chebyshev.asm"
-%include "sine_cordic.asm"
-%include "cosine_sine_cordic_int.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -134,7 +131,7 @@ START:
 .exact_loop:
 
 	movsd xmm0,[r14]
-	call sine
+	call sine_x87
 	movsd [r13],xmm0
 
 	mov rdi,SYS_STDOUT

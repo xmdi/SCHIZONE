@@ -1,6 +1,8 @@
 %ifndef COSINE_SINE_CORDIC_INT
 %define COSINE_SINE_CORDIC_INT
 
+%include "lib/debug/debug.asm"
+
 ; double {xmm0} cosine_sine_cordic_int(double {xmm0});
 ;	Returns approximation of cosine({xmm0}) & sine({xmm0}) in {xmm0} & {xmm1}
 ;	respectively, using CORDIC integer approx.
@@ -67,9 +69,13 @@ cosine_sine_cordic_int:
 %endif
 .in_range: ; needs to be between 0 and tau
 
+
+	movsd xmm0,[.test]
+	
 	; convert {xmm0} to CAU (2^(60+2)) fraction
 	mulsd xmm0,[.CAU_SCALE]
 	cvtsd2si rax,xmm0	
+
 
 	mov rbx,1
 	shl rbx,60	; cordicBase
@@ -102,6 +108,11 @@ cosine_sine_cordic_int:
 	mov r8,1
 .alg:
 
+	debug_reg r8
+	debug_reg rax
+
+	debug_line
+
 	neg rax		; z
 	mov rbx,[.xinit] ; x val
 	xor rdx,rdx	; y val
@@ -109,9 +120,11 @@ cosine_sine_cordic_int:
 	mov rcx,0
 	mov rsi,.atan_table
 .loop:
+	debug_reg rax
 	test rax,rax
 	js .ccw_rotation
 .cw_rotation:
+	debug_literal "sub"
 	sub rax,[rsi]
 	mov r9,rbx
 	mov r10,rdx
@@ -121,6 +134,7 @@ cosine_sine_cordic_int:
 	sub rdx,r9
 	jmp .next
 .ccw_rotation:
+	debug_literal "add"
 	add rax,[rsi]
 	mov r9,rbx
 	mov r10,rdx
@@ -129,6 +143,12 @@ cosine_sine_cordic_int:
 	sub rbx,r10
 	add rdx,r9
 .next:
+	debug_reg rax
+	debug_reg rbx
+	debug_reg rdx
+	debug_line
+
+
 	inc rcx
 	add rsi,8
 	cmp rcx,60
@@ -153,6 +173,8 @@ cosine_sine_cordic_int:
 	cvtsi2sd xmm1,rdx
 	mulsd xmm0,[.OUT_SCALE]
 	mulsd xmm1,[.OUT_SCALE]
+
+	debug_exit 4
 	
 .ret:
 	pop r11
@@ -168,6 +190,9 @@ cosine_sine_cordic_int:
 	ret 
 
 align 8
+
+.test:
+	dq 0.1
 
 .CAU_SCALE:
 	dq 0x43a45f306dc9c883
