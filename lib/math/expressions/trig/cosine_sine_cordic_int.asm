@@ -1,11 +1,9 @@
 %ifndef COSINE_SINE_CORDIC_INT
 %define COSINE_SINE_CORDIC_INT
 
-%include "lib/debug/debug.asm"
-
-; double {xmm0} cosine_sine_cordic_int(double {xmm0});
+; double {xmm0}, double {xmm1} cosine_sine_cordic_int(double {xmm0});
 ;	Returns approximation of cosine({xmm0}) & sine({xmm0}) in {xmm0} & {xmm1}
-;	respectively, using CORDIC integer approx.
+;	respectively, using CORDIC integer approximation (very accurate).
 
 align 64
 cosine_sine_cordic_int:
@@ -20,62 +18,19 @@ cosine_sine_cordic_int:
 	push r10
 	push r11
 
-%if 0
-	movsd xmm1,xmm0
-	pslld xmm1,1
-	psrld xmm1,1
-	comisd xmm1,[.pi]
-	jbe .plus_minus_pi
-
 	movsd xmm1,xmm0
 	mulsd xmm1,[.recip_two_pi]
-	roundsd xmm1,xmm1,0b11		; truncate xmm8 to integer
-	mulsd xmm1,[.two_pi]		; xmm8 is the closest multiple of 2pi
+	;roundsd xmm1,xmm1,0b11		; truncate xmm1 to integer
+	roundsd xmm1,xmm1,0b01		; round down
+	mulsd xmm1,[.two_pi]		; xmm1 is the closest multiple of 2pi
 					; of lower absolute value
 	subsd xmm0,xmm1			; xmm0 is now within [-2pi,2pi]
 	
-	movsd xmm1,xmm0
-	pslld xmm1,1
-	psrld xmm1,1
-	comisd xmm1,[.pi]
-	jbe .plus_minus_pi
-	pxor xmm1,xmm1
-	comisd xmm0,xmm1
-	jb .less_than_neg_pi
-.greater_than_pi:
-	subsd xmm0,[.two_pi]
-	jmp .plus_minus_pi
-.less_than_neg_pi:	
-	addsd xmm0,[.two_pi]
-
-.plus_minus_pi:
-
-	comisd xmm0,[.half_pi]
-	ja .over_half_pi
-
-	comisd xmm0,[.neg_half_pi]
-	ja .in_range
-
-	movsd xmm1,[.neg_pi]
-	subsd xmm1,xmm0
-	movsd xmm0,xmm1
-	jmp .in_range
-	
-.over_half_pi:
-
-	movsd xmm1,[.pi]
-	subsd xmm1,xmm0
-	movsd xmm0,xmm1
-%endif
 .in_range: ; needs to be between 0 and tau
-
-
-	movsd xmm0,[.test]
 	
 	; convert {xmm0} to CAU (2^(60+2)) fraction
 	mulsd xmm0,[.CAU_SCALE]
 	cvtsd2si rax,xmm0	
-
 
 	mov rbx,1
 	shl rbx,60	; cordicBase
@@ -83,13 +38,17 @@ cosine_sine_cordic_int:
 	mov rcx,rbx
 	shl rcx,1	; quad2Boundary
 
+	mov r8,rcx
+	shl r8,1	; max
+
 	mov rdx,rcx
 	add rdx,rbx	; quad3Boundary
 
 	cmp rax,rdx
 	jle .notQuad4
-	mov r8,4
+	sub rax,r8
 	neg rax
+	mov r8,4
 	jmp .alg
 .notQuad4:
 	cmp rax,rcx
@@ -99,19 +58,14 @@ cosine_sine_cordic_int:
 	jmp .alg
 .notQuad3:
 	cmp rax,rbx
-	jle .notQuad2
+	jle .notQuad2	
 	mov r8,2
-	sub rax,rbx
+	sub rax,rcx
 	neg rax
 	jmp .alg
 .notQuad2:
 	mov r8,1
 .alg:
-
-	debug_reg r8
-	debug_reg rax
-
-	debug_line
 
 	neg rax		; z
 	mov rbx,[.xinit] ; x val
@@ -120,34 +74,26 @@ cosine_sine_cordic_int:
 	mov rcx,0
 	mov rsi,.atan_table
 .loop:
-	debug_reg rax
 	test rax,rax
 	js .ccw_rotation
 .cw_rotation:
-	debug_literal "sub"
 	sub rax,[rsi]
 	mov r9,rbx
 	mov r10,rdx
-	shr r9,cl
-	shr r10,cl 
+	sar r9,cl
+	sar r10,cl 
 	add rbx,r10
 	sub rdx,r9
 	jmp .next
 .ccw_rotation:
-	debug_literal "add"
 	add rax,[rsi]
 	mov r9,rbx
 	mov r10,rdx
-	shr r9,cl
-	shr r10,cl 
+	sar r9,cl
+	sar r10,cl 
 	sub rbx,r10
 	add rdx,r9
 .next:
-	debug_reg rax
-	debug_reg rbx
-	debug_reg rdx
-	debug_line
-
 
 	inc rcx
 	add rsi,8
@@ -174,8 +120,6 @@ cosine_sine_cordic_int:
 	mulsd xmm0,[.OUT_SCALE]
 	mulsd xmm1,[.OUT_SCALE]
 
-	debug_exit 4
-	
 .ret:
 	pop r11
 	pop r10
@@ -191,9 +135,6 @@ cosine_sine_cordic_int:
 
 align 8
 
-.test:
-	dq 0.1
-
 .CAU_SCALE:
 	dq 0x43a45f306dc9c883
 
@@ -202,18 +143,6 @@ align 8
 
 .xinit:
 	dq 700114967507363200
-
-.half_pi:	; ~3.1/2
-	dq 0x3FF921FB54442D18
-
-.neg_half_pi:	; ~-3.1/2
-	dq 0xBFF921FB54442D18
-
-.pi:	; ~3.1
-	dq 0x400921FB54442D18
-
-.neg_pi:	; -~3.1
-	dq 0xC00921FB54442D18
 
 .two_pi:	; ~6.3
 	dq 0x401921FB54442D18

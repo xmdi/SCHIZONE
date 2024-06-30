@@ -121,7 +121,6 @@ START:
 
 	mov r14,.rands
 	mov r13,.exacts
-	movsd xmm1,[.tight_tol]
 
 	mov rdi,SYS_STDOUT
 	mov rsi,.exact
@@ -265,8 +264,7 @@ align 8
 .rands_end:
 
 .bounds:
-	dq 0.00,1.57
-	;dq -10.00,10.00
+	dq -10.00,10.00
 
 .n_calls:
 	dq 500005
@@ -294,9 +292,6 @@ align 8
 	dq SINE_FUNC_8
 
 .func_table_end:
-
-.tight_tol:
-	dq 0.00000001
 
 .exact:
 	db `exact   | `
