@@ -59,8 +59,13 @@ PROGRAM_HEADER:
 %include "lib/time/tick_cycles.asm" 
 %include "lib/time/tock_cycles.asm" 
 
-%include "lib/math/expressions/trig/sine.asm"
 %include "lib/math/expressions/trig/cosine.asm"
+%include "lib/math/expressions/trig/cosine_lookup.asm"
+%include "lib/math/expressions/trig/cosine_bhaskara.asm"
+%include "lib/math/expressions/trig/cosine_x87.asm"
+%include "lib/math/expressions/trig/cosine_chebyshev.asm"
+%include "lib/math/expressions/trig/cosine_cordic.asm"
+%include "lib/math/expressions/trig/cosine_sine_cordic_int.asm"
 
 %include "lib/io/print_string.asm"
 %include "lib/io/print_float.asm"
@@ -68,14 +73,6 @@ PROGRAM_HEADER:
 %include "lib/io/print_int_d.asm"
 
 %include "lib/sys/exit.asm"
-
-%include "lib/debug/debug.asm"
-
-%include "cosine_lookup.asm"
-%include "cosine_bhaskara.asm"
-%include "cosine_x87.asm"
-%include "cosine_chebyshev.asm"
-%include "cosine_cordic.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -123,7 +120,6 @@ START:
 
 	mov r14,.rands
 	mov r13,.exacts
-	movsd xmm1,[.tight_tol]
 
 	mov rdi,SYS_STDOUT
 	mov rsi,.exact
@@ -133,7 +129,7 @@ START:
 .exact_loop:
 
 	movsd xmm0,[r14]
-	call cosine
+	call cosine_x87
 	movsd [r13],xmm0
 
 	mov rdi,SYS_STDOUT
@@ -168,7 +164,7 @@ START:
 
 	mov r13,.exacts
 	mov r14,.rands
-	add r15,8
+	add r15,16
 	mov rcx,5
 
 .value_loop:
@@ -190,7 +186,7 @@ START:
 
 	mov rdi,SYS_STDOUT
 	mov rsi,.error
-	mov rdx,11
+	mov rdx,19
 	call print_chars
 
 	mov r13,.exacts
@@ -277,31 +273,33 @@ align 8
 
 align 8
 .func_table:
-	db `ret0   `,0
+	db `return zero    `,0
 	dq COSINE_FUNC_1
-	db `Tseries`,0
+	db `small angle    `,0
 	dq COSINE_FUNC_2
-	db `lookup `,0
+	db `Taylor series  `,0
 	dq COSINE_FUNC_3
-	db `Bhaskra`,0
+	db `lookup table   `,0
 	dq COSINE_FUNC_4
-	db `hardwre`,0
+	db `Bhaskara       `,0
 	dq COSINE_FUNC_5
-	db `chbshev`,0
+	db `hardware instr `,0
 	dq COSINE_FUNC_6
-	db `CORDIC `,0
+	db `Chebyshev      `,0
 	dq COSINE_FUNC_7
+	db `CORDIC float   `,0
+	dq COSINE_FUNC_8
+	db `CORDIC integer `,0
+	dq COSINE_FUNC_9
+
 
 .func_table_end:
-
-.tight_tol:
-	dq 0.00000001
 
 .exact:
 	db `exact   | `
 
 .error:
-	db `\nerror   | `
+	db `\nerror           | `
 
 .explanation:
 	db `comparison of different cosine(x) approximations\n\n`
@@ -328,6 +326,14 @@ COSINE_FUNC_1:
 align 64
 COSINE_FUNC_2:
 
+	movsd xmm0,[.one]
+	ret
+.one:
+	dq 1.0
+
+align 64
+COSINE_FUNC_3:
+
 	movsd xmm1,[.tol]
 	call cosine
 
@@ -337,34 +343,40 @@ COSINE_FUNC_2:
 	dq 0.000001
 
 align 64
-COSINE_FUNC_3:
+COSINE_FUNC_4:
 
 	call cosine_lookup
 	ret
 
 align 64
-COSINE_FUNC_4:
+COSINE_FUNC_5:
 
 	call cosine_bhaskara
 	ret
 
 align 64
-COSINE_FUNC_5:
+COSINE_FUNC_6:
 
 	call cosine_x87
 	ret
 
 align 64
-COSINE_FUNC_6:
+COSINE_FUNC_7:
 
 	mov rdi,10
 	call cosine_chebyshev
 	ret
 
 align 64
-COSINE_FUNC_7:
-
+COSINE_FUNC_8:
+	mov rdi,32
 	call cosine_cordic
+	ret
+
+align 64
+COSINE_FUNC_9:
+
+	call cosine_sine_cordic_int
 	ret
 
 END:

@@ -1,8 +1,9 @@
 %ifndef SINE_CORDIC
 %define SINE_CORDIC
 
-; double {xmm0} sine_cordic(double {xmm0});
-;	Returns approximation of sine({xmm0}) in {xmm0} using CORDIC approx.
+; double {xmm0} sine_cordic(double {xmm0}, uint {rdi});
+;	Returns approximation of sine({xmm0}) in {xmm0} using CORDIC approx with 
+;	{rdi} iterations.
 
 align 64
 sine_cordic:
@@ -65,10 +66,10 @@ sine_cordic:
 	; xmm5 temp for x
 	; xmm6 temp
 
+	mov rcx,rdi
+
 	mov rdi,.atan_table
 	mov rsi,.P_table
-
-	mov rcx,16
 
 .loop:
 
@@ -105,8 +106,11 @@ sine_cordic:
 	dec rcx	
 	jnz .loop
 
-	mulsd xmm2,[.k_factor]
-	mulsd xmm3,[.k_factor]
+	mov rdi,[rsp+16]
+	dec rdi
+	shl rdi,3
+	add rdi,.k_factors
+	mulsd xmm3,[rdi]
 
 	movsd xmm0,xmm3
 
@@ -119,8 +123,39 @@ sine_cordic:
 
 align 8
 
-.k_factor:
-	dq 0x3FE36E9DB5156034
+.k_factors:
+        dq 0x3fe6a09e667f3bcc ; n=1
+        dq 0x3fe43d136248490e ; n=2
+        dq 0x3fe3a261ba6d7a36 ; n=3
+        dq 0x3fe37b9141deb3fe ; n=4
+        dq 0x3fe371dac182eef5 ; n=5
+        dq 0x3fe36f6cfabd961f ; n=6
+        dq 0x3fe36ed1869f27e9 ; n=7
+        dq 0x3fe36eaaa970b20f ; n=8
+        dq 0x3fe36ea0f222a6d1 ; n=9
+        dq 0x3fe36e9e844efd24 ; n=10
+        dq 0x3fe36e9de8da104b ; n=11
+        dq 0x3fe36e9dc1fcd4ee ; n=12
+        dq 0x3fe36e9db8458614 ; n=13
+        dq 0x3fe36e9db5d7b25d ; n=14
+        dq 0x3fe36e9db53c3d6f ; n=15
+        dq 0x3fe36e9db5156034 ; n=16
+        dq 0x3fe36e9db50ba8e5 ; n=17
+        dq 0x3fe36e9db5093b11 ; n=18
+        dq 0x3fe36e9db5089f9c ; n=19
+        dq 0x3fe36e9db50878bf ; n=20
+        dq 0x3fe36e9db5086f08 ; n=21
+        dq 0x3fe36e9db5086c9a ; n=22
+        dq 0x3fe36e9db5086bff ; n=23
+        dq 0x3fe36e9db5086bd8 ; n=24
+        dq 0x3fe36e9db5086bce ; n=25
+        dq 0x3fe36e9db5086bcc ; n=26
+        dq 0x3fe36e9db5086bcc ; n=27
+        dq 0x3fe36e9db5086bcc ; n=28
+        dq 0x3fe36e9db5086bcc ; n=29
+        dq 0x3fe36e9db5086bcc ; n=30
+        dq 0x3fe36e9db5086bcc ; n=31
+        dq 0x3fe36e9db5086bcc ; n=32
 
 .half_pi:	; ~3.1/2
 	dq 0x3FF921FB54442D18
@@ -141,39 +176,71 @@ align 8
 	dq 0x3FC45F306DC9C883
 
 .atan_table:
-	dq 0x3fe921fb54442d18
-	dq 0x3fddac670561bb4f
-	dq 0x3fcf5b75f92c80dd
-	dq 0x3fbfd5ba9aac2f6e
-	dq 0x3faff55bb72cfdea
-	dq 0x3f9ffd55bba97625
-	dq 0x3f8fff555bbb729b
-	dq 0x3f7fffd555bbba97
-	dq 0x3f6ffff5555bbbb7
-	dq 0x3f5ffffd5555bbbc
-	dq 0x3f4fffff55555bbc
-	dq 0x3f3fffffd55555bc
-	dq 0x3f2ffffff555555c
-	dq 0x3f1ffffffd555556
-	dq 0x3f0fffffff555555
-	dq 0x3effffffffd55555
+        dq 0x3fe921fb54442d18 ; n=1
+        dq 0x3fddac670561bb4f ; n=2
+        dq 0x3fcf5b75f92c80dd ; n=3
+        dq 0x3fbfd5ba9aac2f6e ; n=4
+        dq 0x3faff55bb72cfdea ; n=5
+        dq 0x3f9ffd55bba97625 ; n=6
+        dq 0x3f8fff555bbb729b ; n=7
+        dq 0x3f7fffd555bbba97 ; n=8
+        dq 0x3f6ffff5555bbbb7 ; n=9
+        dq 0x3f5ffffd5555bbbc ; n=10
+        dq 0x3f4fffff55555bbc ; n=11
+        dq 0x3f3fffffd55555bc ; n=12
+        dq 0x3f2ffffff555555c ; n=13
+        dq 0x3f1ffffffd555556 ; n=14
+        dq 0x3f0fffffff555555 ; n=15
+        dq 0x3effffffffd55555 ; n=16
+        dq 0x3eeffffffff55555 ; n=17
+        dq 0x3edffffffffd5555 ; n=18
+        dq 0x3ecfffffffff5555 ; n=19
+        dq 0x3ebfffffffffd555 ; n=20
+        dq 0x3eaffffffffff555 ; n=21
+        dq 0x3e9ffffffffffd55 ; n=22
+        dq 0x3e8fffffffffff55 ; n=23
+        dq 0x3e7fffffffffffd5 ; n=24
+        dq 0x3e6ffffffffffff5 ; n=25
+        dq 0x3e5ffffffffffffd ; n=26
+        dq 0x3e4fffffffffffff ; n=27
+        dq 0x3e40000000000000 ; n=28
+        dq 0x3e30000000000000 ; n=29
+        dq 0x3e20000000000000 ; n=30
+        dq 0x3e10000000000000 ; n=31
+        dq 0x3e00000000000000 ; n=32
 
 .P_table:
-	dq 0x3ff0000000000000
-	dq 0x3fe0000000000000
-	dq 0x3fd0000000000000
-	dq 0x3fc0000000000000
-	dq 0x3fb0000000000000
-	dq 0x3fa0000000000000
-	dq 0x3f90000000000000
-	dq 0x3f80000000000000
-	dq 0x3f70000000000000
-	dq 0x3f60000000000000
-	dq 0x3f50000000000000
-	dq 0x3f40000000000000
-	dq 0x3f30000000000000
-	dq 0x3f20000000000000
-	dq 0x3f10000000000000
-	dq 0x3f00000000000000
+        dq 0x3ff0000000000000 ; n=1
+        dq 0x3fe0000000000000 ; n=2
+        dq 0x3fd0000000000000 ; n=3
+        dq 0x3fc0000000000000 ; n=4
+        dq 0x3fb0000000000000 ; n=5
+        dq 0x3fa0000000000000 ; n=6
+        dq 0x3f90000000000000 ; n=7
+        dq 0x3f80000000000000 ; n=8
+        dq 0x3f70000000000000 ; n=9
+        dq 0x3f60000000000000 ; n=10
+        dq 0x3f50000000000000 ; n=11
+        dq 0x3f40000000000000 ; n=12
+        dq 0x3f30000000000000 ; n=13
+        dq 0x3f20000000000000 ; n=14
+        dq 0x3f10000000000000 ; n=15
+        dq 0x3f00000000000000 ; n=16
+        dq 0x3ef0000000000000 ; n=17
+        dq 0x3ee0000000000000 ; n=18
+        dq 0x3ed0000000000000 ; n=19
+        dq 0x3ec0000000000000 ; n=20
+        dq 0x3eb0000000000000 ; n=21
+        dq 0x3ea0000000000000 ; n=22
+        dq 0x3e90000000000000 ; n=23
+        dq 0x3e80000000000000 ; n=24
+        dq 0x3e70000000000000 ; n=25
+        dq 0x3e60000000000000 ; n=26
+        dq 0x3e50000000000000 ; n=27
+        dq 0x3e40000000000000 ; n=28
+        dq 0x3e30000000000000 ; n=29
+        dq 0x3e20000000000000 ; n=30
+        dq 0x3e10000000000000 ; n=31
+        dq 0x3e00000000000000 ; n=32
 
 %endif

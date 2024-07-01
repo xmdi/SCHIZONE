@@ -73,8 +73,6 @@ PROGRAM_HEADER:
 
 %include "lib/sys/exit.asm"
 
-%include "lib/debug/debug.asm"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -165,7 +163,7 @@ START:
 
 	mov r13,.exacts
 	mov r14,.rands
-	add r15,8
+	add r15,16
 	mov rcx,5
 
 .value_loop:
@@ -187,7 +185,7 @@ START:
 
 	mov rdi,SYS_STDOUT
 	mov rsi,.error
-	mov rdx,11
+	mov rdx,19
 	call print_chars
 
 	mov r13,.exacts
@@ -274,22 +272,24 @@ align 8
 
 align 8
 .func_table:
-	db `ret0   `,0
-	dq SINE_FUNC_1
-	db `Tseries`,0
+	db `return zero    `,0
+	dq SINE_FUNC_1	
+	db `small angle    `,0
 	dq SINE_FUNC_2
-	db `lookup `,0
+	db `Taylor series  `,0
 	dq SINE_FUNC_3
-	db `Bhaskra`,0
+	db `lookup table   `,0
 	dq SINE_FUNC_4
-	db `hardwre`,0
+	db `Bhaskara       `,0
 	dq SINE_FUNC_5
-	db `chbshev`,0
+	db `hardware instr `,0
 	dq SINE_FUNC_6
-	db `CORDIC `,0
+	db `Chebyshev      `,0
 	dq SINE_FUNC_7
-	db `CORDICI`,0
+	db `CORDIC float   `,0
 	dq SINE_FUNC_8
+	db `CORDIC integer `,0
+	dq SINE_FUNC_9
 
 .func_table_end:
 
@@ -297,7 +297,7 @@ align 8
 	db `exact   | `
 
 .error:
-	db `\nerror   | `
+	db `\nerror           | `
 
 .explanation:
 	db `comparison of different sine(x) approximations\n\n`
@@ -324,55 +324,58 @@ SINE_FUNC_1:
 align 64
 SINE_FUNC_2:
 
+	ret
+
+align 64
+SINE_FUNC_3:
+
 	movsd xmm1,[.tol]
 	call sine
 
 	ret
 
 .tol:
-	dq 0.000001
+	dq 0.00000001
 
 align 64
-SINE_FUNC_3:
+SINE_FUNC_4:
 
 	call sine_lookup
 	ret
 
 align 64
-SINE_FUNC_4:
+SINE_FUNC_5:
 
 	call sine_bhaskara
 	ret
 
 align 64
-SINE_FUNC_5:
+SINE_FUNC_6:
 
 	call sine_x87
 	ret
 
 align 64
-SINE_FUNC_6:
+SINE_FUNC_7:
 
 	mov rdi,10
 	call sine_chebyshev
 	ret
 
 align 64
-SINE_FUNC_7:
-
+SINE_FUNC_8:
+	mov rdi,32
 	call sine_cordic
 	ret
 
 align 64
-SINE_FUNC_8:
+SINE_FUNC_9:
 
 	call cosine_sine_cordic_int
 	movsd xmm0,xmm1
 	ret
 
 END:
-
-
 
 PRINT_BUFFER: 	; PRINT_BUFFER_SIZE bytes will be allocated here at runtime,
 		; all initialized to zeros
