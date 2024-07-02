@@ -340,7 +340,7 @@ COSINE_FUNC_3:
 	ret
 
 .tol:
-	dq 0.000001
+	dq 0.00000001
 
 align 64
 COSINE_FUNC_4:
@@ -363,7 +363,7 @@ COSINE_FUNC_6:
 align 64
 COSINE_FUNC_7:
 
-	mov rdi,10
+	mov rdi,12
 	call cosine_chebyshev
 	ret
 
@@ -376,6 +376,7 @@ COSINE_FUNC_8:
 align 64
 COSINE_FUNC_9:
 
+	mov rdi,32
 	call cosine_sine_cordic_int
 	ret
 

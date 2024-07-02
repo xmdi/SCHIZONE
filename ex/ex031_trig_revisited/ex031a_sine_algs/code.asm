@@ -358,7 +358,7 @@ SINE_FUNC_6:
 align 64
 SINE_FUNC_7:
 
-	mov rdi,10
+	mov rdi,12
 	call sine_chebyshev
 	ret
 
@@ -371,6 +371,7 @@ SINE_FUNC_8:
 align 64
 SINE_FUNC_9:
 
+	mov rdi,32
 	call cosine_sine_cordic_int
 	movsd xmm0,xmm1
 	ret
