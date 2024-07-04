@@ -1,3 +1,5 @@
 bin/
 **binary
 **.map
+**.html
+**.svg
