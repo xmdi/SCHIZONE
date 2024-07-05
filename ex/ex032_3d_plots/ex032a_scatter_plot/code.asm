@@ -394,7 +394,7 @@ START:
 		; bit 6		= draw legend?
 
 .scatter_dataset_structure1:
-	dq .scatter_dataset_structure2; address of next dataset in linked list {*+0}
+	dq 0; .scatter_dataset_structure2; address of next dataset in linked list {*+0}
 	dq .scatter_data_label_1; address of null-terminated label string {*+8}
 	dq .x_coords; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
@@ -420,6 +420,21 @@ START:
 		; bit 3 	= grab marker size from array?
 		; bit 4 	= grab marker color from array?
 		; bit 5 	= grab line color from array?
+
+
+.x_coords:
+	times 33 dq 1.0
+	times 34 dq 2.0
+	times 34 dq 3.0
+.y_coords:
+	times 50 dq 1.0
+	times 51 dq 2.0
+.z_coords:
+	times 20 dq 1.0
+	times 20 dq 2.0
+	times 20 dq 3.0
+	times 20 dq 4.0
+	times 21 dq 5.0
 
 
 END:
