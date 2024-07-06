@@ -2,11 +2,11 @@
 %define FRAMEBUFFER_3D_RENDER_DEPTH_SWITCH
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_init.asm"
-; void framebuffer_3d_render_depth_init(struct* {rdi}, struct* {rsi}, void* {rdx});
-
 %include "lib/io/framebuffer/parallel/rasterize_faces_depth.asm"
-
 %include "lib/io/framebuffer/parallel/rasterize_edges_depth.asm"
+%include "lib/io/framebuffer/parallel/rasterize_pointcloud_depth.asm"
+
+%include "lib/debug/debug.asm"
 
 framebuffer_3d_render_depth_switch:
 ; void framebuffer_3d_render_depth_switch(void* {rdi});
@@ -33,7 +33,7 @@ framebuffer_3d_render_depth_switch:
 	mov ecx,[framebuffer_init.framebuffer_height]
 	mov r8,[framebuffer_3d_render_depth_init.perspective_structure_address]
 	mov r10,[framebuffer_3d_render_depth_init.depth_buffer_address]
-	
+
 .loop:
 	; need to put some logic hear to accommodate things that aren't wireframes
 
@@ -67,7 +67,11 @@ framebuffer_3d_render_depth_switch:
 	jmp .geometry_type_unsupported
 
 .is_pointcloud:
-;	call rasterize_pointcloud_depth
+
+	mov rsi,r9
+	mov r9,[framebuffer_3d_render_depth_init.depth_buffer_address]
+
+	call rasterize_pointcloud_depth
 
 	jmp .geometry_type_unsupported
 

@@ -3,8 +3,6 @@
 
 ; dependencies
 %include "lib/io/framebuffer/set_line_depth.asm"
-%include "lib/sys/exit.asm"
-
 
 rasterize_edges_depth:
 ; void rasterize_edges_depth(void* {rdi}, int {rsi}, int {edx}, 

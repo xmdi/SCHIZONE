@@ -3,19 +3,17 @@
 
 ; dependencies
 %include "lib/io/framebuffer/set_line_depth.asm"
+;%include "lib/io/framebuffer/set_circle_depth.asm"
+
+%include "lib/debug/debug.asm"
+%include "lib/io/print_array_float.asm"
 
 rasterize_pointcloud_depth:
-; void rasterize_pointcloud_depth(void* {rdi}, int {rsi}, int {edx}, 
-;	int {ecx}, struct* {r8}, struct* {r9}, single* {r10}, long {r11});
-;	Rasterizes a cloud of points described by the structure at {r9} from the
+; void rasterize_pointcloud_depth(void* {rdi}, struct* {rsi}, int {edx}, 
+;	int {ecx}, struct* {r8}, single* {r9});
+;	Rasterizes a cloud of points described by the structure at {rsi} from
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
-;	image using the color value in the low 32 bits of {rsi} to the bitmap
-;	starting at address {rdi}. The 32nd bit of {rsi} indicates the stacking
-;	direction of the bitmap rows. If {r11}=2, colors stored alongside vertex 
-;	information in 32-byte chunks of (x,y,z,ARGB). If {r11}=1, colors stored
-;	alongside vertex information in 32-byte chunks (v0,v1,v2,ARGB). If {r11}=0,
-;	solid point color stored in {rsi}. Depthbuffer at {r10} 
-;	(4*{ecx}*{edx} bytes).
+;	image. Depthbuffer at {r9} (4*{ecx}*{edx} bytes).
 
 %if 0
 .perspective_structure:
@@ -32,22 +30,27 @@ rasterize_pointcloud_depth:
 %endif
 
 %if 0
-.faces_structure:
-	dq ; number of points (N)
-	dq ; number of faces (M)
-	dq .points ; starting address of point array (3N elements)
-	dq .faces ; starting address of face array 
-		;	(3M elements if no colors)
-		;	(4M elements if colors)
+.points_structure:
+	dq 0 ; number of points (N)
+	dq .points_xyz ; pointer to (x,y,z) point array (24N bytes)
+	dq .marker_colors ; pointer (4N bytes)
+	dq .marker_types ; pointer to render type (N bytes)
+				; (1=O,2=X,3=[],4=tri)
+	dq .marker_sizes ; pointer (N bytes)
+	dd 0 ; global marker color if NULL pointer set above
+	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
+	db 0 ; characteristic size of each point if NULL pointer set above
 %endif
 
 	push rax
 	push rbx
-	push rcx
+	push r10
+	push r11
+	push r12
 	push r13
 	push r14
 	push r15
-	sub rsp,160
+	sub rsp,192
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
 	movdqu [rsp+32],xmm2
@@ -58,9 +61,32 @@ rasterize_pointcloud_depth:
 	movdqu [rsp+112],xmm7
 	movdqu [rsp+128],xmm8
 	movdqu [rsp+144],xmm9
+	movdqu [rsp+160],xmm10
+	movdqu [rsp+176],xmm11
 
-	mov r15,[r9+8]	; number of points in r15
-	mov rax,[r9+24]
+
+	mov r10,r9 	; save depth buffer to {r10}
+	mov r14,rsi 	; pointcloud struct
+
+.z:
+
+	; default characteristics if not otherwise set by array
+	mov esi, dword [r14+40]
+	movzx r13, byte [r14+45]
+	movzx rbp, byte [r14+44]
+
+.a:
+
+	cvtsi2sd xmm10,rbp 	; {xmm10} contains characteristic marker size
+	movsd xmm11,xmm10 
+	mulsd xmm11,[.two]
+.b:
+	mov r15,[r14+0]	; number of points in r15
+	mov rax,[r14+8] ; point to 0th point x coordinate
+	mov rbx,[r14+16] ; point to 0th point marker color
+	mov r11,[r14+24] ; point to 0th point marker type
+	mov r12,[r14+32] ; point to 0th point marker size
+
 	;loop thru all points
 
 .loop_points:
@@ -69,36 +95,9 @@ rasterize_pointcloud_depth:
 	; rasterized pt y = -((Pt).(Uy)*zoom)*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
 
-	xor r13,r13
-	mov rbp,.triangle_colors
-
-.triangle_points_loop:
-
-	; grab a point
-	
-	mov r14,[rax]
-	shl r14,3
-	cmp r11,2
-	jne .no_encoded_color
-	imul r14,r14,4	; {r14} points to the x value of the first point
-	jmp .color_encoding
-.no_encoded_color:
-	imul r14,r14,3	; {r14} points to the x value of the first point
-.color_encoding:
-	add r14,[r9+16]
-
-	movsd xmm3,[r14]	; Pt_x
-	movsd xmm4,[r14+8]	; Pt_y
-	movsd xmm5,[r14+16]	; Pt_z
-
-	cmp r11,2
-	jne .no_vtx_colors
-
-	mov rbx,[r14+24]
-	mov [rbp],rbx
-	add rbp,8
-
-.no_vtx_colors:
+	movsd xmm3,[rax]	; Pt_x
+	movsd xmm4,[rax+8]	; Pt_y
+	movsd xmm5,[rax+16]	; Pt_z
 
 	; correct relative to lookFrom point
 	subsd xmm3,[r8+0]
@@ -116,6 +115,10 @@ rasterize_pointcloud_depth:
 	addsd xmm0,xmm1
 	addsd xmm0,xmm2		
 	movsd xmm6,xmm0		; Pt.Uz in {xmm6}
+	
+	; record Pt depth in array	
+	movsd [.point_array+16],xmm6
+	movsd [.point_array+40],xmm6
 
 	movsd xmm0,[framebuffer_3d_render_depth_init.Uxzoom+0]
 	movsd xmm1,[framebuffer_3d_render_depth_init.Uxzoom+8]
@@ -136,65 +139,184 @@ rasterize_pointcloud_depth:
 	addsd xmm7,xmm8
 	addsd xmm7,xmm9		; Pt.Uy*f in {xmm7}
 
-	;;;; confirmed!
-;	mulsd xmm0,[.neg]
-;	mulsd xmm7,[.neg]
-	
 	;TODO parallelize
 	addsd xmm0,[.one]
 	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
 	addsd xmm7,[.one]
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
 
-	movsd [r13+.triangle_points+0],xmm0 ; projected x
-	movsd [r13+.triangle_points+8],xmm7 ; projected y
-	movsd [r13+.triangle_points+16],xmm6 ; projected depth z
-			
-	add rax,8
-	add r13,24
-	cmp r13,56
-	jle .triangle_points_loop
+	; grab marker color
+	cmp qword [r14+16],0
+	je .color_set
+	mov esi,dword [rbx]
+	add rbx,4
+.color_set:
+	; grab marker size
+	cmp qword [r14+32],0
+	je .size_set
+	movzx r13,byte [r12]	
+	
+	cvtsi2sd xmm10,r13
+	movsd xmm11,xmm10 
+	mulsd xmm11,[.two]
 
-	push rsi
+	inc r12
+.size_set:
+
+	; handle different point types 
+		
+	; grab marker type
+	cmp qword [r14+24],0
+	je .type_set
+.abc:
+	movzx rbp,byte [r11]
+	inc r11
+.type_set:
+
+	cmp bpl,1
+	je .circle_point
+	cmp bpl,2
+	je .x_point
+	cmp bpl,3
+	je .square_point
+	cmp bpl,4
+	je .triangle_point
+
+	jmp .go_next_point ; invalid point type specified, skip
+
+	; actually draw the point
+
+.triangle_point:
+%if 0	
 	push rax
 	push r8
 	push r9
-
-	; {r10} points to depth buffer
-	mov r8,.triangle_points
-	
-	cmp r11,2
-	je .colors_interpolated_from_vertices
-	cmp r11,1
-	je .colors_set_per_face
-	cmp r11,0
-	je .solid_color_override
-
-.colors_interpolated_from_vertices:
-	mov r9,1
-	mov rsi,.triangle_colors
-	jmp .set_triangle_depth
-.colors_set_per_face:
-	mov rsi,[rax]
-.solid_color_override:
-	; color in {rsi} from function call
-	xor r9,r9
-
-.set_triangle_depth:
-
-	call set_triangle_depth
-	
+	push r10
+	push r11
+	call set_line_depth ; bottom side
+	sub r9,r13
+	sub r9,r13
+	call set_line_depth ; right side
+	sub r10,r13
+	sub r10,r13
+	call set_line_depth ; left side
+	pop r11
+	pop r10
 	pop r9
 	pop r8
 	pop rax
-	pop rsi
+	%endif
+	jmp .go_next_point
 
-	add rax,8
+.square_point:	
+	push r8
+	push r9
+	mov r8,.point_array
+	mov r9,0x0100
 
-.continue:
+	subsd xmm0,xmm10	
+	subsd xmm7,xmm10
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	addsd xmm0,xmm11
+	movsd [.point_array+24],xmm0
+	movsd [.point_array+32],xmm7
+
+	call set_line_depth ; bottom
+
+	addsd xmm7,xmm11
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	
+	call set_line_depth ; right
+
+	subsd xmm0,xmm11
+	movsd [.point_array+24],xmm0
+	movsd [.point_array+32],xmm7
+	
+	call set_line_depth ; top
+
+	subsd xmm7,xmm11
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	
+	call set_line_depth ; top
+	
+	pop r9
+	pop r8
+	jmp .go_next_point
+
+.x_point:
+	
+	push r8
+	push r9
+	mov r8,.point_array
+	mov r9,0x0100
+
+	subsd xmm0,xmm10	
+	subsd xmm7,xmm10
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	addsd xmm0,xmm11
+	addsd xmm7,xmm11
+	movsd [.point_array+24],xmm0
+	movsd [.point_array+32],xmm7
+
+	call set_line_depth ; slash 1
+
+	subsd xmm0,xmm11
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	
+	addsd xmm0,xmm11
+	subsd xmm7,xmm11
+	movsd [.point_array+24],xmm0
+	movsd [.point_array+32],xmm7
+	
+	call set_line_depth ; slash 2
+
+	pop r9
+	pop r8
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	jmp .go_next_point
+
+.circle_point:
+%if 0
+	push rax
+	push r8
+	push r9
+	push r10
+	mov r10,r13
+	mov r8,r11
+	mov r9,r12
+	call set_circle
+	pop r10
+	pop r9
+	pop r8
+	pop rax
+%endif
+
+.go_next_point:
+
+	add rax,24
 	dec r15
-	jnz .loop_faces
-.jmp_out:
+	jnz .loop_points
+
 	movdqu xmm0,[rsp+0]
 	movdqu xmm1,[rsp+16]
 	movdqu xmm2,[rsp+32]
@@ -205,30 +327,26 @@ rasterize_pointcloud_depth:
 	movdqu xmm7,[rsp+112]
 	movdqu xmm8,[rsp+128]
 	movdqu xmm9,[rsp+144]
-	add rsp,160
+	movdqu xmm10,[rsp+160]
+	movdqu xmm11,[rsp+176]
+	add rsp,192
 	pop r15
 	pop r14
 	pop r13
-	pop rcx
+	pop r12
+	pop r11
+	pop r10
 	pop rbx
 	pop rax
 
 	ret
 
-.skip:
-	add rax,32
-	jmp .continue
+.point_array:
+	times 6 dq 0.0
+
+.two:
+	dq 2.0
 
 .one:
 	dq 1.0
-.neg:
-	dq -1.0
-.triangle_normal:
-	times 3 dq 0.0
-.triangle_points:	; store x and y and depth of 3 vertices as a float 
-	times 9 dq 0.0
-.triangle_colors:
-	times 3 dq 0
-.working:
-	times 3 dq 0
 %endif

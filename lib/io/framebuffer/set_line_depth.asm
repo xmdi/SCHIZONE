@@ -6,6 +6,8 @@
 %include "lib/math/vector/dot_product_3.asm"
 %include "lib/math/vector/triangle_normal.asm"
 
+%include "lib/debug/debug.asm"
+
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},[6x0B,char,bool] {r9}, single* {r10})
@@ -54,8 +56,13 @@ set_line_depth:
 	mov byte [.color_interp_flag],r9b
 	mov [.depth_buffer_address],r10
 
+	cmp r9,0
+	je .no_color_interp
+
 	mov rax,[rsi]
 	mov [.init_colors],rax
+
+.no_color_interp:
 
 	movsd xmm12,[r8+0]	; min vtx 1 x
 	minsd xmm12,[r8+24]	; min vtx 2 x
@@ -87,7 +94,6 @@ set_line_depth:
 
 	;;;;;; todo, adjust line endpoints to be within screen boundary
 	;;;;;; oops nvm for gradient
-
 	mov rax,rbp
 	shr rax,8
 	test rax,0x1
@@ -372,21 +378,6 @@ set_line_depth:
 .no_round:
 	; {xmm4} is 0->1 along line segmenti
 
-	; interpolation of A
-%if 0
-	movzx r14,byte [r15+3]
-	cvtsi2sd xmm0,r14
-	movzx r14,byte [r15+7]
-	cvtsi2sd xmm1,r14
-	subsd xmm1,xmm0
-	mulsd xmm1,xmm4
-	addsd xmm0,xmm1
-	cvtsd2si r14,xmm0	
-
-	shl r14,24
-	or r13,r14
-%endif
-
 	; interpolation of R
 	movzx r14,byte [r15+2]
 	cvtsi2sd xmm0,r14
@@ -663,11 +654,15 @@ set_line_depth:
 	add rbp,r8
 	shl rbp,2 ; {rbp} contains byte number for pixel of interest
 	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
+.b:
+;	debug_reg rbp
+
 	movss xmm1,[rbp]
 
 	movss xmm2,xmm15
 
 	subss xmm2,xmm1
+.c:
 	comiss xmm2,dword [.wireframe_depth_threshold]
 
 	jb .too_deep
