@@ -331,23 +331,23 @@ START:
 	dq 3,7,0xFFFF0000 ; sides
 
 .scatter_title:
-	db `Cantilever Beam Deflection`,0
+	db `A sphere`,0
 
 .scatter_xlabel:
-	db `Beam Coordinate (length)`,0
+	db `x`,0
 
 .scatter_ylabel:
-	db `Vertical Deflection (length)`,0
+	db `y`,0
 
 .scatter_zlabel:
-	db `Vertical Deflection (length)`,0
+	db `z`,0
 
 .scatter_plot_structure:
 	dq .scatter_title; address of null-terminated title string {*+0}
 	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
-	dq .scatter_dataset_structure; address of linked list for datasets {*+32}
+	dq .scatter_dataset_structure1; address of linked list for datasets {*+32}
 	dq 0.0; x-origin (double) {*+40}
 	dq 0.0; y-origin (double) {*+48}
 	dq 0.0; z-origin (double) {*+56}
@@ -422,6 +422,8 @@ START:
 		; bit 5 	= grab line color from array?
 
 
+.scatter_data_label_1:
+	db `sphere points`,0
 .x_coords:
 	times 33 dq 1.0
 	times 34 dq 2.0
@@ -435,7 +437,12 @@ START:
 	times 20 dq 3.0
 	times 20 dq 4.0
 	times 21 dq 5.0
-
+.marker0_colors:
+	times 101 dd 0xFFFF0000
+.marker0_sizes:
+	times 101 db 5
+.line0_colors:
+	times 101 dd 0xFF0000FF
 
 END:
 
