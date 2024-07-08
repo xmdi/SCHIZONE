@@ -298,7 +298,7 @@ START:
 	dd 0xFFFFFF00
 
 .scatter_marker_types:
-	db 2,2,3,3
+	db 4,2,3,3
 
 .scatter_marker_sizes:
 	db 15,10,5,3

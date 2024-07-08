@@ -187,25 +187,42 @@ rasterize_pointcloud_depth:
 	; actually draw the point
 
 .triangle_point:
-%if 0	
-	push rax
 	push r8
 	push r9
-	push r10
-	push r11
-	call set_line_depth ; bottom side
-	sub r9,r13
-	sub r9,r13
-	call set_line_depth ; right side
-	sub r10,r13
-	sub r10,r13
-	call set_line_depth ; left side
-	pop r11
-	pop r10
+	mov r8,.point_array
+	mov r9,0x0100
+
+	subsd xmm0,xmm10
+	movsd xmm5,xmm10
+	mulsd xmm5,[.inv_sqrt3]
+	subsd xmm7,xmm5
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	addsd xmm0,xmm11
+	movsd [.point_array+24],xmm0
+	movsd [.point_array+32],xmm7
+
+	call set_line_depth ; bottom
+
+	movsd xmm5,xmm11
+	mulsd xmm5,[.half_sqrt3]
+
+	subsd xmm0,xmm10
+	addsd xmm7,xmm5
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+	
+	call set_line_depth ; right
+
+	subsd xmm0,xmm10
+	subsd xmm7,xmm5
+	movsd [.point_array+24],xmm0
+	movsd [.point_array+32],xmm7
+	
+	call set_line_depth ; left
+	
 	pop r9
 	pop r8
-	pop rax
-	%endif
 	jmp .go_next_point
 
 .square_point:	
@@ -240,7 +257,7 @@ rasterize_pointcloud_depth:
 	movsd [.point_array+0],xmm0
 	movsd [.point_array+8],xmm7
 	
-	call set_line_depth ; top
+	call set_line_depth ; left
 	
 	pop r9
 	pop r8
@@ -277,21 +294,6 @@ rasterize_pointcloud_depth:
 
 	pop r9
 	pop r8
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	jmp .go_next_point
 
@@ -343,10 +345,12 @@ rasterize_pointcloud_depth:
 
 .point_array:
 	times 6 dq 0.0
-
 .two:
 	dq 2.0
-
+.inv_sqrt3:
+	dq 0x3FE279A74590331D
+.half_sqrt3:
+	dq 0x3FEBB67AE8584CAA
 .one:
 	dq 1.0
 %endif
