@@ -3,10 +3,6 @@
 
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
-%include "lib/math/vector/dot_product_3.asm"
-%include "lib/math/vector/triangle_normal.asm"
-
-%include "lib/debug/debug.asm"
 
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
@@ -655,7 +651,6 @@ set_line_depth:
 	shl rbp,2 ; {rbp} contains byte number for pixel of interest
 	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
 .b:
-;	debug_reg rbp
 
 	movss xmm1,[rbp]
 

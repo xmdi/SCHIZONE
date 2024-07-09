@@ -80,6 +80,7 @@ DRAW_CROSS_CURSOR:
 	push r11
 
 	mov r10,r8
+
 	sub r8,7
 	add r10,7
 	mov r11,r9
@@ -276,11 +277,19 @@ START:
 
 .scatter_points_structure:
 	dq 4 ; number of points (N)
-	dq .scatter_points_xyz ; pointer to (x,y,z) point array (24N bytes)
+	dq .scatter_points_xyz ; pointer to (x) point array (8N bytes)
+	dq .scatter_points_xyz+8 ; pointer to (y) point array (8N bytes)
+	dq .scatter_points_xyz+16 ; pointer to (z) point array (8N bytes)
 	dq .scatter_marker_colors ; pointer (4N bytes)
 	dq .scatter_marker_types ; pointer to render type (N bytes)
 				; (1=O,2=X,3=[],4=tri)
 	dq .scatter_marker_sizes ; pointer (N bytes)
+	dw 16 ;
+	dw 16 ;
+	dw 16 ;
+	dw 0 ;
+	dw 0 ;
+	dw 0 ;
 	dd 0 ; global marker color if NULL pointer set above
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
 	db 0 ; characteristic size of each point if NULL pointer set above
@@ -298,10 +307,10 @@ START:
 	dd 0xFFFFFF00
 
 .scatter_marker_types:
-	db 4,2,3,3
+	db 4,2,3,1
 
 .scatter_marker_sizes:
-	db 15,10,5,3
+	db 15,10,5,7
 
 END:
 

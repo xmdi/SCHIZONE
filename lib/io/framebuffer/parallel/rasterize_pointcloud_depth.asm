@@ -3,10 +3,9 @@
 
 ; dependencies
 %include "lib/io/framebuffer/set_line_depth.asm"
-;%include "lib/io/framebuffer/set_circle_depth.asm"
+%include "lib/io/framebuffer/set_circle_depth.asm"
 
 %include "lib/debug/debug.asm"
-%include "lib/io/print_array_float.asm"
 
 rasterize_pointcloud_depth:
 ; void rasterize_pointcloud_depth(void* {rdi}, struct* {rsi}, int {edx}, 
@@ -32,11 +31,19 @@ rasterize_pointcloud_depth:
 %if 0
 .points_structure:
 	dq 0 ; number of points (N)
-	dq .points_xyz ; pointer to (x,y,z) point array (24N bytes)
+	dq .points_x ; pointer to (x) point array (8N bytes)
+	dq .points_y ; pointer to (y) point array (8N bytes)
+	dq .points_z ; pointer to (z) point array (8N bytes)
 	dq .marker_colors ; pointer (4N bytes)
 	dq .marker_types ; pointer to render type (N bytes)
 				; (1=O,2=X,3=[],4=tri)
 	dq .marker_sizes ; pointer (N bytes)
+	dw .stride_x ;
+	dw .stride_y ;
+	dw .stride_z ;
+	dw .stride_colors ;
+	dw .stride_types ;
+	dw .stride_sizes ;
 	dd 0 ; global marker color if NULL pointer set above
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
 	db 0 ; characteristic size of each point if NULL pointer set above
@@ -64,28 +71,29 @@ rasterize_pointcloud_depth:
 	movdqu [rsp+160],xmm10
 	movdqu [rsp+176],xmm11
 
-
 	mov r10,r9 	; save depth buffer to {r10}
 	mov r14,rsi 	; pointcloud struct
 
-.z:
-
 	; default characteristics if not otherwise set by array
-	mov esi, dword [r14+40]
-	movzx r13, byte [r14+45]
-	movzx rbp, byte [r14+44]
-
-.a:
+	mov esi, dword [r14+68]
+	movzx r13, byte [r14+73]
+	movzx rbp, byte [r14+72]
 
 	cvtsi2sd xmm10,rbp 	; {xmm10} contains characteristic marker size
 	movsd xmm11,xmm10 
 	mulsd xmm11,[.two]
-.b:
+
 	mov r15,[r14+0]	; number of points in r15
-	mov rax,[r14+8] ; point to 0th point x coordinate
-	mov rbx,[r14+16] ; point to 0th point marker color
-	mov r11,[r14+24] ; point to 0th point marker type
-	mov r12,[r14+32] ; point to 0th point marker size
+	;mov rax,[r14+8] ; point to 0th point x coordinate
+	;xor rax,rax ; point to 0th point x coordinate
+	mov rbx,[r14+32] ; point to 0th point marker color
+	mov r11,[r14+40] ; point to 0th point marker type
+	mov r12,[r14+48] ; point to 0th point marker size
+
+	xor rax,rax
+	mov [.x_offset],rax
+	mov [.y_offset],rax
+	mov [.z_offset],rax
 
 	;loop thru all points
 
@@ -95,9 +103,36 @@ rasterize_pointcloud_depth:
 	; rasterized pt y = -((Pt).(Uy)*zoom)*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
 
+
+	mov rax,[.x_offset]
+	push rax
+	add rax,[r14+8]
 	movsd xmm3,[rax]	; Pt_x
-	movsd xmm4,[rax+8]	; Pt_y
-	movsd xmm5,[rax+16]	; Pt_z
+	movzx rax, word [r14+56]
+	add ax,8
+	add rax,[rsp+0]
+	add rsp,8
+	mov [.x_offset],rax
+
+	mov rax,[.y_offset]
+	push rax
+	add rax,[r14+16]
+	movsd xmm4,[rax]	; Pt_y
+	movzx rax, word [r14+58]
+	add ax,8
+	add rax,[rsp+0]
+	add rsp,8
+	mov [.y_offset],rax
+	
+	mov rax,[.z_offset]
+	push rax
+	add rax,[r14+24]
+	movsd xmm5,[rax]	; Pt_z
+	movzx rax, word [r14+60]
+	add ax,8
+	add rax,[rsp+0]
+	add rsp,8
+	mov [.z_offset],rax
 
 	; correct relative to lookFrom point
 	subsd xmm3,[r8+0]
@@ -146,13 +181,14 @@ rasterize_pointcloud_depth:
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
 
 	; grab marker color
-	cmp qword [r14+16],0
+	cmp qword [r14+32],0
 	je .color_set
 	mov esi,dword [rbx]
 	add rbx,4
+	add rbx,[r14+62]
 .color_set:
 	; grab marker size
-	cmp qword [r14+32],0
+	cmp qword [r14+48],0
 	je .size_set
 	movzx r13,byte [r12]	
 	
@@ -161,16 +197,18 @@ rasterize_pointcloud_depth:
 	mulsd xmm11,[.two]
 
 	inc r12
+	add r12,[r14+66]
 .size_set:
 
 	; handle different point types 
 		
 	; grab marker type
-	cmp qword [r14+24],0
+	cmp qword [r14+40],0
 	je .type_set
 .abc:
 	movzx rbp,byte [r11]
 	inc r11
+	add r11,[r14+64]
 .type_set:
 
 	cmp bpl,1
@@ -297,25 +335,24 @@ rasterize_pointcloud_depth:
 	
 	jmp .go_next_point
 
-.circle_point:
-%if 0
-	push rax
+.circle_point:	
+
 	push r8
 	push r9
-	push r10
-	mov r10,r13
-	mov r8,r11
-	mov r9,r12
-	call set_circle
-	pop r10
+	mov r8,.point_array
+	mov r9,r10
+
+	movsd [.point_array+0],xmm0
+	movsd [.point_array+8],xmm7
+
+	movsd xmm0,xmm10
+	call set_circle_depth ; slash 1
+
 	pop r9
 	pop r8
-	pop rax
-%endif
 
 .go_next_point:
 
-	add rax,24
 	dec r15
 	jnz .loop_points
 
@@ -342,6 +379,13 @@ rasterize_pointcloud_depth:
 	pop rax
 
 	ret
+
+.x_offset:
+	dq 0
+.y_offset:
+	dq 0
+.z_offset:
+	dq 0
 
 .point_array:
 	times 6 dq 0.0
