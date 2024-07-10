@@ -58,6 +58,14 @@ PROGRAM_HEADER:
 
 %include "lib/debug/debug.asm"
 
+%include "lib/math/rand/rand_float_array.asm"
+
+%include "lib/math/rand/rand_int_array.asm"
+
+%include "lib/math/rand/rand_int_nbytes_array.asm"
+
+%include "lib/io/print_memory.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -102,7 +110,33 @@ DRAW_CROSS_CURSOR:
 START:
 
 	; generate scatter plot geometries
+	mov rax,-10
+	cvtsi2sd xmm0,rax
+	mov rax,10
+	cvtsi2sd xmm1,rax	
+	mov rdx,101
+	xor rsi,rsi
+	mov rdi,.x_coords
+	call rand_float_array
+	mov rdi,.y_coords
+	call rand_float_array
+	mov rdi,.z_coords
+	call rand_float_array
+	mov rdi,.marker0_types
+	mov rcx,2
+	mov r8,4
+	mov r9,1
+	call rand_int_nbytes_array
 
+	mov rdi,.marker0_sizes
+	mov rcx,1
+	mov r8,10
+	call rand_int_nbytes_array
+	mov rdi,.marker0_colors
+	mov rcx,0
+	mov r8,0xFFFFFF
+	mov r9,4
+	call rand_int_nbytes_array
 
 
 	; init rendering
@@ -231,7 +265,7 @@ START:
 	dw 0; extra stride between marker color elements {*+54}
 	dq .marker0_sizes; address of first marker size element {*+56}
 	dw 0; extra stride between marker size elements {*+64}
-	dq .line0_colors; address of first line color element {*+66}
+	dq .marker0_types; address of first marker type element {*+66}
 	dw 0; extra stride between line color elements {*+74}
 	dd 101; number of elements {*+76}
 	dd 0xFF0000; #XXXXXX RGB marker color {*+80}
@@ -266,8 +300,11 @@ START:
 	times 101 dd 0xFFFF0000
 .marker0_sizes:
 	times 101 db 5
-.line0_colors:
-	times 101 dd 0xFF0000FF
+.marker0_types:
+	times 101 db 1
+	db 99
+
+	times 100 db 0
 
 .scatter_points_geometry:
 	dq 0 ; next geometry in linked list
@@ -276,17 +313,17 @@ START:
 	db 0b00000001 ; type of structure to render
 
 .scatter_points_structure:
-	dq 4 ; number of points (N)
-	dq .scatter_points_xyz ; pointer to (x) point array (8N bytes)
-	dq .scatter_points_xyz+8 ; pointer to (y) point array (8N bytes)
-	dq .scatter_points_xyz+16 ; pointer to (z) point array (8N bytes)
-	dq .scatter_marker_colors ; pointer (4N bytes)
-	dq .scatter_marker_types ; pointer to render type (N bytes)
+	dq 101 ; number of points (N)
+	dq .x_coords ; pointer to (x) point array (8N bytes)
+	dq .y_coords ; pointer to (y) point array (8N bytes)
+	dq .z_coords ; pointer to (z) point array (8N bytes)
+	dq .marker0_colors ; pointer (4N bytes)
+	dq .marker0_types ; pointer to render type (N bytes)
 				; (1=O,2=X,3=[],4=tri)
-	dq .scatter_marker_sizes ; pointer (N bytes)
-	dw 16 ;
-	dw 16 ;
-	dw 16 ;
+	dq .marker0_sizes ; pointer (N bytes)
+	dw 0 ;
+	dw 0 ;
+	dw 0 ;
 	dw 0 ;
 	dw 0 ;
 	dw 0 ;

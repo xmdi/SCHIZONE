@@ -8,10 +8,13 @@ rand_float_array:
 ;	bytes between elements with double-precision floating point numbers
 ;	such that {xmm0} <= values <= {xmm1}.
 
-	sub rsp,40
-	movdqu [rsp+24],xmm2
-	movdqu [rsp+8],xmm1
-	mov [rsp+0],rax	
+	push rax
+	push rdi
+	push rdx
+
+	sub rsp,32
+	movdqu [rsp+16],xmm2
+	movdqu [rsp+0],xmm1
 
 	subsd xmm1,xmm0	; range in {xmm1}
 
@@ -35,10 +38,13 @@ rand_float_array:
 	dec rdx
 	jnz .loop
 	
-	movdqu xmm2,[rsp+24]
-	movdqu xmm1,[rsp+8]
-	mov rax,[rsp+0]
-	add rsp,40
+	movdqu xmm2,[rsp+16]
+	movdqu xmm1,[rsp+0]
+	add rsp,32
+
+	pop rdx
+	pop rdi
+	pop rax
 
 	ret		; return
 
