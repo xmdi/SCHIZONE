@@ -41,10 +41,6 @@ rand_int_nbytes_array:
 	jmp .ret
 
 .char:
-	debug_reg rdi
-	debug_reg rdx
-;	debug_regs print_int_d
-;	debug_exit 3
 	mov byte [rdi],dl; place random integer into array
 	inc rdi 	; go onto next array target
 	add rdi,rsi	; extra offset between elements

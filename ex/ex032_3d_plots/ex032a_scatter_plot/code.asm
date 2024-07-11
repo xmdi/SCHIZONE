@@ -56,8 +56,6 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_loop.asm"
 
-%include "lib/debug/debug.asm"
-
 %include "lib/math/rand/rand_float_array.asm"
 
 %include "lib/math/rand/rand_int_array.asm"
@@ -123,7 +121,7 @@ START:
 	mov rdi,.z_coords
 	call rand_float_array
 	mov rdi,.marker0_types
-	mov rcx,2
+	mov rcx,1
 	mov r8,4
 	mov r9,1
 	call rand_int_nbytes_array

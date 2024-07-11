@@ -4,6 +4,8 @@
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
 
+%include "lib/debug/debug.asm"
+
 set_circle_depth:
 ; void set_circle_depth(void* {rdi}, long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},single* {r9}, double {xmm0})
@@ -138,6 +140,19 @@ set_circle_depth:
 
 .set_pixel_and_depth: ; needs pixel x,y at {r8,r9} and 4B-float depth @ {xmm15}
 
+	push rdx
+
+
+	cmp r8d,0
+	jle .skip_this_pixel
+	cmp r8d,edx
+	jge .skip_this_pixel
+	cmp r9d,0
+	jle .skip_this_pixel
+	cmp r9d,ecx
+	jge .skip_this_pixel
+
+
 	mov rbp,r9
 	imul rbp,rdx
 	add rbp,r8
@@ -156,8 +171,10 @@ set_circle_depth:
 	call set_pixel
 	movss [rbp],xmm15
 
+.skip_this_pixel:
 .too_deep:
 
+	pop rdx
 	ret
 
 .depth_buffer_address:

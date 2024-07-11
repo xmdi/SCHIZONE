@@ -6,8 +6,6 @@
 %include "lib/io/framebuffer/parallel/rasterize_edges_depth.asm"
 %include "lib/io/framebuffer/parallel/rasterize_pointcloud_depth.asm"
 
-%include "lib/debug/debug.asm"
-
 framebuffer_3d_render_depth_switch:
 ; void framebuffer_3d_render_depth_switch(void* {rdi});
 ;	Processes objects for the 3D rendering setup with  

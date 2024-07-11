@@ -5,8 +5,6 @@
 %include "lib/io/framebuffer/set_line_depth.asm"
 %include "lib/io/framebuffer/set_circle_depth.asm"
 
-%include "lib/debug/debug.asm"
-
 rasterize_pointcloud_depth:
 ; void rasterize_pointcloud_depth(void* {rdi}, struct* {rsi}, int {edx}, 
 ;	int {ecx}, struct* {r8}, single* {r9});

@@ -4,6 +4,8 @@
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
 
+%include "lib/debug/debug.asm"
+
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},[6x0B,char,bool] {r9}, single* {r10})
@@ -643,7 +645,19 @@ set_line_depth:
 
 .set_pixel_and_depth:
 
+	push rdx
 	push rbp
+
+	cmp r8d,0
+	jle .skip_this_pixel
+	cmp r8d,edx
+	jge .skip_this_pixel
+	cmp r9d,0
+	jle .skip_this_pixel
+	cmp r9d,ecx
+	jge .skip_this_pixel
+
+
 
 	mov rbp,r9
 	imul rbp,rdx
@@ -651,6 +665,9 @@ set_line_depth:
 	shl rbp,2 ; {rbp} contains byte number for pixel of interest
 	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
 .b:
+
+	debug_reg r8
+	debug_reg r9
 
 	movss xmm1,[rbp]
 
@@ -665,9 +682,11 @@ set_line_depth:
 	call set_pixel
 	movss [rbp],xmm15
 
+.skip_this_pixel:
 .too_deep:
 
 	pop rbp
+	pop rdx
 
 	ret
 
