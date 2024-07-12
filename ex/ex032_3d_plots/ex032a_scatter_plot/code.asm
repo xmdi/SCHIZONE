@@ -5,7 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 0x2000000 ; ~32 MB
+%define HEAP_SIZE 0x4000000 ; ~64 MB
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,6 +50,8 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
+%include "lib/debug/debug.asm"
+
 %include "lib/io/bitmap/set_line.asm"
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_init.asm"
@@ -63,6 +65,12 @@ PROGRAM_HEADER:
 %include "lib/math/rand/rand_int_nbytes_array.asm"
 
 %include "lib/io/print_memory.asm"
+
+%include "lib/io/print_array_float.asm"
+%include "lib/io/print_array_int.asm"
+
+%include "lib/io/framebuffer/parallel/scatter_plot_3d.asm"
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -136,10 +144,17 @@ START:
 	mov r9,4
 	call rand_int_nbytes_array
 
+	call heap_init
+
+	mov rdi,.scatter_plot_structure
+	call scatter_plot_3d
+
+	mov [.scatter_points_geometry],rax
 
 	; init rendering
 	mov rdi,.perspective_structure
-	mov rsi,.axis_geometry
+	;mov rsi,.axis_geometry
+	mov rsi,.scatter_points_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
@@ -204,44 +219,47 @@ START:
 	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
-	dq .scatter_dataset_structure1; address of linked list for datasets {*+32}
-	dq 0.0; plot origin x-position (double) {*+40}
-	dq 0.0; plot origin y-position (double) {*+48}
-	dq 0.0; plot origin z-position (double) {*+56}
-	dq -5.0; x-min (double) {*+64}
-	dq 5.0; x-max (double) {*+72}
-	dq -6.0; y-min (double) {*+80}
-	dq 6.0; y-max (double) {*+88}
-	dq -7.0; z-min (double) {*+96}
-	dq 7.0; z-max (double) {*+104}
-	dq 0; legend x-coordinate {*+112}
-	dq 0; legend y-coordinate {*+120}
-	dq 0; legend z-coordinate {*+128}
-	dd 0x000000; #XXXXXX RGB x-axis color {*+136}
-	dd 0x000000; #XXXXXX RGB y-axis color {*+140}
-	dd 0x000000; #XXXXXX RGB z-axis color {*+144}
-	dd 0x000000; #XXXXXX title/legend RGB font color {*+148}
-	db 11; number of major x-ticks {*+152}
-	db 5; number of major y-ticks {*+153}
-	db 5; number of major z-ticks {*+154}
-	db 2; minor subdivisions per x-tick {*+155}
-	db 2; minor subdivisions per y-tick {*+156}
-	db 2; minor subdivisions per z-tick {*+157}
-	db 2; significant digits on x values {*+158}
-	db 2; significant digits on y values {*+159}
-	db 2; significant digits on z values {*+160}
-	db 32; title font size (px) {*+161}
-	db 24; axis label font size (px) {*+162}
-	db 16; tick & legend label font size (px) {*+163}
-	dq 1.0; y-offset for x-tick labels {*+164}
-	dq -1.0; x-offset for y-tick labels {*+172}
-	dq -1.0; x-offset for z-tick labels {*+180}
-	db 2; axis & major tick stroke thickness (px) {*+188}
-	db 1; minor tick stroke thickness (px) {*+189}
-	db 5; x-tick length (px) {*+190}
-	db 5; y-tick length (px) {*+191}
-	db 5; z-tick length (px) {*+192}
-	db 0x1F; flags: {*+193}
+	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
+	dq 0.0; plot origin x translation (double) {*+40}
+	dq 0.0; plot origin y translation (double) {*+48}
+	dq 0.0; plot origin z translation (double) {*+56}
+	dq 0.0; origin x-coord (double) {*+64}
+	dq 0.0; origin y-coord (double) {*+72}
+	dq 0.0; origin z_coord (double) {*+80}
+	dq -2.0; x-min (double) {*+88}
+	dq 2.0; x-max (double) {*+96}
+	dq -1.0; y-min (double) {*+104}
+	dq 1.0; y-max (double) {*+112}
+	dq -1.0; z-min (double) {*+120}
+	dq 1.0; z-max (double) {*+128}
+	dq 0; legend x-coordinate {*+136}
+	dq 0; legend y-coordinate {*+144}
+	dq 0; legend z-coordinate {*+152}
+	dd 0xFF0000; #XXXXXX RGB x-axis color {*+160}
+	dd 0x00FF00; #XXXXXX RGB y-axis color {*+164}
+	dd 0x0000FF; #XXXXXX RGB z-axis color {*+168}
+	dd 0x000000; #XXXXXX title/legend RGB font color {*+172}
+	db 11; number of major x-ticks {*+176}
+	db 5; number of major y-ticks {*+177}
+	db 5; number of major z-ticks {*+178}
+	db 2; minor subdivisions per x-tick {*+179}
+	db 2; minor subdivisions per y-tick {*+180}
+	db 2; minor subdivisions per z-tick {*+181}
+	db 2; significant digits on x values {*+182}
+	db 2; significant digits on y values {*+183}
+	db 2; significant digits on z values {*+184}
+	db 32; title font size (px) {*+185}
+	db 24; axis label font size (px) {*+186}
+	db 16; tick & legend label font size (px) {*+187}
+	dq 1.0; y-offset for x-tick labels {*+188}
+	dq -1.0; x-offset for y-tick labels {*+196}
+	dq -1.0; x-offset for z-tick labels {*+204}
+	db 5; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
+	db 1; minor tick stroke thickness (px) {*+213}
+	db 5; x-tick length (px) {*+214}
+	db 5; y-tick length (px) {*+215}
+	db 5; z-tick length (px) {*+216}
+	db 0x1F; flags: {*+217}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?

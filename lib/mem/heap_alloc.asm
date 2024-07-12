@@ -18,6 +18,8 @@ heap_alloc:
 
 
 .next_block:	; check this chunk of memory
+
+
 	mov rsi,[rax]	; move header into {rsi}
 	test rsi,1	; if the LSB is 1, the chunk has already been allocated
 	jnz .cant_use_this_chunk

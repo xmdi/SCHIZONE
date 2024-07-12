@@ -10,43 +10,46 @@
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
 	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
-	dq 0.0; plot origin x-position (double) {*+40}
-	dq 0.0; plot origin y-position (double) {*+48}
-	dq 0.0; plot origin z-position (double) {*+56}
-	dq -5.0; x-min (double) {*+64}
-	dq 5.0; x-max (double) {*+72}
-	dq -6.0; y-min (double) {*+80}
-	dq 6.0; y-max (double) {*+88}
-	dq -7.0; z-min (double) {*+96}
-	dq 7.0; z-max (double) {*+104}
-	dq 0; legend x-coordinate {*+112}
-	dq 0; legend y-coordinate {*+120}
-	dq 0; legend z-coordinate {*+128}
-	dd 0x000000; #XXXXXX RGB x-axis color {*+136}
-	dd 0x000000; #XXXXXX RGB y-axis color {*+140}
-	dd 0x000000; #XXXXXX RGB z-axis color {*+144}
-	dd 0x000000; #XXXXXX title/legend RGB font color {*+148}
-	db 11; number of major x-ticks {*+152}
-	db 5; number of major y-ticks {*+153}
-	db 5; number of major z-ticks {*+154}
-	db 2; minor subdivisions per x-tick {*+155}
-	db 2; minor subdivisions per y-tick {*+156}
-	db 2; minor subdivisions per z-tick {*+157}
-	db 2; significant digits on x values {*+158}
-	db 2; significant digits on y values {*+159}
-	db 2; significant digits on z values {*+160}
-	db 32; title font size (px) {*+161}
-	db 24; axis label font size (px) {*+162}
-	db 16; tick & legend label font size (px) {*+163}
-	dq 1.0; y-offset for x-tick labels {*+164}
-	dq -1.0; x-offset for y-tick labels {*+172}
-	dq -1.0; x-offset for z-tick labels {*+180}
-	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+188}
-	db 1; minor tick stroke thickness (px) {*+189}
-	db 5; x-tick length (px) {*+190}
-	db 5; y-tick length (px) {*+191}
-	db 5; z-tick length (px) {*+192}
-	db 0x1F; flags: {*+193}
+	dq 0.0; plot origin x translation (double) {*+40}
+	dq 0.0; plot origin y translation (double) {*+48}
+	dq 0.0; plot origin z translation (double) {*+56}
+	dq 0.0; origin x-coord (double) {*+64}
+	dq 0.0; origin y-coord (double) {*+72}
+	dq 0.0; origin z_coord (double) {*+80}
+	dq -5.0; x-min (double) {*+88}
+	dq 5.0; x-max (double) {*+96}
+	dq -6.0; y-min (double) {*+104}
+	dq 6.0; y-max (double) {*+112}
+	dq -7.0; z-min (double) {*+120}
+	dq 7.0; z-max (double) {*+128}
+	dq 0; legend x-coordinate {*+136}
+	dq 0; legend y-coordinate {*+144}
+	dq 0; legend z-coordinate {*+152}
+	dd 0x000000; #XXXXXX RGB x-axis color {*+160}
+	dd 0x000000; #XXXXXX RGB y-axis color {*+164}
+	dd 0x000000; #XXXXXX RGB z-axis color {*+168}
+	dd 0x000000; #XXXXXX title/legend RGB font color {*+172}
+	db 11; number of major x-ticks {*+176}
+	db 5; number of major y-ticks {*+177}
+	db 5; number of major z-ticks {*+178}
+	db 2; minor subdivisions per x-tick {*+179}
+	db 2; minor subdivisions per y-tick {*+180}
+	db 2; minor subdivisions per z-tick {*+181}
+	db 2; significant digits on x values {*+182}
+	db 2; significant digits on y values {*+183}
+	db 2; significant digits on z values {*+184}
+	db 32; title font size (px) {*+185}
+	db 24; axis label font size (px) {*+186}
+	db 16; tick & legend label font size (px) {*+187}
+	dq 1.0; y-offset for x-tick labels {*+188}
+	dq -1.0; x-offset for y-tick labels {*+196}
+	dq -1.0; x-offset for z-tick labels {*+204}
+	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
+	db 1; minor tick stroke thickness (px) {*+213}
+	db 5; x-tick length (px) {*+214}
+	db 5; y-tick length (px) {*+215}
+	db 5; z-tick length (px) {*+216}
+	db 0x1F; flags: {*+217}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?
@@ -87,25 +90,144 @@ scatter_plot_3d:
 ; 	3D graphics structures linked together returned in {rax}. 
 
 	push r15
+	push rbx
 
 	mov r15,rdi
 
-	cmp byte [r15+188],0
+	cmp byte [r15+212],0
 	je .no_axis
 
-	; create the axis structure	
+	;;; create the axis structure	
 
+	; axis point struct
 
+	mov rdi,144
+	call heap_alloc
 
+	debug_literal "hi"
+
+	test rax,rax
+	jz .died
+
+	mov rbx,[r15+64] ; origin x
+	mov [rax+48],rbx	
+	mov [rax+72],rbx	
+	mov [rax+96],rbx	
+	mov [rax+120],rbx	
+
+	mov rbx,[r15+72] ; origin y
+	mov [rax+8],rbx	
+	mov [rax+32],rbx	
+	mov [rax+104],rbx	
+	mov [rax+128],rbx	
+
+	mov rbx,[r15+80] ; origin z
+	mov [rax+16],rbx	
+	mov [rax+40],rbx	
+	mov [rax+64],rbx	
+	mov [rax+88],rbx	
+
+	mov rbx,[r15+88]
+	mov [rax+0],rbx ; xmin x
+	mov rbx,[r15+96]
+	mov [rax+24],rbx ; xmax x
+	
+	mov rbx,[r15+104]
+	mov [rax+56],rbx ; ymin y
+	mov rbx,[r15+112]
+	mov [rax+80],rbx ; ymax y
+	
+	mov rbx,[r15+120]
+	mov [rax+112],rbx ; zmin z
+	mov rbx,[r15+128]
+	mov [rax+136],rbx ; zmax z
+	
+	mov [.axis_point_list_array_address],rax
+
+	; axis edge struct
+	mov rdi,72
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	xor rbx,rbx ; six coupled vertex pairs
+	mov [rax+0],rbx
+	inc rbx
+	mov [rax+8],rbx
+	inc rbx
+	mov [rax+24],rbx
+	inc rbx
+	mov [rax+32],rbx
+	inc rbx
+	mov [rax+48],rbx
+	inc rbx
+	mov [rax+56],rbx
+
+	mov ebx, dword [r15+160] ; x color
+	mov dword [rax+16],ebx
+	mov ebx, dword [r15+164] ; y color
+	mov dword [rax+40],ebx
+	mov ebx, dword [r15+168] ; z color
+	mov dword [rax+64],ebx
+
+	mov [.axis_edge_list_array_address],rax
+
+	; axis wire struct
+	mov rdi,33
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,6 ; num points
+	mov [rax+0],rbx
+
+	mov rbx,3 ; num edges
+	mov [rax+8],rbx
+
+	mov rbx,[.axis_point_list_array_address]
+	mov [rax+16],rbx ; points list
+
+	mov rbx,[.axis_edge_list_array_address]
+	mov [rax+24],rbx ; edges list
+	
+	mov bl,[r15+212] ; axis thickness
+	mov byte [rax+32],bl
+
+	mov [.axis_wire_struct_address],rax
+
+	; axis geom struct
+	mov rdi,25
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,[.axis_wire_struct_address] ; wire substruct
+	mov [rax+8],rbx
+
+	mov bl,0b1001 ; type of wire
+	mov byte [rax+24],bl
+
+	mov [.axis_geometry_struct_address],rax
 
 
 	; NOTE: tick marks to have their own rendering struct
 
 .no_axis:
 
+
+
+
+	mov rax,[.axis_geometry_struct_address]
+
+.died:
+	pop rbx
 	pop r15
 
 	ret
+
 
 .axis_geometry_struct_address:
 	dq 0
