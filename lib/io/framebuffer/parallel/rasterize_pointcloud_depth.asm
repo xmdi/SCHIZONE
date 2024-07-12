@@ -55,6 +55,7 @@ rasterize_pointcloud_depth:
 	push r13
 	push r14
 	push r15
+	push rbp
 	sub rsp,192
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
@@ -203,7 +204,6 @@ rasterize_pointcloud_depth:
 	; grab marker type
 	cmp qword [r14+40],0
 	je .type_set
-.abc:
 	movzx rbp,byte [r11]
 	inc r11
 	add r11,[r14+64]
@@ -367,6 +367,7 @@ rasterize_pointcloud_depth:
 	movdqu xmm10,[rsp+160]
 	movdqu xmm11,[rsp+176]
 	add rsp,192
+	pop rbp
 	pop r15
 	pop r14
 	pop r13

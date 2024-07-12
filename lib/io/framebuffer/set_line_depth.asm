@@ -666,8 +666,8 @@ set_line_depth:
 	add rbp,[.depth_buffer_address]	; {rbp} points to depth for pixel of interest
 .b:
 
-	debug_reg r8
-	debug_reg r9
+;	debug_reg r8
+;	debug_reg r9
 
 	movss xmm1,[rbp]
 

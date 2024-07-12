@@ -15,8 +15,11 @@ set_circle_depth:
 ;	{rsi} contains solid line color (32 bpp). Pointer to 
 ;	single-precision depth buffer at {r10} (4*{ecx}*{edx} bytes).
 
+;	debug_regs print_int_d
+
 	push r8
 	push r9
+	push r10
 	push r11
 	push r12
 	push r13
@@ -133,15 +136,20 @@ set_circle_depth:
 	pop r13
 	pop r12
 	pop r11
+	pop r10
 	pop r9
 	pop r8
+
+;	debug_regs print_int_d
+
+;	debug_exit 5
 
 	ret
 
 .set_pixel_and_depth: ; needs pixel x,y at {r8,r9} and 4B-float depth @ {xmm15}
 
-	push rdx
-
+;	push rdx
+	push rbp
 
 	cmp r8d,0
 	jle .skip_this_pixel
@@ -174,7 +182,8 @@ set_circle_depth:
 .skip_this_pixel:
 .too_deep:
 
-	pop rdx
+	pop rbp
+;	pop rdx
 	ret
 
 .depth_buffer_address:

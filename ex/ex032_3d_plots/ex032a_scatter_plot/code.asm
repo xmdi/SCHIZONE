@@ -205,22 +205,22 @@ START:
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
 	dq .scatter_dataset_structure1; address of linked list for datasets {*+32}
-	dq 0.0; x-origin (double) {*+40}
-	dq 0.0; y-origin (double) {*+48}
-	dq 0.0; z-origin (double) {*+56}
+	dq 0.0; plot origin x-position (double) {*+40}
+	dq 0.0; plot origin y-position (double) {*+48}
+	dq 0.0; plot origin z-position (double) {*+56}
 	dq -5.0; x-min (double) {*+64}
 	dq 5.0; x-max (double) {*+72}
 	dq -6.0; y-min (double) {*+80}
 	dq 6.0; y-max (double) {*+88}
 	dq -7.0; z-min (double) {*+96}
 	dq 7.0; z-max (double) {*+104}
-	dq 0; legend x-coordinate offset (px) {*+112}
-	dq 0; legend y-coordinate offset (px) {*+120}
-	dq 0; legend z-coordinate offset (px) {*+128}
+	dq 0; legend x-coordinate {*+112}
+	dq 0; legend y-coordinate {*+120}
+	dq 0; legend z-coordinate {*+128}
 	dd 0x000000; #XXXXXX RGB x-axis color {*+136}
 	dd 0x000000; #XXXXXX RGB y-axis color {*+140}
 	dd 0x000000; #XXXXXX RGB z-axis color {*+144}
-	dd 0x000000; #XXXXXX RGB font color {*+148}
+	dd 0x000000; #XXXXXX title/legend RGB font color {*+148}
 	db 11; number of major x-ticks {*+152}
 	db 5; number of major y-ticks {*+153}
 	db 5; number of major z-ticks {*+154}
@@ -236,8 +236,8 @@ START:
 	dq 1.0; y-offset for x-tick labels {*+164}
 	dq -1.0; x-offset for y-tick labels {*+172}
 	dq -1.0; x-offset for z-tick labels {*+180}
-	db 2; grid major stroke thickness (px) {*+188}
-	db 1; grid minor stroke thickness (px) {*+189}
+	db 2; axis & major tick stroke thickness (px) {*+188}
+	db 1; minor tick stroke thickness (px) {*+189}
 	db 5; x-tick length (px) {*+190}
 	db 5; y-tick length (px) {*+191}
 	db 5; z-tick length (px) {*+192}
@@ -246,12 +246,12 @@ START:
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?
 		; bit 3		= show z-label?
-		; bit 4		= draw grid?
+		; bit 4		= draw ticks?
 		; bit 5		= show tick labels?
 		; bit 6		= draw legend?
 
 .scatter_dataset_structure1:
-	dq 0; .scatter_dataset_structure2; address of next dataset in linked list {*+0}
+	dq 0; address of next dataset in linked list {*+0}
 	dq .scatter_data_label_1; address of null-terminated label string {*+8}
 	dq .x_coords; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
@@ -264,52 +264,37 @@ START:
 	dq .marker0_sizes; address of first marker size element {*+56}
 	dw 0; extra stride between marker size elements {*+64}
 	dq .marker0_types; address of first marker type element {*+66}
-	dw 0; extra stride between line color elements {*+74}
+	dw 0; extra stride between marker type elements {*+74}
 	dd 101; number of elements {*+76}
-	dd 0xFF0000; #XXXXXX RGB marker color {*+80}
-	dd 0xFF0000; #XXXXXX RGB line color {*+84}
-	db 5; marker size (px) {*+88}
-	db 5; line thickness (px) {*+89}
-	db 0x03; flags: {*+90}
-		; bit 0 (LSB)	= point marker?
-		; bit 1		= connecting lines?
-		; bit 2		= include in legend?
-		; bit 3 	= grab marker size from array?
-		; bit 4 	= grab marker color from array?
-		; bit 5 	= grab line color from array?
-
+	dd 0xFF0000; default #XXXXXX RGB marker color {*+80}
+	db 5; default marker size (px) {*+84}
+	db 5; default marker type (1-4) {*+85}
+	db 0x01; flags: {*+86}
+		; bit 0 (LSB)	= include in legend?
 
 .scatter_data_label_1:
 	db `sphere points`,0
 .x_coords:
-	times 33 dq 1.0
-	times 34 dq 2.0
-	times 34 dq 3.0
+	times 101 dq 0.0
 .y_coords:
-	times 50 dq 1.0
-	times 51 dq 2.0
+	times 101 dq 0.0
 .z_coords:
-	times 20 dq 1.0
-	times 20 dq 2.0
-	times 20 dq 3.0
-	times 20 dq 4.0
-	times 21 dq 5.0
+	times 101 dq 0.0
 .marker0_colors:
-	times 101 dd 0xFFFF0000
+	times 101 dd 0
 .marker0_sizes:
-	times 101 db 5
+	times 101 db 0
 .marker0_types:
-	times 101 db 1
-	db 99
+	times 101 db 0
 
-	times 100 db 0
-
+	; container for pointcloud rendering struct
 .scatter_points_geometry:
 	dq 0 ; next geometry in linked list
 	dq .scatter_points_structure ; address of point/edge/face structure
 	dq 0x1FF000000 ; color (0xARGB) NOTE: UNUSED!
 	db 0b00000001 ; type of structure to render
 
+	; pointcloud rendering struct
 .scatter_points_structure:
 	dq 101 ; number of points (N)
 	dq .x_coords ; pointer to (x) point array (8N bytes)
@@ -328,24 +313,6 @@ START:
 	dd 0 ; global marker color if NULL pointer set above
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
 	db 0 ; characteristic size of each point if NULL pointer set above
-
-.scatter_points_xyz:
-	dq 0.5,-0.5,0.0
-	dq -0.5,0.5,2.0
-	dq -0.5,-0.5,0.0
-	dq 0.5,-0.5,1.0
-
-.scatter_marker_colors:
-	dd 0xFFFF0000
-	dd 0xFF00FF00
-	dd 0xFF0000FF
-	dd 0xFFFFFF00
-
-.scatter_marker_types:
-	db 4,2,3,1
-
-.scatter_marker_sizes:
-	db 15,10,5,7
 
 END:
 
