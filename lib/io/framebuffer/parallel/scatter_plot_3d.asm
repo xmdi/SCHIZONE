@@ -44,12 +44,11 @@
 	dq 1.0; y-offset for x-tick labels {*+188}
 	dq -1.0; x-offset for y-tick labels {*+196}
 	dq -1.0; x-offset for z-tick labels {*+204}
-	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
-	db 1; minor tick stroke thickness (px) {*+213}
-	db 5; x-tick length (px) {*+214}
-	db 5; y-tick length (px) {*+215}
-	db 5; z-tick length (px) {*+216}
-	db 0x1F; flags: {*+217}
+	db 2; axis & tick stroke thickness (px) (0 disables axis) {*+212}
+	db 5; x-tick fraction (/255) {*+213}
+	db 5; y-tick fraction (/255) {*+214}
+	db 5; z-tick fraction (/255) {*+215}
+	db 0x1F; flags: {*+216}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
 		; bit 2		= show y-label?
@@ -91,6 +90,7 @@ scatter_plot_3d:
 
 	push r15
 	push rbx
+	push rcx
 
 	mov r15,rdi
 
@@ -103,9 +103,7 @@ scatter_plot_3d:
 
 	mov rdi,144
 	call heap_alloc
-
-	debug_literal "hi"
-
+	
 	test rax,rax
 	jz .died
 
@@ -215,14 +213,121 @@ scatter_plot_3d:
 
 	; NOTE: tick marks to have their own rendering struct
 
+
+	;;; create the grid structure	
+
+	mov bl, byte [r15+216]
+	test bl,0b10000
+	jz .no_grid
+
+	; TODO: check for at least one tick mark in x
+
+	; grid point struct
+
+	movzx rbx,byte [r15+176] ; major x ticks
+	movzx rcx,byte [r15+179] ; subdivisions per x tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi		; number of major and minor x ticks
+	
+	call heap_alloc
+	mov [.grid_edge_list_array_address],rax
+	test rax,rax
+	jz .died
+	mov r13,rax
+
+	shl rdi,1
+	call heap_alloc
+	mov [.grid_point_list_array_address],rax
+	test rax,rax
+	jz .died
+	mov r14,rax
+
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+88] ; xmin
+	movsd xmm1,[r15+72] ; yO
+	movsd xmm2,[r15+80] ; zO
+
+	movsd xmm4,[r15+96]
+	subsd xmm4,xmm0
+	movsd xmm6,xmm4
+	shr rdi,1
+	dec rdi
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+	
+	movzx rbx, byte [r15+213]
+	cvtsi2sd xmm5,rbx
+	mulsd xmm5,[.byte_fraction]
+	mulsd xmm5,xmm6 	; semi tick length
+
+	movsd xmm6,xmm1
+	addsd xmm6,xmm5
+	; put point1 at (xmm0,xmm6,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm6
+	movsd [r14+16],xmm2
+
+	movsd xmm6,xmm1
+	subsd xmm6,xmm5
+	; put point2 at (xmm0,xmm6,xmm2)
+	movsd [r14+24],xmm0
+	movsd [r14+32],xmm6
+	movsd [r14+40],xmm2
+
+	add r14,48
+	
+	xor r12,r12
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+160]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
+
+.loop_ticks_x:
+
+	addsd xmm0,xmm4
+			
+	movsd xmm6,xmm1
+	addsd xmm6,xmm5
+	; put point1 at (xmm0,xmm6,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm6
+	movsd [r14+16],xmm2
+
+	movsd xmm6,xmm1
+	subsd xmm6,xmm5
+	; put point2 at (xmm0,xmm6,xmm2)
+	movsd [r14+24],xmm0
+	movsd [r14+32],xmm6
+	movsd [r14+40],xmm2
+
+	add r14,48
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+160]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
+
+	dec rdi
+	jnz .loop_ticks_x
+
+
+.no_grid:
 .no_axis:
-
-
-
 
 	mov rax,[.axis_geometry_struct_address]
 
 .died:
+	pop rcx
 	pop rbx
 	pop r15
 
@@ -241,5 +346,20 @@ scatter_plot_3d:
 .axis_edge_list_array_address:
 	dq 0
 
+.grid_geometry_struct_address:
+	dq 0
+
+.grid_wire_struct_address:
+	dq 0
+
+.grid_point_list_array_address:
+	dq 0
+
+.grid_edge_list_array_address:
+	dq 0
+
+align 8
+.byte_fraction:
+	dq 0x3F60101010101010 
 
 %endif

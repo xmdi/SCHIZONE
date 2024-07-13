@@ -254,11 +254,11 @@ START:
 	dq 1.0; y-offset for x-tick labels {*+188}
 	dq -1.0; x-offset for y-tick labels {*+196}
 	dq -1.0; x-offset for z-tick labels {*+204}
-	db 5; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
+	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
 	db 1; minor tick stroke thickness (px) {*+213}
-	db 5; x-tick length (px) {*+214}
-	db 5; y-tick length (px) {*+215}
-	db 5; z-tick length (px) {*+216}
+	db 5; x-tick fraction (/255) {*+214}
+	db 5; y-tick fraction (/255) {*+215}
+	db 5; z-tick fraction (/255) {*+216}
 	db 0x1F; flags: {*+217}
 		; bit 0 (LSB)	= show title?
 		; bit 1		= show x-label?
