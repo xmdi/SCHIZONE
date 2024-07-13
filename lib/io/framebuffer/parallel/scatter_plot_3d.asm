@@ -210,9 +210,7 @@ scatter_plot_3d:
 
 	mov [.axis_geometry_struct_address],rax
 
-
 	; NOTE: tick marks to have their own rendering struct
-
 
 	;;; create the grid structure	
 
@@ -231,7 +229,9 @@ scatter_plot_3d:
 	dec rdi
 	imul rdi,rcx
 	inc rdi		; number of major and minor x ticks
-	
+
+	imul rdi,rdi,24
+
 	call heap_alloc
 	mov [.grid_edge_list_array_address],rax
 	test rax,rax
@@ -239,6 +239,7 @@ scatter_plot_3d:
 	mov r13,rax
 
 	shl rdi,1
+
 	call heap_alloc
 	mov [.grid_point_list_array_address],rax
 	test rax,rax
@@ -252,9 +253,13 @@ scatter_plot_3d:
 
 	movsd xmm4,[r15+96]
 	subsd xmm4,xmm0
-	movsd xmm6,xmm4
-	shr rdi,1
+	movsd xmm6,xmm4	
+
+	; check	
+	mov rdi,rbx
 	dec rdi
+	imul rdi,rcx
+
 	cvtsi2sd xmm5,rdi
 	divsd xmm4,xmm5  	; delta x
 	
@@ -263,35 +268,11 @@ scatter_plot_3d:
 	mulsd xmm5,[.byte_fraction]
 	mulsd xmm5,xmm6 	; semi tick length
 
-	movsd xmm6,xmm1
-	addsd xmm6,xmm5
-	; put point1 at (xmm0,xmm6,xmm2)
-	movsd [r14],xmm0
-	movsd [r14+8],xmm6
-	movsd [r14+16],xmm2
-
-	movsd xmm6,xmm1
-	subsd xmm6,xmm5
-	; put point2 at (xmm0,xmm6,xmm2)
-	movsd [r14+24],xmm0
-	movsd [r14+32],xmm6
-	movsd [r14+40],xmm2
-
-	add r14,48
-	
 	xor r12,r12
-	
-	mov [r13],r12 ; populates first edge pair and color
-	inc r12
-	mov [r13+8],r12
-	mov ebx, dword [r15+160]
-	mov [r13+16],rbx
-	inc r12
-	add r13,24
+
+	inc rdi
 
 .loop_ticks_x:
-
-	addsd xmm0,xmm4
 			
 	movsd xmm6,xmm1
 	addsd xmm6,xmm5
@@ -317,15 +298,67 @@ scatter_plot_3d:
 	inc r12
 	add r13,24
 
+	addsd xmm0,xmm4
+	
 	dec rdi
 	jnz .loop_ticks_x
 
+
+	; grid wire struct
+	mov rdi,33
+	call heap_alloc
+	
+	test rax,rax
+	jz .died
+
+	movzx rbx,byte [r15+176] ; major x ticks
+	movzx rcx,byte [r15+179] ; subdivisions per x tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi
+	
+	mov rbx,rdi ; num edges
+	mov [rax+8],rbx
+
+	shl rdi,1
+	mov rbx,rdi ; num points
+	mov [rax+0],rbx
+
+	mov rbx,[.grid_point_list_array_address]
+	mov [rax+16],rbx ; points list
+
+	mov rbx,[.grid_edge_list_array_address]
+	mov [rax+24],rbx ; edges list
+	
+	mov bl,[r15+212] ; axis thickness
+	mov byte [rax+32],bl
+
+	mov [.grid_wire_struct_address],rax
+
+	; grid geom struct
+	mov rdi,25
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,[.grid_wire_struct_address] ; wire substruct
+	mov [rax+8],rbx
+
+	mov bl,0b1001 ; type of wire
+	mov byte [rax+24],bl
+
+	mov [.grid_geometry_struct_address],rax
+
+	mov rbx,[.axis_geometry_struct_address]
+	mov [rbx],rax
 
 .no_grid:
 .no_axis:
 
 	mov rax,[.axis_geometry_struct_address]
-
 .died:
 	pop rcx
 	pop rbx
