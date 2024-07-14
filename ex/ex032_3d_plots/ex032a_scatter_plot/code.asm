@@ -226,12 +226,12 @@ START:
 	dq 0.0; origin x-coord (double) {*+64}
 	dq 0.0; origin y-coord (double) {*+72}
 	dq 0.0; origin z_coord (double) {*+80}
-	dq -2.0; x-min (double) {*+88}
-	dq 2.0; x-max (double) {*+96}
-	dq -1.0; y-min (double) {*+104}
-	dq 1.0; y-max (double) {*+112}
-	dq -1.0; z-min (double) {*+120}
-	dq 1.0; z-max (double) {*+128}
+	dq -10.0; x-min (double) {*+88}
+	dq 10.0; x-max (double) {*+96}
+	dq -10.0; y-min (double) {*+104}
+	dq 10.0; y-max (double) {*+112}
+	dq -10.0; z-min (double) {*+120}
+	dq 10.0; z-max (double) {*+128}
 	dq 0; legend x-coordinate {*+136}
 	dq 0; legend y-coordinate {*+144}
 	dq 0; legend z-coordinate {*+152}

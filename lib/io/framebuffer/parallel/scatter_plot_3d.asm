@@ -230,6 +230,28 @@ scatter_plot_3d:
 	imul rdi,rcx
 	inc rdi		; number of major and minor x ticks
 
+	mov rax,rdi
+
+	movzx rbx,byte [r15+177] ; major y ticks
+	movzx rcx,byte [r15+180] ; subdivisions per y tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi		; number of major and minor y ticks
+
+	add rax,rdi
+
+	movzx rbx,byte [r15+178] ; major z ticks
+	movzx rcx,byte [r15+181] ; subdivisions per z tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi		; number of major and minor z ticks
+
+	add rdi,rax 	; total ticks in all directions
+
 	imul rdi,rdi,24
 
 	call heap_alloc
@@ -246,6 +268,11 @@ scatter_plot_3d:
 	jz .died
 	mov r14,rax
 
+	; x grid starts here
+
+	movzx rbx,byte [r15+176] ; major x ticks
+	movzx rcx,byte [r15+179] ; subdivisions per x tick
+	
 	; tracking x y z in xmm0,xmm1,xmm2
 	movsd xmm0,[r15+88] ; xmin
 	movsd xmm1,[r15+72] ; yO
@@ -253,7 +280,6 @@ scatter_plot_3d:
 
 	movsd xmm4,[r15+96]
 	subsd xmm4,xmm0
-	movsd xmm6,xmm4	
 
 	; check	
 	mov rdi,rbx
@@ -266,6 +292,8 @@ scatter_plot_3d:
 	movzx rbx, byte [r15+213]
 	cvtsi2sd xmm5,rbx
 	mulsd xmm5,[.byte_fraction]
+	movsd xmm6,[r15+112] ; ymax
+	subsd xmm6,[r15+104] ; ymin
 	mulsd xmm5,xmm6 	; semi tick length
 
 	xor r12,r12
@@ -302,6 +330,85 @@ scatter_plot_3d:
 	
 	dec rdi
 	jnz .loop_ticks_x
+
+	; TODO: check for at least one tick mark in y
+
+	movzx rbx,byte [r15+177] ; major y ticks
+	movzx rcx,byte [r15+180] ; subdivisions per y tick
+
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0
+	movsd xmm1,[r15+104] ; ymin
+	movsd xmm2,[r15+80] ; zO
+
+	movsd xmm4,[r15+112] ; ymax
+	subsd xmm4,xmm1
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta y
+	
+	movzx rbx, byte [r15+214]
+	cvtsi2sd xmm5,rbx
+	mulsd xmm5,[.byte_fraction]
+	movsd xmm6,[r15+128] ; zmax
+	subsd xmm6,[r15+120] ; zmin
+	mulsd xmm5,xmm6 	; semi tick length
+
+	inc rdi
+
+.loop_ticks_y:
+			
+	movsd xmm6,xmm2
+	addsd xmm6,xmm5
+	; put point1 at (xmm0,xmm1,xmm6)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm6
+
+	movsd xmm6,xmm2
+	subsd xmm6,xmm5
+	; put point2 at (xmm0,xmm1,xmm6)
+	movsd [r14+24],xmm0
+	movsd [r14+32],xmm1
+	movsd [r14+40],xmm6
+
+	add r14,48
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+164]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
+
+	addsd xmm1,xmm4
+	
+	dec rdi
+	jnz .loop_ticks_y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	; grid wire struct
