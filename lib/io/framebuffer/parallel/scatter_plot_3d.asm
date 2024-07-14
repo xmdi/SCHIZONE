@@ -252,6 +252,8 @@ scatter_plot_3d:
 
 	add rdi,rax 	; total ticks in all directions
 
+	mov [.num_grid_edges],rdi
+
 	imul rdi,rdi,24
 
 	call heap_alloc
@@ -392,23 +394,66 @@ scatter_plot_3d:
 	dec rdi
 	jnz .loop_ticks_y
 
+	; TODO: check for at least one tick mark in z
 
+	movzx rbx,byte [r15+178] ; major z ticks
+	movzx rcx,byte [r15+181] ; subdivisions per z tick
 
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0
+	movsd xmm1,[r15+72] ; y0
+	movsd xmm2,[r15+120] ; zmin
 
+	movsd xmm4,[r15+128] ; zmax
+	subsd xmm4,xmm2
 
+	; check	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
 
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta z
+	
+	movzx rbx, byte [r15+215]
+	cvtsi2sd xmm5,rbx
+	mulsd xmm5,[.byte_fraction]
+	movsd xmm6,[r15+96] ; xmax
+	subsd xmm6,[r15+88] ; xmin
+	mulsd xmm5,xmm6 	; semi tick length
 
+	inc rdi
 
+.loop_ticks_z:
+			
+	movsd xmm6,xmm0
+	addsd xmm6,xmm5
+	; put point1 at (xmm6,xmm1,xmm2)
+	movsd [r14],xmm6
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
 
+	movsd xmm6,xmm0
+	subsd xmm6,xmm5
+	; put point2 at (xmm6,xmm1,xmm2)
+	movsd [r14+24],xmm6
+	movsd [r14+32],xmm1
+	movsd [r14+40],xmm2
 
+	add r14,48
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+168]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
 
-
-
-
-
-
-
-
+	addsd xmm2,xmm4
+	
+	dec rdi
+	jnz .loop_ticks_z
 
 
 	; grid wire struct
@@ -418,20 +463,12 @@ scatter_plot_3d:
 	test rax,rax
 	jz .died
 
-	movzx rbx,byte [r15+176] ; major x ticks
-	movzx rcx,byte [r15+179] ; subdivisions per x tick
 	
-	mov rdi,rbx
-	dec rdi
-	imul rdi,rcx
-	inc rdi
-	
-	mov rbx,rdi ; num edges
+	mov rbx,[.num_grid_edges] ; num edges
 	mov [rax+8],rbx
 
-	shl rdi,1
-	mov rbx,rdi ; num points
-	mov [rax+0],rbx
+	shl rbx,1
+	mov [rax+0],rbx ; num points
 
 	mov rbx,[.grid_point_list_array_address]
 	mov [rax+16],rbx ; points list
@@ -496,6 +533,9 @@ scatter_plot_3d:
 	dq 0
 
 .grid_edge_list_array_address:
+	dq 0
+
+.num_grid_edges: ; 2x for points
 	dq 0
 
 align 8
