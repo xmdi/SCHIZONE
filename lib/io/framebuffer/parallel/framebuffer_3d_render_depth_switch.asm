@@ -3,6 +3,7 @@
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_init.asm"
 %include "lib/io/framebuffer/parallel/rasterize_faces_depth.asm"
+%include "lib/io/framebuffer/parallel/rasterize_text_depth.asm"
 %include "lib/io/framebuffer/parallel/rasterize_edges_depth.asm"
 %include "lib/io/framebuffer/parallel/rasterize_pointcloud_depth.asm"
 
@@ -110,7 +111,8 @@ framebuffer_3d_render_depth_switch:
 	jmp .geometry_type_unsupported
 
 .is_text:
-;	call rasterize_text
+	call rasterize_text_depth
+
 
 .geometry_type_unsupported:
 

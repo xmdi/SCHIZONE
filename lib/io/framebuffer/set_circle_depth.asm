@@ -4,8 +4,6 @@
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
 
-%include "lib/debug/debug.asm"
-
 set_circle_depth:
 ; void set_circle_depth(void* {rdi}, long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},single* {r9}, double {xmm0})

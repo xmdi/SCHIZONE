@@ -52,6 +52,8 @@ PROGRAM_HEADER:
 
 %include "lib/debug/debug.asm"
 
+%include "lib/io/bitmap/SCHIZOFONT.asm"
+
 %include "lib/io/bitmap/set_line.asm"
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_init.asm"
@@ -67,6 +69,7 @@ PROGRAM_HEADER:
 %include "lib/io/print_memory.asm"
 
 %include "lib/io/print_array_float.asm"
+
 %include "lib/io/print_array_int.asm"
 
 %include "lib/io/framebuffer/parallel/scatter_plot_3d.asm"
@@ -154,7 +157,8 @@ START:
 	; init rendering
 	mov rdi,.perspective_structure
 	;mov rsi,.axis_geometry
-	mov rsi,.scatter_points_geometry
+	;mov rsi,.scatter_points_geometry
+	mov rsi,.text_1_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
@@ -330,6 +334,24 @@ START:
 	dd 0 ; global marker color if NULL pointer set above
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
 	db 0 ; characteristic size of each point if NULL pointer set above
+
+.text_1_geometry:
+	dq 0;.scatter_points_geometry ; next geometry in linked list
+	dq .text_1_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (0xARGB)
+	db 0b00000010 ; type of structure to render
+
+.text_1_structure:
+	dq .text_1_position ; address of 24-byte (x,y,z) position
+	dq .text_1 ; address of null-terminated string
+	dq SCHIZOFONT ; address of font definition
+	dq 4 ; font-size (scaling of 8px)
+
+.text_1_position:
+	dq 0.2,3.2,3.0
+
+.text_1:
+	db `Jeffrey Epstein`,0
 
 END:
 

@@ -2,7 +2,7 @@
 %define RASTERIZE_TEXT_DEPTH
 
 ; dependency
-%include "lib/io/bitmap/set_pixel.asm"
+%include "lib/io/framebuffer/set_text_depth.asm"
 
 rasterize_text_depth:
 ; void rasterize_text_depth(void* {rdi}, int {rsi}, int {edx}, 
@@ -58,53 +58,18 @@ rasterize_text_depth:
 	movdqu [rsp+160],xmm10
 	movdqu [rsp+176],xmm11
 
-	mov r10,r9 	; save depth buffer to {r10}
-	mov r14,rsi 	; pointcloud struct
-
-
-	xor rax,rax
-	mov [.x_offset],rax
-	mov [.y_offset],rax
-	mov [.z_offset],rax
+	mov r14,[r9] 	; address of x,y,z for text
 
 	;loop thru all points
-
 
 	; rasterized pt x = ((Pt).(Ux)*zoom)*width/2+width/2
 	; rasterized pt y = -((Pt).(Uy)*zoom)*height/2+height/2
 	; rasterized depth z = (Pt).(Uz)
 
-
-	mov rax,[.x_offset]
-	push rax
-	add rax,[r14+8]
-	movsd xmm3,[rax]	; Pt_x
-	movzx rax, word [r14+56]
-	add ax,8
-	add rax,[rsp+0]
-	add rsp,8
-	mov [.x_offset],rax
-
-	mov rax,[.y_offset]
-	push rax
-	add rax,[r14+16]
-	movsd xmm4,[rax]	; Pt_y
-	movzx rax, word [r14+58]
-	add ax,8
-	add rax,[rsp+0]
-	add rsp,8
-	mov [.y_offset],rax
+	movsd xmm3,[r14]	; Pt_x
+	movsd xmm4,[r14+8]	; Pt_y
+	movsd xmm5,[r14+16]	; Pt_z
 	
-	mov rax,[.z_offset]
-	push rax
-	add rax,[r14+24]
-	movsd xmm5,[rax]	; Pt_z
-	movzx rax, word [r14+60]
-	add ax,8
-	add rax,[rsp+0]
-	add rsp,8
-	mov [.z_offset],rax
-
 	; correct relative to lookFrom point
 	subsd xmm3,[r8+0]
 	subsd xmm4,[r8+8]
@@ -147,14 +112,13 @@ rasterize_text_depth:
 	addsd xmm7,[.one]
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
 
-
 	mov r8,r11
 	mov r13,r12
 	mov r12,[r9+16]	; font definition
 	mov r11,[r9+8]	; text
 	mov r10,[r9+24]	; font size
 	mov r9,r13
-
+	
 	call set_text_depth
 
 	movdqu xmm0,[rsp+0]
