@@ -152,7 +152,7 @@ START:
 	mov rdi,.scatter_plot_structure
 	call scatter_plot_3d
 
-	mov [.scatter_points_geometry],rax
+	;mov [.scatter_points_geometry],rax ; reactivate this
 
 	; init rendering
 	mov rdi,.perspective_structure
@@ -336,7 +336,7 @@ START:
 	db 0 ; characteristic size of each point if NULL pointer set above
 
 .text_1_geometry:
-	dq 0;.scatter_points_geometry ; next geometry in linked list
+	dq .scatter_points_geometry ; next geometry in linked list
 	dq .text_1_structure ; address of point/edge/face structure
 	dq 0x1FFFF0000 ; color (0xARGB)
 	db 0b00000010 ; type of structure to render

@@ -132,7 +132,7 @@ rasterize_pointcloud_depth:
 	add rax,[rsp+0]
 	add rsp,8
 	mov [.z_offset],rax
-
+	.a:
 	; correct relative to lookFrom point
 	subsd xmm3,[r8+0]
 	subsd xmm4,[r8+8]

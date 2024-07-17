@@ -37,6 +37,8 @@ rasterize_text_depth:
 
 	push rax
 	push rbx
+	push r8
+	push r9
 	push r10
 	push r11
 	push r12
@@ -141,6 +143,8 @@ rasterize_text_depth:
 	pop r12
 	pop r11
 	pop r10
+	pop r9
+	pop r8
 	pop rbx
 	pop rax
 
