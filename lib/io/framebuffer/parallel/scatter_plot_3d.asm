@@ -22,13 +22,13 @@
 	dq 6.0; y-max (double) {*+112}
 	dq -7.0; z-min (double) {*+120}
 	dq 7.0; z-max (double) {*+128}
-	dq 0; legend x-coordinate {*+136}
-	dq 0; legend y-coordinate {*+144}
-	dq 0; legend z-coordinate {*+152}
+	dq 0; title x-coordinate {*+136}
+	dq 0; title y-coordinate {*+144}
+	dq 0; title z-coordinate {*+152}
 	dd 0x000000; #XXXXXX RGB x-axis color {*+160}
 	dd 0x000000; #XXXXXX RGB y-axis color {*+164}
 	dd 0x000000; #XXXXXX RGB z-axis color {*+168}
-	dd 0x000000; #XXXXXX title/legend RGB font color {*+172}
+	dd 0x000000; #XXXXXX title RGB font color {*+172}
 	db 11; number of major x-ticks {*+176}
 	db 5; number of major y-ticks {*+177}
 	db 5; number of major z-ticks {*+178}
@@ -40,7 +40,7 @@
 	db 2; significant digits on z values {*+184}
 	db 32; title font size (px) {*+185}
 	db 24; axis label font size (px) {*+186}
-	db 16; tick & legend label font size (px) {*+187}
+	db 16; tick label font size (px) {*+187}
 	dq 1.0; y-offset for x-tick labels {*+188}
 	dq -1.0; x-offset for y-tick labels {*+196}
 	dq -1.0; x-offset for z-tick labels {*+204}
@@ -55,7 +55,6 @@
 		; bit 3		= show z-label?
 		; bit 4		= draw ticks?
 		; bit 5		= show tick labels?
-		; bit 6		= draw legend?
 
 .scatter_dataset_structure1:
 	dq 0; address of next dataset in linked list {*+0}
@@ -76,11 +75,11 @@
 	dd 0xFF0000; default #XXXXXX RGB marker color {*+80}
 	db 5; default marker size (px) {*+84}
 	db 5; default marker type (1-4) {*+85}
-	db 0x01; flags: {*+86}
-		; bit 0 (LSB)	= include in legend?
+	db 0x00; flags, currently unused: {*+86}
 
 %endif
 
+%include "lib/io/bitmap/SCHIZOFONT.asm"
 %include "lib/mem/heap_alloc.asm"
 
 scatter_plot_3d:
@@ -89,10 +88,14 @@ scatter_plot_3d:
 ; 	3D graphics structures linked together returned in {rax}. 
 
 	push r15
+	push r14
 	push rbx
 	push rcx
 
 	mov r15,rdi
+
+	xor rax,rax
+	mov [.num_textboxes],rax
 
 	cmp byte [r15+212],0
 	je .no_axis
@@ -223,6 +226,7 @@ scatter_plot_3d:
 	; grid point struct
 
 	movzx rbx,byte [r15+176] ; major x ticks
+	add [.num_textboxes],rbx
 	movzx rcx,byte [r15+179] ; subdivisions per x tick
 	
 	mov rdi,rbx
@@ -233,6 +237,7 @@ scatter_plot_3d:
 	mov rax,rdi
 
 	movzx rbx,byte [r15+177] ; major y ticks
+	add [.num_textboxes],rbx
 	movzx rcx,byte [r15+180] ; subdivisions per y tick
 	
 	mov rdi,rbx
@@ -243,6 +248,7 @@ scatter_plot_3d:
 	add rax,rdi
 
 	movzx rbx,byte [r15+178] ; major z ticks
+	add [.num_textboxes],rbx
 	movzx rcx,byte [r15+181] ; subdivisions per z tick
 	
 	mov rdi,rbx
@@ -497,15 +503,203 @@ scatter_plot_3d:
 	mov [.grid_geometry_struct_address],rax
 
 	mov rbx,[.axis_geometry_struct_address]
+
 	mov [rbx],rax
 
 .no_grid:
+%if 0
+	mov bl, byte [r15+216]
+	test bl,0b1
+	jz .no_title_text
+	inc qword [.num_textboxes]
+.no_title_text:	
+	test bl,0b10
+	jz .no_x_text
+	inc qword [.num_textboxes]
+.no_x_text:	
+	test bl,0b10
+	jz .no_y_text
+	inc qword [.num_textboxes]
+.no_y_text:
+	test bl,0b100
+	jz .no_z_text
+	inc qword [.num_textboxes]
+.no_z_text:	
+%endif
+	mov rdi,[.num_textboxes]
+	imul rdi,rdi,36
+
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov [.pointcloud_array_address],rax
+
+	mov rdi,32
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.pointcloud_struct_address],rax
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.pointcloud_geometry_address],rax
+
+	xor rbx,rbx
+	mov [rax+0],rbx
+	mov rbx,[.pointcloud_struct_address]
+	mov [rax+8],rbx
+	mov rbx,0b11
+	mov byte [rax+24],bl
+
+	mov rax,[.pointcloud_struct_address]
+	mov rbx,SCHIZOFONT
+	mov [rax+16],rbx
+	xor rbx,rbx
+	movzx rbx,byte [r15+187]
+	mov [rax+24],rbx
+	mov rbx,[.pointcloud_array_address]
+	mov [rax+0],rbx	
+	mov rbx,[.num_textboxes]
+	mov [rax+8],rbx
+
+	mov rax,[.pointcloud_geometry_address]
+	mov rbx,[.grid_geometry_struct_address]
+	mov [rbx],rax
+
+	; grid tick labels start here
+
+	mov r14,[.pointcloud_array_address]
+
+	; x grid tick labels start here
+	
+	movzx rbx,byte [r15+176] ; major x ticks
+	
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+88] ; xmin
+	movsd xmm1,[r15+72] ; yO
+	addsd xmm1,[r15+188] ; yO + tick label offset
+	movsd xmm2,[r15+80] ; zO
+
+	movsd xmm4,[r15+96]
+	subsd xmm4,xmm0
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+
+	inc rdi
+
+.loop_tick_labels_x:
+			
+	; put text at (xmm0,xmm1,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+	mov qword [r14+24],.kek
+	mov ebx,0xFFFFFFFF
+	mov dword [r14+32],ebx
+
+	add r14,36
+
+	addsd xmm0,xmm4
+	
+	dec rdi
+	jnz .loop_tick_labels_x
+
+	; y grid tick labels start here
+	
+	movzx rbx,byte [r15+176] ; major x ticks
+	
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+88] ; xmin
+	movsd xmm1,[r15+72] ; yO
+	addsd xmm1,[r15+188] ; yO + tick label offset
+	movsd xmm2,[r15+80] ; zO
+
+	movsd xmm4,[r15+96]
+	subsd xmm4,xmm0
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+
+	inc rdi
+
+.loop_tick_labels_y:
+			
+	; put text at (xmm0,xmm1,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+	mov qword [r14+24],.kek
+	mov ebx,0xFFFFFFFF
+	mov dword [r14+32],ebx
+
+	add r14,36
+
+	addsd xmm0,xmm4
+	
+	dec rdi
+	jnz .loop_tick_labels_y
+
+	; z grid tick labels start here
+	
+	movzx rbx,byte [r15+176] ; major x ticks
+	
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+88] ; xmin
+	movsd xmm1,[r15+72] ; yO
+	addsd xmm1,[r15+188] ; yO + tick label offset
+	movsd xmm2,[r15+80] ; zO
+
+	movsd xmm4,[r15+96]
+	subsd xmm4,xmm0
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+
+	inc rdi
+
+.loop_tick_labels_z:
+			
+	; put text at (xmm0,xmm1,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+	mov qword [r14+24],.kek
+	mov ebx,0xFFFFFFFF
+	mov dword [r14+32],ebx
+
+	add r14,36
+
+	addsd xmm0,xmm4
+	
+	dec rdi
+	jnz .loop_tick_labels_z
+
+
+
 .no_axis:
 
 	mov rax,[.axis_geometry_struct_address]
+
 .died:
 	pop rcx
 	pop rbx
+	pop r14
 	pop r15
 
 	ret
@@ -537,6 +731,21 @@ scatter_plot_3d:
 
 .num_grid_edges: ; 2x for points
 	dq 0
+
+.num_textboxes:
+	dq 0
+
+.pointcloud_array_address:
+	dq 0
+
+.pointcloud_struct_address:
+	dq 0
+
+.pointcloud_geometry_address:
+	dq 0
+
+.kek:
+	db `kek`,0
 
 align 8
 .byte_fraction:

@@ -1,11 +1,11 @@
-%ifndef RASTERIZE_TEXT_DEPTH
-%define RASTERIZE_TEXT_DEPTH
+%ifndef RASTERIZE_TEXTCLOUD_DEPTH
+%define RASTERIZE_TEXTCLOUD_DEPTH
 
 ; dependency
 %include "lib/io/framebuffer/set_text_depth.asm"
 
-rasterize_text_depth:
-; void rasterize_text_depth(void* {rdi}, int {rsi}, int {edx}, 
+rasterize_textcloud_depth:
+; void rasterize_textcloud_depth(void* {rdi}, int {rsi}, int {edx}, 
 ;	int {ecx}, struct* {r8}, struct* {r9}, single* {r10});
 ;	Rasterizes the text described by the structure at {r9} from the
 ;	perspective described by the structure at {r8} to the {edx}x{ecx} (WxH)
@@ -28,11 +28,12 @@ rasterize_text_depth:
 %endif
 
 %if 0
-.text_structure:
-	dq 0 ; address of 24-byte (x,y,z) position
-	dq 0 ; address of null-terminated string
-	dq 0 ; address of font definition
-	dq 0 ; font-size (scaling of 8px)
+.textcloud_structure:
+	dq .text_1_position ; address of 36-byte (x,y,z,char*,ARGB)
+	dq 10 ; number of textboxes in cloud
+	dq SCHIZOFONT ; address of font definition
+	dq 4 ; font-size (scaling of 8px)
+
 %endif
 
 	push rax
@@ -44,6 +45,7 @@ rasterize_text_depth:
 	push r12
 	push r13
 	push r14
+	push r15
 	sub rsp,160
 	movdqu [rsp+0],xmm0
 	movdqu [rsp+16],xmm1
@@ -56,10 +58,12 @@ rasterize_text_depth:
 	movdqu [rsp+128],xmm8
 	movdqu [rsp+144],xmm9
 
-	mov r14,[r9] 	; address of x,y,z for text
+	mov r14,[r9] 	; address of x,y,z,char*,ARGB for each text
+	mov r15,[r9+8] 	; num textboxes
 	mov r13,r10
 
-	;loop thru all points
+	; loop thru all points
+.loop_points:
 
 	; rasterized pt x = ((Pt).(Ux)*zoom)*width/2+width/2
 	; rasterized pt y = -((Pt).(Uy)*zoom)*height/2+height/2
@@ -114,14 +118,27 @@ rasterize_text_depth:
 	; NOTE mysterious inverted y-direction wrt other projections
 
 	mov r12,[r9+16]	; font definition
-	mov r11,[r9+8]	; text
+	mov r11,[r14+24]	; text
+	xor rsi,rsi
+	mov esi,dword [r14+32] 	; color
+	bts rsi,32
 	mov r10,[r9+24]	; font size
+
+	push r8
+	push r9
 
 	cvtsd2si r8,xmm0
 	cvtsd2si r9,xmm7
 	movsd xmm0,xmm6
 
 	call set_text_depth
+
+	pop r9
+	pop r8
+
+	add r14,36
+	dec r15
+	jnz .loop_points
 
 	movdqu xmm0,[rsp+0]
 	movdqu xmm1,[rsp+16]
@@ -134,6 +151,7 @@ rasterize_text_depth:
 	movdqu xmm8,[rsp+128]
 	movdqu xmm9,[rsp+144]
 	add rsp,160
+	pop r15
 	pop r14
 	pop r13
 	pop r12

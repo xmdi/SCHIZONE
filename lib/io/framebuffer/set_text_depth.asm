@@ -3,17 +3,16 @@
 
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
-%include "lib/debug/debug.asm"
 
 set_text_depth:
 ; void set_text(void* {rdi}, int {esi}, int {edx}, int {ecx},
 ;		 int {r8d}, int {r9d}, int {r10d}, char* {r11},
-; 		void* {r12}, single* {r13});
+; 		void* {r12}, single* {r13}, double {xmm0});
 ;	Renders null-terminated character array starting at {r11} beginning 
 ;	at pixel ({r8d},{r9d}) (from (0,0) @ top-left) in ARGB data array 
 ;	starting at {rdi} for an {edx}x{ecx} (WxH) image in the color value
 ;	in {esi}. Font defined at {r12} and font scaling in {r10}. Depth buffer
-; 	at {r13}.
+; 	at {r13}. Depth of text in {xmm0}.
 
 	push rbp
 	push r8

@@ -6,6 +6,7 @@
 %include "lib/io/framebuffer/parallel/rasterize_text_depth.asm"
 %include "lib/io/framebuffer/parallel/rasterize_edges_depth.asm"
 %include "lib/io/framebuffer/parallel/rasterize_pointcloud_depth.asm"
+%include "lib/io/framebuffer/parallel/rasterize_textcloud_depth.asm"
 
 framebuffer_3d_render_depth_switch:
 ; void framebuffer_3d_render_depth_switch(void* {rdi});
@@ -60,6 +61,9 @@ framebuffer_3d_render_depth_switch:
 	cmp byte [r14+24],0b00000110
 	je .is_face_interpolated_color
 
+	cmp byte [r14+24],0b00000011
+	je .is_textcloud
+
 	cmp byte [r14+24],0b00000010
 	je .is_text
 
@@ -109,6 +113,12 @@ framebuffer_3d_render_depth_switch:
 	call rasterize_faces_depth
 
 	jmp .geometry_type_unsupported
+
+.is_textcloud:
+	call rasterize_textcloud_depth
+	
+	jmp .geometry_type_unsupported
+
 
 .is_text:
 	call rasterize_text_depth

@@ -152,13 +152,12 @@ START:
 	mov rdi,.scatter_plot_structure
 	call scatter_plot_3d
 
-	;mov [.scatter_points_geometry],rax ; reactivate this
+	mov [.scatter_points_geometry],rax ; reactivate this
 
 	; init rendering
 	mov rdi,.perspective_structure
-	;mov rsi,.axis_geometry
-	;mov rsi,.scatter_points_geometry
-	mov rsi,.text_1_geometry
+	mov rsi,.scatter_points_geometry
+	;mov rsi,.text_1_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
@@ -269,7 +268,6 @@ START:
 		; bit 3		= show z-label?
 		; bit 4		= draw ticks?
 		; bit 5		= show tick labels?
-		; bit 6		= draw legend?
 
 .scatter_dataset_structure1:
 	dq 0; address of next dataset in linked list {*+0}
@@ -335,6 +333,7 @@ START:
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
 	db 0 ; characteristic size of each point if NULL pointer set above
 
+%if 0
 .text_1_geometry:
 	dq .scatter_points_geometry ; next geometry in linked list
 	dq .text_1_structure ; address of point/edge/face structure
@@ -348,10 +347,38 @@ START:
 	dq 4 ; font-size (scaling of 8px)
 
 .text_1_position:
-	dq 0.2,3.2,3.0
+	dq 10.0,10.0,10.0
 
 .text_1:
 	db `Jeffrey Epstein`,0
+%endif
+
+%if 0
+.text_1_geometry:
+	dq .scatter_points_geometry ; next geometry in linked list
+	dq .text_1_structure ; address of point/edge/face structure
+	dq 0x1FFFF0000 ; color (unused for textclouds)
+	db 0b00000011 ; type of structure to render
+
+.text_1_structure:
+	dq .text_1_array ; address of 24-byte (x,y,z,char*,ARGB) 
+	dq 2 ; number of textboxes
+	dq SCHIZOFONT ; address of font definition
+	dq 4 ; font-size (scaling of 8px)
+
+.text_1_array:
+	dq 10.0,10.0,10.0,.text_1
+       	dd 0xFFFF0000
+	dq 10.0,-10.0,10.0,.text_2
+       	dd 0xFF0000FF
+
+.text_1:
+	db `Jeffrey Epstein`,0
+	
+.text_2:
+	db `George W. Bush`,0
+
+%endif
 
 END:
 
