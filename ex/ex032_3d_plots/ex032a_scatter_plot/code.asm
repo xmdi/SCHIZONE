@@ -161,6 +161,8 @@ START:
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
+	debug_literal "$"
+
 .loop: 	; render loop
 
 	call framebuffer_3d_render_depth_loop

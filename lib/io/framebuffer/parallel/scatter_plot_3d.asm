@@ -526,6 +526,8 @@ scatter_plot_3d:
 	inc qword [.num_textboxes]
 .no_z_text:	
 %endif
+
+
 	mov rdi,[.num_textboxes]
 	imul rdi,rdi,36
 
@@ -689,8 +691,7 @@ scatter_plot_3d:
 	
 	dec rdi
 	jnz .loop_tick_labels_z
-
-
+	
 
 .no_axis:
 
