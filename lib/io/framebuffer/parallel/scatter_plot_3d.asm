@@ -636,6 +636,9 @@ scatter_plot_3d:
 
 	inc rdi
 
+
+	jmp .no_axis
+
 .loop_tick_labels_y:
 			
 	; put text at (xmm0,xmm1,xmm2)
