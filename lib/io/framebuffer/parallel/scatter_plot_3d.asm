@@ -529,6 +529,8 @@ scatter_plot_3d:
 
 
 	mov rdi,[.num_textboxes]
+	mov rdi,1
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	imul rdi,rdi,36
 
 	call heap_alloc
@@ -565,6 +567,9 @@ scatter_plot_3d:
 	mov rbx,[.pointcloud_array_address]
 	mov [rax+0],rbx	
 	mov rbx,[.num_textboxes]
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	mov rbx,1
+
 	mov [rax+8],rbx
 
 	mov rax,[.pointcloud_geometry_address]
@@ -604,13 +609,15 @@ scatter_plot_3d:
 	movsd [r14+8],xmm1
 	movsd [r14+16],xmm2
 	mov qword [r14+24],.kek
-	mov ebx,0xFFFFFFFF
+	mov ebx,dword [r15+160]
 	mov dword [r14+32],ebx
 
 	add r14,36
 
 	addsd xmm0,xmm4
-	
+
+	jmp .out ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	dec rdi
 	jnz .loop_tick_labels_x
 
@@ -694,7 +701,8 @@ scatter_plot_3d:
 	
 	dec rdi
 	jnz .loop_tick_labels_z
-	
+
+.out:	
 
 .no_axis:
 

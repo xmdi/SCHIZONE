@@ -253,12 +253,12 @@ START:
 	db 2; significant digits on x values {*+182}
 	db 2; significant digits on y values {*+183}
 	db 2; significant digits on z values {*+184}
-	db 32; title font size (px) {*+185}
-	db 24; axis label font size (px) {*+186}
-	db 16; tick & legend label font size (px) {*+187}
-	dq 1.0; y-offset for x-tick labels {*+188}
-	dq -1.0; x-offset for y-tick labels {*+196}
-	dq -1.0; x-offset for z-tick labels {*+204}
+	db 4; title font size (px) {*+185}
+	db 3; axis label font size (px) {*+186}
+	db 2; tick & legend label font size (px) {*+187}
+	dq 0.5; y-offset for x-tick labels {*+188}
+	dq -0.5; x-offset for y-tick labels {*+196}
+	dq -0.5; x-offset for z-tick labels {*+204}
 	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
 	db 5; x-tick fraction (/255) {*+213}
 	db 5; y-tick fraction (/255) {*+214}
