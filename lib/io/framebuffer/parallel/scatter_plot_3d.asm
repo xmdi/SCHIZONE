@@ -604,12 +604,7 @@ scatter_plot_3d:
 	mov ebx,dword [r15+160]
 	mov dword [r14+32],ebx
 
-	debug_literal "x"
-	debug_reg rdi
-	debug_reg r14
 	add r14,36
-
-
 
 	addsd xmm0,xmm4
 
@@ -647,9 +642,6 @@ scatter_plot_3d:
 	mov qword [r14+24],.kek
 	mov ebx,dword [r15+164]
 	mov dword [r14+32],ebx
-	debug_literal "y"
-	debug_reg rdi
-	debug_reg r14
 	
 	add r14,36
 
@@ -689,9 +681,6 @@ scatter_plot_3d:
 	mov qword [r14+24],.kek
 	mov ebx,dword [r15+168]
 	mov dword [r14+32],ebx
-	debug_literal "z"
-	debug_reg rdi
-	debug_reg r14
 	
 	add r14,36
 

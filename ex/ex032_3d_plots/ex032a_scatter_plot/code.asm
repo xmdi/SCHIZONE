@@ -154,17 +154,12 @@ START:
 
 	mov [.scatter_points_geometry],rax ; reactivate this
 
-	debug_literal "#"
-	
 	; init rendering
 	mov rdi,.perspective_structure
 	mov rsi,.scatter_points_geometry
 	;mov rsi,.text_1_geometry
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
-
-	debug_literal "$"
-;	debug_exit 4
 
 .loop: 	; render loop
 
