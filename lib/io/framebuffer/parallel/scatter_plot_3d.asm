@@ -461,14 +461,12 @@ scatter_plot_3d:
 	dec rdi
 	jnz .loop_ticks_z
 
-
 	; grid wire struct
 	mov rdi,33
 	call heap_alloc
 	
 	test rax,rax
 	jz .died
-
 	
 	mov rbx,[.num_grid_edges] ; num edges
 	mov [rax+8],rbx
@@ -527,12 +525,8 @@ scatter_plot_3d:
 .no_z_text:	
 %endif
 
-
 	mov rdi,[.num_textboxes]
-	mov rdi,1
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	imul rdi,rdi,36
-
 	call heap_alloc
 	test rax,rax
 	jz .died
@@ -551,6 +545,7 @@ scatter_plot_3d:
 	jz .died
 	mov [.pointcloud_geometry_address],rax
 
+
 	xor rbx,rbx
 	mov [rax+0],rbx
 	mov rbx,[.pointcloud_struct_address]
@@ -567,9 +562,6 @@ scatter_plot_3d:
 	mov rbx,[.pointcloud_array_address]
 	mov [rax+0],rbx	
 	mov rbx,[.num_textboxes]
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	mov rbx,1
-
 	mov [rax+8],rbx
 
 	mov rax,[.pointcloud_geometry_address]
@@ -612,27 +604,30 @@ scatter_plot_3d:
 	mov ebx,dword [r15+160]
 	mov dword [r14+32],ebx
 
+	debug_literal "x"
+	debug_reg rdi
+	debug_reg r14
 	add r14,36
 
-	addsd xmm0,xmm4
 
-	jmp .out ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	addsd xmm0,xmm4
 
 	dec rdi
 	jnz .loop_tick_labels_x
 
 	; y grid tick labels start here
 	
-	movzx rbx,byte [r15+176] ; major x ticks
-	
-	; tracking x y z in xmm0,xmm1,xmm2
-	movsd xmm0,[r15+88] ; xmin
-	movsd xmm1,[r15+72] ; yO
-	addsd xmm1,[r15+188] ; yO + tick label offset
-	movsd xmm2,[r15+80] ; zO
+	movzx rbx,byte [r15+177] ; major y ticks
 
-	movsd xmm4,[r15+96]
-	subsd xmm4,xmm0
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0
+	movsd xmm1,[r15+104] ; ymin
+	movsd xmm2,[r15+80] ; z0
+	addsd xmm2,[r15+196] ; zO + tick label offset
+
+	movsd xmm4,[r15+112]
+	subsd xmm4,xmm1
 
 	; check	
 	mov rdi,rbx
@@ -643,9 +638,6 @@ scatter_plot_3d:
 
 	inc rdi
 
-
-	jmp .no_axis
-
 .loop_tick_labels_y:
 			
 	; put text at (xmm0,xmm1,xmm2)
@@ -653,28 +645,31 @@ scatter_plot_3d:
 	movsd [r14+8],xmm1
 	movsd [r14+16],xmm2
 	mov qword [r14+24],.kek
-	mov ebx,0xFFFFFFFF
+	mov ebx,dword [r15+164]
 	mov dword [r14+32],ebx
-
+	debug_literal "y"
+	debug_reg rdi
+	debug_reg r14
+	
 	add r14,36
 
-	addsd xmm0,xmm4
+	addsd xmm1,xmm4
 	
 	dec rdi
 	jnz .loop_tick_labels_y
 
 	; z grid tick labels start here
 	
-	movzx rbx,byte [r15+176] ; major x ticks
+	movzx rbx,byte [r15+178] ; major z ticks
 	
 	; tracking x y z in xmm0,xmm1,xmm2
-	movsd xmm0,[r15+88] ; xmin
+	movsd xmm0,[r15+64] ; x0 
+	addsd xmm0,[r15+204] ; xO + tick label offset
 	movsd xmm1,[r15+72] ; yO
-	addsd xmm1,[r15+188] ; yO + tick label offset
-	movsd xmm2,[r15+80] ; zO
+	movsd xmm2,[r15+120] ; zmin
 
-	movsd xmm4,[r15+96]
-	subsd xmm4,xmm0
+	movsd xmm4,[r15+128]
+	subsd xmm4,xmm2
 
 	; check	
 	mov rdi,rbx
@@ -692,12 +687,15 @@ scatter_plot_3d:
 	movsd [r14+8],xmm1
 	movsd [r14+16],xmm2
 	mov qword [r14+24],.kek
-	mov ebx,0xFFFFFFFF
+	mov ebx,dword [r15+168]
 	mov dword [r14+32],ebx
-
+	debug_literal "z"
+	debug_reg rdi
+	debug_reg r14
+	
 	add r14,36
 
-	addsd xmm0,xmm4
+	addsd xmm2,xmm4
 	
 	dec rdi
 	jnz .loop_tick_labels_z
