@@ -244,18 +244,18 @@ START:
 	dd 0x000000; #XXXXXX title/legend RGB font color {*+172}
 	db 11; number of major x-ticks {*+176}
 	db 5; number of major y-ticks {*+177}
-	db 5; number of major z-ticks {*+178}
+	db 6; number of major z-ticks {*+178}
 	db 2; minor subdivisions per x-tick {*+179}
 	db 2; minor subdivisions per y-tick {*+180}
 	db 2; minor subdivisions per z-tick {*+181}
-	db 2; significant digits on x values {*+182}
-	db 2; significant digits on y values {*+183}
-	db 2; significant digits on z values {*+184}
+	db 3; significant digits on x values {*+182}
+	db 3; significant digits on y values {*+183}
+	db 3; significant digits on z values {*+184}
 	db 4; title font size (px) {*+185}
 	db 3; axis label font size (px) {*+186}
 	db 2; tick & legend label font size (px) {*+187}
 	dq 0.5; y-offset for x-tick labels {*+188}
-	dq -0.5; x-offset for y-tick labels {*+196}
+	dq 0.5; z-offset for y-tick labels {*+196}
 	dq -0.5; x-offset for z-tick labels {*+204}
 	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
 	db 5; x-tick fraction (/255) {*+213}
