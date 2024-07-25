@@ -206,7 +206,7 @@ START:
 	dq 0,3,0xFF0000FF ; Z
 
 .scatter_title:
-	db `A sphere`,0
+	db `Random Scatterplot`,0
 
 .scatter_xlabel:
 	db `x`,0
@@ -235,13 +235,13 @@ START:
 	dq 10.0; y-max (double) {*+112}
 	dq -10.0; z-min (double) {*+120}
 	dq 10.0; z-max (double) {*+128}
-	dq 0; legend x-coordinate {*+136}
-	dq 0; legend y-coordinate {*+144}
-	dq 0; legend z-coordinate {*+152}
-	dd 0xFF0000; #XXXXXX RGB x-axis color {*+160}
-	dd 0x00FF00; #XXXXXX RGB y-axis color {*+164}
-	dd 0x0000FF; #XXXXXX RGB z-axis color {*+168}
-	dd 0x000000; #XXXXXX title/legend RGB font color {*+172}
+	dq 0.0; legend x-coordinate {*+136}
+	dq -5.0; legend y-coordinate {*+144}
+	dq 12.0; legend z-coordinate {*+152}
+	dd 0xFFFF0000; #XXXXXX RGB x-axis color {*+160}
+	dd 0xFF00FF00; #XXXXXX RGB y-axis color {*+164}
+	dd 0xFF0000FF; #XXXXXX RGB z-axis color {*+168}
+	dd 0xFFFFFFFF; #XXXXXX title/legend RGB font color {*+172}
 	db 11; number of major x-ticks {*+176}
 	db 5; number of major y-ticks {*+177}
 	db 6; number of major z-ticks {*+178}

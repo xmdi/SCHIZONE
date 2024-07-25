@@ -798,7 +798,67 @@ scatter_plot_3d:
 	dec rdi
 	jnz .loop_tick_labels_z
 
-.out:	
+	;; title?
+	mov bl, byte [r15+216]
+	test bl,0b1
+	jz .no_title_text
+
+	mov rdi,24
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov [.title_position_address],rax
+	mov rbx,[r15+136]
+	mov [rax+0],rbx
+	mov rbx,[r15+144]
+	mov [rax+8],rbx
+	mov rbx,[r15+152]
+	mov [rax+16],rbx
+
+	mov rdi,32
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.title_struct_address],rax
+
+	mov rbx,SCHIZOFONT
+	mov [rax+16],rbx
+	xor rbx,rbx
+	movzx rbx,byte [r15+185]
+	mov [rax+24],rbx
+	mov rbx,[.title_position_address]
+	mov [rax+0],rbx	
+	mov rbx,[r15+0]
+	mov [rax+8],rbx
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.title_geometry_address],rax
+
+	xor rbx,rbx
+	mov [rax+0],rbx
+	mov rbx,[.title_struct_address]
+	mov [rax+8],rbx	
+	xor rbx,rbx
+	mov ebx,dword [r15+172]
+;	debug_reg_h rbx
+	bts rbx,32
+;	debug_reg_h rbx
+;	debug_exit 3
+	mov [rax+16],rbx
+	mov rbx,0b10
+	mov byte [rax+24],bl
+
+	mov rax,[.title_geometry_address]
+	mov rbx,[.pointcloud_geometry_address]
+	mov [rbx],rax
+
+.no_title_text:	
+
+
 
 .no_axis:
 
@@ -852,8 +912,14 @@ scatter_plot_3d:
 .pointcloud_geometry_address:
 	dq 0
 
-.kek:
-	db `kek`,0
+.title_position_address:
+	dq 0
+
+.title_struct_address:
+	dq 0
+
+.title_geometry_address:
+	dq 0
 
 align 8
 .byte_fraction:

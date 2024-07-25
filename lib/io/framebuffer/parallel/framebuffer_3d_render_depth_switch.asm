@@ -121,6 +121,7 @@ framebuffer_3d_render_depth_switch:
 
 
 .is_text:
+
 	call rasterize_text_depth
 
 
