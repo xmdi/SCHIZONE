@@ -178,33 +178,6 @@ START:
 	dq 1.0 ; upDir_z	
 	dq 0.2	; zoom
 
-.axis_geometry:
-	dq .scatter_points_geometry ; next geometry in linked list
-	dq .axis_wire_structure ; address of point/edge/face structure
-	dq 0xFF000000 ; color (0xARGB)
-	db 0b00001001 ; type of structure to render
-
-.axis_wire_structure:
-	dq 4 ; number of points (N)
-	dq 3 ; number of edges (M)
-	dq .axis_points ; starting address of point array (3N elements, 4N if colors)
-	dq .axis_edges ; starting address of edge array 
-		;	(2M elements if no colors)
-		;	(3M elements if colors)
-	db 3 ; line thickness
-
-
-.axis_points:
-	dq 0.0,0.0,0.0 ; O
-	dq 1.0,0.0,0.0 ; X
-	dq 0.0,1.0,0.0 ; Y
-	dq 0.0,0.0,1.0 ; Z
-
-.axis_edges:
-	dq 0,1,0xFFFF0000 ; X
-	dq 0,2,0xFF00FF00 ; Y
-	dq 0,3,0xFF0000FF ; Z
-
 .scatter_title:
 	db `Random Scatterplot`,0
 
@@ -332,53 +305,6 @@ START:
 	dd 0 ; global marker color if NULL pointer set above
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
 	db 0 ; characteristic size of each point if NULL pointer set above
-
-%if 0
-.text_1_geometry:
-	dq .scatter_points_geometry ; next geometry in linked list
-	dq .text_1_structure ; address of point/edge/face structure
-	dq 0x1FFFF0000 ; color (0xARGB)
-	db 0b00000010 ; type of structure to render
-
-.text_1_structure:
-	dq .text_1_position ; address of 24-byte (x,y,z) position
-	dq .text_1 ; address of null-terminated string
-	dq SCHIZOFONT ; address of font definition
-	dq 4 ; font-size (scaling of 8px)
-
-.text_1_position:
-	dq 10.0,10.0,10.0
-
-.text_1:
-	db `Jeffrey Epstein`,0
-%endif
-
-%if 0
-.text_1_geometry:
-	dq .scatter_points_geometry ; next geometry in linked list
-	dq .text_1_structure ; address of point/edge/face structure
-	dq 0x1FFFF0000 ; color (unused for textclouds)
-	db 0b00000011 ; type of structure to render
-
-.text_1_structure:
-	dq .text_1_array ; address of 24-byte (x,y,z,char*,ARGB) 
-	dq 2 ; number of textboxes
-	dq SCHIZOFONT ; address of font definition
-	dq 4 ; font-size (scaling of 8px)
-
-.text_1_array:
-	dq 10.0,10.0,10.0,.text_1
-       	dd 0xFFFF0000
-	dq 10.0,-10.0,10.0,.text_2
-       	dd 0xFF0000FF
-
-.text_1:
-	db `Jeffrey Epstein`,0
-	
-.text_2:
-	db `George W. Bush`,0
-
-%endif
 
 END:
 
