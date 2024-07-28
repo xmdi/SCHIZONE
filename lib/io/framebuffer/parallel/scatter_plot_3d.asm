@@ -858,6 +858,70 @@ scatter_plot_3d:
 
 .no_title_text:	
 
+; 	axis titles
+
+	xor rdi,rdi
+	mov bl, byte [r15+216]
+	test bl,0b10
+	jz .no_x_text
+	inc rdi
+.no_x_text:	
+	test bl,0b10
+	jz .no_y_text
+	inc rdi
+.no_y_text:
+	test bl,0b100
+	jz .no_z_text
+	inc rdi
+.no_z_text:
+
+	push rdi
+
+	imul rdi,rdi,36
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov [.axis_textcloud_array_address],rax
+
+	mov rdi,32
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.axis_textcloud_struct_address],rax
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.axis_textcloud_geometry_address],rax
+
+	xor rbx,rbx
+	mov [rax+0],rbx
+	mov rbx,[.axis_textcloud_struct_address]
+	mov [rax+8],rbx
+	mov rbx,0b11
+	mov byte [rax+24],bl
+
+	mov rax,[.axis_textcloud_struct_address]
+	mov rbx,SCHIZOFONT
+	mov [rax+16],rbx
+	xor rbx,rbx
+	movzx rbx,byte [r15+187]
+	mov [rax+24],rbx
+	mov rbx,[.axis_textcloud_array_address]
+	mov [rax+0],rbx	
+	pop rbx
+;	mov rbx,[.num_textboxes];;;;;;;;;;;;;;;;;;;;;;;;;;;
+	mov [rax+8],rbx
+
+	mov rax,[.axis_textcloud_geometry_address]
+	mov rbx,[.title_geometry_address]
+	mov [rbx],rax
+
+	; populate the axis labels here
+
+
 
 
 .no_axis:
