@@ -42,7 +42,7 @@
 	db 24; axis label font size (px) {*+186}
 	db 16; tick label font size (px) {*+187}
 	dq 1.0; y-offset for x-tick labels {*+188}
-	dq -1.0; x-offset for y-tick labels {*+196}
+	dq -1.0; z-offset for y-tick labels {*+196}
 	dq -1.0; x-offset for z-tick labels {*+204}
 	db 2; axis & tick stroke thickness (px) (0 disables axis) {*+212}
 	db 5; x-tick fraction (/255) {*+213}
@@ -512,25 +512,6 @@ scatter_plot_3d:
 	mov [rbx],rax
 
 .no_grid:
-%if 0
-	mov bl, byte [r15+216]
-	test bl,0b1
-	jz .no_title_text
-	inc qword [.num_textboxes]
-.no_title_text:	
-	test bl,0b10
-	jz .no_x_text
-	inc qword [.num_textboxes]
-.no_x_text:	
-	test bl,0b10
-	jz .no_y_text
-	inc qword [.num_textboxes]
-.no_y_text:
-	test bl,0b100
-	jz .no_z_text
-	inc qword [.num_textboxes]
-.no_z_text:	
-%endif
 
 	mov rdi,[.num_textboxes]
 	imul rdi,rdi,36
@@ -565,6 +546,8 @@ scatter_plot_3d:
 	mov [rax+16],rbx
 	xor rbx,rbx
 	movzx rbx,byte [r15+187]
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	add rbx,0b1000000000
 	mov [rax+24],rbx
 	mov rbx,[.pointcloud_array_address]
 	mov [rax+0],rbx	
@@ -866,11 +849,11 @@ scatter_plot_3d:
 	jz .no_x_text
 	inc rdi
 .no_x_text:	
-	test bl,0b10
+	test bl,0b100
 	jz .no_y_text
 	inc rdi
 .no_y_text:
-	test bl,0b100
+	test bl,0b1000
 	jz .no_z_text
 	inc rdi
 .no_z_text:
@@ -907,21 +890,102 @@ scatter_plot_3d:
 	mov rbx,SCHIZOFONT
 	mov [rax+16],rbx
 	xor rbx,rbx
-	movzx rbx,byte [r15+187]
+	movzx rbx,byte [r15+186]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	add rbx,0b1000000000
+
 	mov [rax+24],rbx
 	mov rbx,[.axis_textcloud_array_address]
 	mov [rax+0],rbx	
 	pop rbx
-;	mov rbx,[.num_textboxes];;;;;;;;;;;;;;;;;;;;;;;;;;;
 	mov [rax+8],rbx
 
 	mov rax,[.axis_textcloud_geometry_address]
 	mov rbx,[.title_geometry_address]
 	mov [rbx],rax
 
+	mov r14,[.axis_textcloud_array_address]
+
 	; populate the axis labels here
 
+	mov bl, byte [r15+216]
+	test bl,0b10
+	jz .put_no_x_text
+	
+	; origin location
+	movsd xmm0,[r15+64]
+	movsd xmm1,[r15+72]
+	movsd xmm2,[r15+80]
 
+	addsd xmm0,[r15+96]
+	subsd xmm1,[r15+188]
+	; z unaffected
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	mov rax,[r15+8]
+	mov qword [r14+24],rax
+
+	mov ebx,dword [r15+160]
+	mov dword [r14+32],ebx
+
+	add r14,36
+
+.put_no_x_text:	
+	mov bl, byte [r15+216]
+	test bl,0b100
+	jz .put_no_y_text
+
+	; origin location
+	movsd xmm0,[r15+64]
+	movsd xmm1,[r15+72]
+	movsd xmm2,[r15+80]
+
+	; x unaffected
+	addsd xmm1,[r15+112]
+	subsd xmm2,[r15+196]
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	mov rax,[r15+16]
+	mov qword [r14+24],rax
+
+	mov ebx,dword [r15+164]
+	mov dword [r14+32],ebx
+	add r14,36
+	
+	
+.put_no_y_text:
+	mov bl, byte [r15+216]
+	test bl,0b1000
+	jz .put_no_z_text
+
+	; origin location
+	movsd xmm0,[r15+64]
+	movsd xmm1,[r15+72]
+	movsd xmm2,[r15+80]
+
+	subsd xmm0,[r15+204]
+	; y unaffected
+	addsd xmm2,[r15+128]
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	mov rax,[r15+24]
+	mov qword [r14+24],rax
+
+	mov ebx,dword [r15+168]
+	mov dword [r14+32],ebx
+	
+	
+.put_no_z_text:
 
 
 .no_axis:
@@ -974,6 +1038,15 @@ scatter_plot_3d:
 	dq 0
 
 .pointcloud_geometry_address:
+	dq 0
+
+.axis_textcloud_array_address:
+	dq 0
+
+.axis_textcloud_struct_address:
+	dq 0
+
+.axis_textcloud_geometry_address:
 	dq 0
 
 .title_position_address:

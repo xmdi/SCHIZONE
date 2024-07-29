@@ -14,6 +14,10 @@ set_text_depth:
 ;	in {esi}. Font defined at {r12} and font scaling in {r10}. Depth buffer
 ; 	at {r13}. Depth of text in {xmm0}.
 
+
+	; low byte r10 = font scale
+	; second byte r10 = text alignment
+
 	push rbp
 	push r8
 	push r9
@@ -36,7 +40,57 @@ set_text_depth:
 	
 	mov [.depth_buffer_address],r13
 
+	; adjust per desired text alignment
+
+	mov rbx,r10
+	shr rbx,8
+	and rbx,0xFF
+	cmp bl,0b00
+	je .letter_loop ; left alignment
+
+	; count number of characters before encountering a newline/null-byte
+	push r11
+	xor r15,r15
+.char_count_loop:
+	cmp byte [r11], byte 10
+	je .stop_counting	
+	cmp byte [r11], byte 0
+	je .stop_counting
+	inc r15
+	inc r11
+	jmp .char_count_loop
+
+.stop_counting:
+
+	cmp bl,0b01
+	je .right_alignment ; right alignment
+	; if neither right nor left aligned, do center alignment
+
+.center_alignment: ; center alignment
+
+	mov rbx,r10
+	and rbx,0xFF
+	shl rbx,2
+	imul rbx,r15
+	sub r8,rbx
+	pop r11
+	jmp .pre_letter_loop
+	
+.right_alignment:
+	mov rbx,r10
+	and rbx,0xFF
+	shl rbx,3
+	imul rbx,r15
+	sub r8,rbx
+	pop r11
+
+.pre_letter_loop:
+
+	and r10,0xFF
+	mov [rsp+56],r8
+	
 .letter_loop:
+
 	xor rbp,rbp
 	mov bpl,byte [r11]
 	cmp rbp,10

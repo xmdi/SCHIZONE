@@ -182,13 +182,13 @@ START:
 	db `Random Scatterplot`,0
 
 .scatter_xlabel:
-	db `x`,0
+	db `xtitle`,0
 
 .scatter_ylabel:
-	db `y`,0
+	db `ytitle`,0
 
 .scatter_zlabel:
-	db `z`,0
+	db `ztitle`,0
 
 .scatter_plot_structure:
 	dq .scatter_title; address of null-terminated title string {*+0}
