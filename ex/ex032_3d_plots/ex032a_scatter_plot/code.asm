@@ -152,12 +152,9 @@ START:
 	mov rdi,.scatter_plot_structure
 	call scatter_plot_3d
 
-	mov [.scatter_points_geometry],rax ; reactivate this
-
 	; init rendering
 	mov rdi,.perspective_structure
-	mov rsi,.scatter_points_geometry
-	;mov rsi,.text_1_geometry
+	mov rsi,rax
 	mov rdx,DRAW_CROSS_CURSOR
 	call framebuffer_3d_render_depth_init
 
@@ -265,7 +262,7 @@ START:
 		; bit 0 (LSB)	= include in legend?
 
 .scatter_data_label_1:
-	db `sphere points`,0
+	db `random points`,0
 .x_coords:
 	times 101 dq 0.0
 .y_coords:
@@ -278,33 +275,6 @@ START:
 	times 101 db 0
 .marker0_types:
 	times 101 db 0
-
-	; container for pointcloud rendering struct
-.scatter_points_geometry:
-	dq 0 ; next geometry in linked list
-	dq .scatter_points_structure ; address of point/edge/face structure
-	dq 0x1FF000000 ; color (0xARGB) NOTE: UNUSED!
-	db 0b00000001 ; type of structure to render
-
-	; pointcloud rendering struct
-.scatter_points_structure:
-	dq 101 ; number of points (N)
-	dq .x_coords ; pointer to (x) point array (8N bytes)
-	dq .y_coords ; pointer to (y) point array (8N bytes)
-	dq .z_coords ; pointer to (z) point array (8N bytes)
-	dq .marker0_colors ; pointer (4N bytes)
-	dq .marker0_types ; pointer to render type (N bytes)
-				; (1=O,2=X,3=[],4=tri)
-	dq .marker0_sizes ; pointer (N bytes)
-	dw 0 ;
-	dw 0 ;
-	dw 0 ;
-	dw 0 ;
-	dw 0 ;
-	dw 0 ;
-	dd 0 ; global marker color if NULL pointer set above
-	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
-	db 0 ; characteristic size of each point if NULL pointer set above
 
 END:
 

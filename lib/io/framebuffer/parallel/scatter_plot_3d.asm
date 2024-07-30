@@ -809,6 +809,8 @@ scatter_plot_3d:
 	mov [rax+16],rbx
 	xor rbx,rbx
 	movzx rbx,byte [r15+185]
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	add rbx,0b1000000000
 	mov [rax+24],rbx
 	mov rbx,[.title_position_address]
 	mov [rax+0],rbx	
@@ -989,6 +991,74 @@ scatter_plot_3d:
 
 
 .no_axis:
+
+	; scatter point struct population
+	; TODO loop thru multiple
+
+	mov rdi,74
+	call heap_alloc
+	test rax,rax
+	jz .died
+	push rax
+
+	mov r14,[r15+32] ; scatter_dataset_structure
+
+	mov ebx,dword [r14+76]
+	mov [rax+0],rbx
+
+	mov rbx,[r14+16]
+	mov [rax+8],rbx
+	mov rbx,[r14+26]
+	mov [rax+16],rbx
+	mov rbx,[r14+36]
+	mov [rax+24],rbx
+	mov rbx,[r14+46]
+	mov [rax+32],rbx
+	mov rbx,[r14+56]
+	mov [rax+40],rbx
+	mov rbx,[r14+66]
+	mov [rax+48],rbx
+
+
+	mov bx,word [r14+24]
+	mov word [rax+56],bx
+	mov bx,word [r14+34]
+	mov word [rax+58],bx
+	mov bx,word [r14+44]
+	mov word [rax+60],bx
+	mov bx,word [r14+54]
+	mov word [rax+62],bx
+	mov bx,word [r14+64]
+	mov word [rax+64],bx
+	mov bx,word [r14+74]
+	mov word [rax+66],bx
+
+	mov ebx,dword [r14+80]
+	mov dword [rax+68],ebx
+	mov bl,byte [r14+84]
+	mov byte [rax+72],bl
+	mov bl,byte [r14+85]
+	mov byte [rax+73],bl
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	xor rbx,rbx
+	mov [rax],rbx
+	mov [rax+16],rbx
+	pop rbx
+	mov [rax+8],rbx
+	mov rbx,0b1
+	mov byte [rax+24],bl
+
+	mov rbx,[.axis_textcloud_geometry_address]
+	mov [rbx],rax
+
+
+; end of scatter points
+
 
 	mov rax,[.axis_geometry_struct_address]
 
