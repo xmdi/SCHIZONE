@@ -83,6 +83,7 @@ framebuffer_3d_render_depth_init:
 	
 	mov rdi,[framebuffer_init.framebuffer_size]
 	call heap_alloc
+
 	mov [.depth_buffer_address],rax
 	
 	; set the depth at every pixel to start at +Inf
@@ -92,6 +93,7 @@ framebuffer_3d_render_depth_init:
 	mov ebx,[.Inf]
 
 .depth_buffer_init:
+
 	mov [rdi],ebx	
 	add rdi,4
 	dec rcx
@@ -297,7 +299,6 @@ framebuffer_3d_render_depth_init:
 	cvtsi2sd xmm10,rax
 	movsd [.half_height],xmm10
 
-
 	;; everything above should work
 
 	; process objects
@@ -318,7 +319,7 @@ framebuffer_3d_render_depth_init:
 	add rsi,24
 	call distance_3
 	movsd [.look_distance],xmm0
-	
+
 	movdqu xmm15,[rsp+0]
 	add rsp,16
 	pop r15

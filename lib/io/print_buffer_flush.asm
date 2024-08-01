@@ -12,7 +12,9 @@ print_buffer_flush:
 	push rax
 
 	mov rsi,PRINT_BUFFER	; save address of first character in {rsi}
+	.b:
 	mov rdx,[PRINT_BUFFER_LENGTH] ; set {rdx} to number of bytes in buffer
+	.a:
 	mov rax,SYS_WRITE	; set {rax} to write syscall
 	syscall			; execute write syscall
 	xor rax,rax

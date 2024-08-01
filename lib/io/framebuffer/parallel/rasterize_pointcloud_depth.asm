@@ -83,6 +83,7 @@ rasterize_pointcloud_depth:
 	mulsd xmm11,[.two]
 
 	mov r15,[r14+0]	; number of points in r15
+
 	;mov rax,[r14+8] ; point to 0th point x coordinate
 	;xor rax,rax ; point to 0th point x coordinate
 	mov rbx,[r14+32] ; point to 0th point marker color
@@ -112,7 +113,6 @@ rasterize_pointcloud_depth:
 	add rax,[rsp+0]
 	add rsp,8
 	mov [.x_offset],rax
-
 	mov rax,[.y_offset]
 	push rax
 	add rax,[r14+16]
@@ -122,7 +122,6 @@ rasterize_pointcloud_depth:
 	add rax,[rsp+0]
 	add rsp,8
 	mov [.y_offset],rax
-	
 	mov rax,[.z_offset]
 	push rax
 	add rax,[r14+24]
@@ -130,9 +129,9 @@ rasterize_pointcloud_depth:
 	movzx rax, word [r14+60]
 	add ax,8
 	add rax,[rsp+0]
+
 	add rsp,8
 	mov [.z_offset],rax
-	
 	; correct relative to lookFrom point
 	subsd xmm3,[r8+0]
 	subsd xmm4,[r8+8]
@@ -183,8 +182,9 @@ rasterize_pointcloud_depth:
 	cmp qword [r14+32],0
 	je .color_set
 	mov esi,dword [rbx]
-	add rbx,4
-	add rbx,[r14+62]
+	add rbx,4	
+	movzx rax,word [r14+62]
+	add rbx,rax
 .color_set:
 	; grab marker size
 	cmp qword [r14+48],0
@@ -195,8 +195,9 @@ rasterize_pointcloud_depth:
 	movsd xmm11,xmm10 
 	mulsd xmm11,[.two]
 
-	inc r12
-	add r12,[r14+66]
+	inc r12	
+	movzx rax,word [r14+66]
+	add r12,rax
 .size_set:
 
 	; handle different point types 
@@ -206,7 +207,8 @@ rasterize_pointcloud_depth:
 	je .type_set
 	movzx rbp,byte [r11]
 	inc r11
-	add r11,[r14+64]
+	movzx rax,word [r14+64]
+	add r11,rax
 .type_set:
 
 	cmp bpl,1

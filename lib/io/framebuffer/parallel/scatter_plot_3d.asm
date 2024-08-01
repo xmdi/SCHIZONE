@@ -1003,7 +1003,7 @@ scatter_plot_3d:
 
 	mov r14,[r15+32] ; scatter_dataset_structure
 
-	mov ebx,dword [r14+76]
+	mov ebx, dword [r14+76] ; nPoints
 	mov [rax+0],rbx
 
 	mov rbx,[r14+16]
@@ -1014,11 +1014,10 @@ scatter_plot_3d:
 	mov [rax+24],rbx
 	mov rbx,[r14+46]
 	mov [rax+32],rbx
-	mov rbx,[r14+56]
-	mov [rax+40],rbx
 	mov rbx,[r14+66]
+	mov [rax+40],rbx
+	mov rbx,[r14+56]
 	mov [rax+48],rbx
-
 
 	mov bx,word [r14+24]
 	mov word [rax+56],bx
@@ -1028,16 +1027,16 @@ scatter_plot_3d:
 	mov word [rax+60],bx
 	mov bx,word [r14+54]
 	mov word [rax+62],bx
-	mov bx,word [r14+64]
-	mov word [rax+64],bx
 	mov bx,word [r14+74]
+	mov word [rax+64],bx
+	mov bx,word [r14+64]
 	mov word [rax+66],bx
 
 	mov ebx,dword [r14+80]
 	mov dword [rax+68],ebx
-	mov bl,byte [r14+84]
-	mov byte [rax+72],bl
 	mov bl,byte [r14+85]
+	mov byte [rax+72],bl
+	mov bl,byte [r14+84]
 	mov byte [rax+73],bl
 
 	mov rdi,25
@@ -1049,13 +1048,13 @@ scatter_plot_3d:
 	mov [rax],rbx
 	mov [rax+16],rbx
 	pop rbx
+
 	mov [rax+8],rbx
-	mov rbx,0b1
+	mov rbx,1
 	mov byte [rax+24],bl
 
 	mov rbx,[.axis_textcloud_geometry_address]
 	mov [rbx],rax
-
 
 ; end of scatter points
 

@@ -5,7 +5,7 @@
 %define LOAD_ADDRESS 0x00020000 ; pretty much any number >0 works
 %define CODE_SIZE END-(LOAD_ADDRESS+0x78) ; everything beyond HEADER is code
 %define PRINT_BUFFER_SIZE 4096
-%define HEAP_SIZE 0x8000000
+%define HEAP_SIZE 0x2000000
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;HEADER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -176,16 +176,16 @@ START:
 	dq 0.2	; zoom
 
 .scatter_title:
-	db `Random Scatterplot`,0
+	db `Meri's visits to Epstein Island`,0
 
 .scatter_xlabel:
-	db `xtitle`,0
+	db `Day of Month`,0
 
 .scatter_ylabel:
-	db `ytitle`,0
+	db `Age of Minor`,0
 
 .scatter_zlabel:
-	db `ztitle`,0
+	db `Time Spent`,0
 
 .scatter_plot_structure:
 	dq .scatter_title; address of null-terminated title string {*+0}
@@ -199,19 +199,19 @@ START:
 	dq 0.0; origin x-coord (double) {*+64}
 	dq 0.0; origin y-coord (double) {*+72}
 	dq 0.0; origin z_coord (double) {*+80}
-	dq -10.0; x-min (double) {*+88}
-	dq 10.0; x-max (double) {*+96}
-	dq -10.0; y-min (double) {*+104}
-	dq 10.0; y-max (double) {*+112}
-	dq -10.0; z-min (double) {*+120}
-	dq 10.0; z-max (double) {*+128}
+	dq -100.0; x-min (double) {*+88}
+	dq 100.0; x-max (double) {*+96}
+	dq -100.0; y-min (double) {*+104}
+	dq 100.0; y-max (double) {*+112}
+	dq -100.0; z-min (double) {*+120}
+	dq 100.0; z-max (double) {*+128}
 	dq 0.0; legend x-coordinate {*+136}
-	dq -5.0; legend y-coordinate {*+144}
-	dq 12.0; legend z-coordinate {*+152}
-	dd 0xFFFF0000; #XXXXXX RGB x-axis color {*+160}
-	dd 0xFF00FF00; #XXXXXX RGB y-axis color {*+164}
-	dd 0xFF0000FF; #XXXXXX RGB z-axis color {*+168}
-	dd 0xFFFFFFFF; #XXXXXX title/legend RGB font color {*+172}
+	dq 0.0; legend y-coordinate {*+144}
+	dq 112.0; legend z-coordinate {*+152}
+	dd 0xFFFFFF00; #XXXXXX RGB x-axis color {*+160}
+	dd 0xFFFF69B4; #XXXXXX RGB y-axis color {*+164}
+	dd 0xFF355E3B; #XXXXXX RGB z-axis color {*+168}
+	dd 0xFFF9F9F9; #XXXXXX title/legend RGB font color {*+172}
 	db 11; number of major x-ticks {*+176}
 	db 5; number of major y-ticks {*+177}
 	db 6; number of major z-ticks {*+178}
@@ -224,9 +224,9 @@ START:
 	db 4; title font size (px) {*+185}
 	db 3; axis label font size (px) {*+186}
 	db 2; tick & legend label font size (px) {*+187}
-	dq 0.5; y-offset for x-tick labels {*+188}
-	dq 0.5; z-offset for y-tick labels {*+196}
-	dq -0.5; x-offset for z-tick labels {*+204}
+	dq 5.0; y-offset for x-tick labels {*+188}
+	dq 5.0; z-offset for y-tick labels {*+196}
+	dq -5.0; x-offset for z-tick labels {*+204}
 	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
 	db 5; x-tick fraction (/255) {*+213}
 	db 5; y-tick fraction (/255) {*+214}
