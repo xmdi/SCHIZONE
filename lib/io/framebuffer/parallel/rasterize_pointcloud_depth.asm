@@ -28,23 +28,29 @@ rasterize_pointcloud_depth:
 
 %if 0
 .points_structure:
-	dq 0 ; number of points (N)
-	dq .points_x ; pointer to (x) point array (8N bytes)
-	dq .points_y ; pointer to (y) point array (8N bytes)
-	dq .points_z ; pointer to (z) point array (8N bytes)
-	dq .marker_colors ; pointer (4N bytes)
-	dq .marker_types ; pointer to render type (N bytes)
-				; (1=O,2=X,3=[],4=tri)
-	dq .marker_sizes ; pointer (N bytes)
-	dw .stride_x ;
-	dw .stride_y ;
-	dw .stride_z ;
-	dw .stride_colors ;
-	dw .stride_types ;
-	dw .stride_sizes ;
-	dd 0 ; global marker color if NULL pointer set above
+	dq 0 ; number of points (N) [*+0]
+	dq .points_x ; pointer to (x) point array (8N bytes) [*+8]
+	dq .points_y ; pointer to (y) point array (8N bytes) [*+16]
+	dq .points_z ; pointer to (z) point array (8N bytes) [*+24]
+	dq .marker_colors ; pointer (4N bytes) [*+32]
+	dq .marker_types ; pointer to render type (N bytes) [*+40]
+				; (1=O,2=X,3=[],4=tri
+	dq .marker_sizes ; pointer (N bytes) [*+48]
+	dw .stride_x ; [*+56]
+	dw .stride_y ; [*+58]
+	dw .stride_z ; [*+60]
+	dw .stride_colors ; [*+62]
+	dw .stride_types ; [*+64]
+	dw .stride_sizes ; [*+66]
+	dd 0 ; global marker color if NULL pointer set above [*+68]
 	db 0 ; point render type (1=O,2=X,3=[],4=tri) if NULL pointer set above
+       		;[*+72]
 	db 0 ; characteristic size of each point if NULL pointer set above
+       		;[*+73]
+	dq 0 ; x-direction pointcloud translation [*+74]
+	dq 0 ; y-direction pointcloud translation [*+82]
+	dq 0 ; z-direction pointcloud translation [*+90]
+
 %endif
 
 	push rax
@@ -136,6 +142,11 @@ rasterize_pointcloud_depth:
 	subsd xmm3,[r8+0]
 	subsd xmm4,[r8+8]
 	subsd xmm5,[r8+16]
+
+	; adjust point based on pointcloud translation	
+	addsd xmm3,[r14+74]
+	addsd xmm4,[r14+82]
+	addsd xmm5,[r14+90]
 
 	movsd xmm0,[framebuffer_3d_render_depth_init.view_axes+48]
 	movsd xmm1,[framebuffer_3d_render_depth_init.view_axes+56]

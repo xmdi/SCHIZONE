@@ -840,12 +840,17 @@ scatter_plot_3d:
 	jz .died
 
 	mov [.title_position_address],rax
-	mov rbx,[r15+136]
-	mov [rax+0],rbx
-	mov rbx,[r15+144]
-	mov [rax+8],rbx
-	mov rbx,[r15+152]
-	mov [rax+16],rbx
+	
+	
+	movsd xmm0,[r15+136]
+	addsd xmm0,[r15+40]
+	movsd [rax+0],xmm0
+	movsd xmm0,[r15+144]
+	addsd xmm0,[r15+48]
+	movsd [rax+8],xmm0
+	movsd xmm0,[r15+152]
+	addsd xmm0,[r15+56]
+	movsd [rax+16],xmm0
 
 	mov rdi,32
 	call heap_alloc
@@ -1061,7 +1066,7 @@ scatter_plot_3d:
 	; scatter point struct population
 	; TODO loop thru multiple
 
-	mov rdi,74
+	mov rdi,98
 	call heap_alloc
 	test rax,rax
 	jz .died
@@ -1103,6 +1108,14 @@ scatter_plot_3d:
 	mov bl,byte [r14+84]
 	mov byte [rax+73],bl
 
+	; offset scatterplot translation
+	mov rbx,[r15+40]
+	mov [rax+74],rbx
+	mov rbx,[r15+48]
+	mov [rax+82],rbx
+	mov rbx,[r15+56]
+	mov [rax+90],rbx
+	
 	mov rdi,25
 	call heap_alloc
 	test rax,rax

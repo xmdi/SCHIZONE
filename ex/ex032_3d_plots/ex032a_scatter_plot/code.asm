@@ -50,8 +50,6 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/debug/debug.asm"
-
 %include "lib/io/bitmap/SCHIZOFONT.asm"
 
 %include "lib/io/bitmap/set_line.asm"

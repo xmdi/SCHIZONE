@@ -4,8 +4,6 @@
 ; dependency
 %include "lib/io/bitmap/set_pixel.asm"
 
-%include "lib/debug/debug.asm"
-
 set_line_depth:
 ; void set_line_depth(void* {rdi}, long*/long {rsi}, int {edx}, int {ecx},
 ;		 double* {r8},[6x0B,char,bool] {r9}, single* {r10})
