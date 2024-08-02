@@ -193,9 +193,9 @@ START:
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
 	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
-	dq 0.0; plot origin x translation (double) {*+40}
-	dq 0.0; plot origin y translation (double) {*+48}
-	dq 0.0; plot origin z translation (double) {*+56}
+	dq 3.0; plot origin x translation (double) {*+40}
+	dq 3.0; plot origin y translation (double) {*+48}
+	dq 3.0; plot origin z translation (double) {*+56}
 	dq 0.0; origin x-coord (double) {*+64}
 	dq 0.0; origin y-coord (double) {*+72}
 	dq 0.0; origin z_coord (double) {*+80}
@@ -205,13 +205,13 @@ START:
 	dq 10.0; y-max (double) {*+112}
 	dq -10.0; z-min (double) {*+120}
 	dq 10.0; z-max (double) {*+128}
-	dq 0.0; legend x-coordinate {*+136}
-	dq 0.0; legend y-coordinate {*+144}
-	dq 12.0; legend z-coordinate {*+152}
+	dq 0.0; title x-coordinate {*+136}
+	dq 0.0; title y-coordinate {*+144}
+	dq 12.0; title z-coordinate {*+152}
 	dd 0xFFFF0000; #XXXXXX RGB x-axis color {*+160}
 	dd 0xFF00FF00; #XXXXXX RGB y-axis color {*+164}
 	dd 0xFF0000FF; #XXXXXX RGB z-axis color {*+168}
-	dd 0xFFFFFFFF; #XXXXXX title/legend RGB font color {*+172}
+	dd 0xFFFFFFFF; #XXXXXX title RGB font color {*+172}
 	db 5; number of major x-ticks {*+176}
 	db 5; number of major y-ticks {*+177}
 	db 5; number of major z-ticks {*+178}
@@ -223,10 +223,10 @@ START:
 	db 3; significant digits on z values {*+184}
 	db 4; title font size (px) {*+185}
 	db 3; axis label font size (px) {*+186}
-	db 2; tick & legend label font size (px) {*+187}
-	dq 0.5; y-offset for x-tick labels {*+188}
+	db 2; tick label font size (px) {*+187}
+	dq 1.0; y-offset for x-tick labels {*+188}
 	dq 0.5; z-offset for y-tick labels {*+196}
-	dq -0.5; x-offset for z-tick labels {*+204}
+	dq -1.0; x-offset for z-tick labels {*+204}
 	db 2; axis & major tick stroke thickness (px) (0 disables axis) {*+212}
 	db 5; x-tick fraction (/255) {*+213}
 	db 5; y-tick fraction (/255) {*+214}
@@ -241,7 +241,7 @@ START:
 
 .scatter_dataset_structure1:
 	dq 0; address of next dataset in linked list {*+0}
-	dq .scatter_data_label_1; address of null-terminated label string {*+8}
+	dq 0; address of null-terminated label string, currently unused {*+8}
 	dq .x_coords; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
 	dq .y_coords; address of first y-coordinate {*+26}
@@ -261,8 +261,6 @@ START:
 	db 0x01; flags: {*+86}
 		; bit 0 (LSB)	= include in legend?
 
-.scatter_data_label_1:
-	db `random points`,0
 .x_coords:
 	times 101 dq 0.0
 .y_coords:

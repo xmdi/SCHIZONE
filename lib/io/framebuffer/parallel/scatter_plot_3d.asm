@@ -58,7 +58,7 @@
 
 .scatter_dataset_structure1:
 	dq 0; address of next dataset in linked list {*+0}
-	dq .scatter_data_label_1; address of null-terminated label string {*+8}
+	dq 0; address of null-terminated label string, currently unused {*+8}
 	dq .x_coords; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
 	dq .y_coords; address of first y-coordinate {*+26}
@@ -117,38 +117,50 @@ scatter_plot_3d:
 	test rax,rax
 	jz .died
 
-	mov rbx,[r15+64] ; origin x
+	movsd xmm0,[r15+64] ; origin x
+	addsd xmm0,[r15+40]
+	movq rbx,xmm0
 	mov [rax+48],rbx	
 	mov [rax+72],rbx	
 	mov [rax+96],rbx	
 	mov [rax+120],rbx	
 
-	mov rbx,[r15+72] ; origin y
+	movsd xmm0,[r15+72] ; origin y
+	addsd xmm0,[r15+48]
+	movq rbx,xmm0
 	mov [rax+8],rbx	
 	mov [rax+32],rbx	
 	mov [rax+104],rbx	
 	mov [rax+128],rbx	
 
-	mov rbx,[r15+80] ; origin z
+	movsd xmm0,[r15+80] ; origin z
+	addsd xmm0,[r15+56]
+	movq rbx,xmm0
 	mov [rax+16],rbx	
 	mov [rax+40],rbx	
 	mov [rax+64],rbx	
 	mov [rax+88],rbx	
 
-	mov rbx,[r15+88]
-	mov [rax+0],rbx ; xmin x
-	mov rbx,[r15+96]
-	mov [rax+24],rbx ; xmax x
+	movsd xmm0,[r15+88]
+	addsd xmm0,[r15+40]
+	movq [rax+0],xmm0 ; xmin x
+	movsd xmm0,[r15+96]
+	addsd xmm0,[r15+40]
+	movq [rax+24],xmm0 ; xmax x
 	
-	mov rbx,[r15+104]
-	mov [rax+56],rbx ; ymin y
-	mov rbx,[r15+112]
-	mov [rax+80],rbx ; ymax y
+	movsd xmm0,[r15+104]
+	addsd xmm0,[r15+48]
+	movq [rax+56],xmm0 ; ymin y
+	movsd xmm0,[r15+112]
+	addsd xmm0,[r15+48]
+	movq [rax+80],xmm0 ; ymax y
 	
-	mov rbx,[r15+120]
-	mov [rax+112],rbx ; zmin z
-	mov rbx,[r15+128]
-	mov [rax+136],rbx ; zmax z
+	movsd xmm0,[r15+120]
+	addsd xmm0,[r15+56]
+	movq [rax+112],xmm0 ; zmin z
+	movsd xmm0,[r15+128]
+	addsd xmm0,[r15+56]
+	movq [rax+136],xmm0 ; zmax z
 	
 	mov [.axis_point_list_array_address],rax
 
@@ -292,8 +304,13 @@ scatter_plot_3d:
 	movsd xmm0,[r15+88] ; xmin
 	movsd xmm1,[r15+72] ; yO
 	movsd xmm2,[r15+80] ; zO
+	
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
 
 	movsd xmm4,[r15+96]
+	addsd xmm4,[r15+40]
 	subsd xmm4,xmm0
 
 	; check	
@@ -355,8 +372,13 @@ scatter_plot_3d:
 	movsd xmm0,[r15+64] ; x0
 	movsd xmm1,[r15+104] ; ymin
 	movsd xmm2,[r15+80] ; zO
+	
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
 
 	movsd xmm4,[r15+112] ; ymax
+	addsd xmm4,[r15+48]
 	subsd xmm4,xmm1
 
 	; check	
@@ -416,8 +438,13 @@ scatter_plot_3d:
 	movsd xmm0,[r15+64] ; x0
 	movsd xmm1,[r15+72] ; y0
 	movsd xmm2,[r15+120] ; zmin
+	
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
 
 	movsd xmm4,[r15+128] ; zmax
+	addsd xmm4,[r15+56]
 	subsd xmm4,xmm2
 
 	; check	
@@ -572,7 +599,12 @@ scatter_plot_3d:
 	addsd xmm1,[r15+188] ; yO + tick label offset
 	movsd xmm2,[r15+80] ; zO
 
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
 	movsd xmm4,[r15+96]
+	addsd xmm4,[r15+40]
 	subsd xmm4,xmm0
 
 	; check	
@@ -595,7 +627,8 @@ scatter_plot_3d:
 	push rsi
 	push rdx
 	push rax
-	; for y and z will have to push/pop xmm0
+	sub rsp,16
+	movdqu [rsp+0],xmm0
 
 	movzx rdi,byte [r15+182] ; x sig dig
 	add rdi,8 		; extra digits
@@ -612,11 +645,14 @@ scatter_plot_3d:
 
 	mov rdi,rax
 	movzx rsi, byte [r15+182]
-;	movsd xmm0,
+;	movsd xmm0....
+	subsd xmm0,[r15+40]
 	call print_float	
 
 	call print_buffer_flush_to_memory
 
+	movdqu xmm0,[rsp+0]
+	add rsp,16
 	pop rax
 	pop rdx
 	pop rsi
@@ -643,7 +679,12 @@ scatter_plot_3d:
 	movsd xmm2,[r15+80] ; z0
 	addsd xmm2,[r15+196] ; zO + tick label offset
 
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
 	movsd xmm4,[r15+112]
+	addsd xmm4,[r15+48]
 	subsd xmm4,xmm1
 
 	; check	
@@ -685,6 +726,7 @@ scatter_plot_3d:
 	mov rdi,rax
 	movzx rsi, byte [r15+183]
 	movsd xmm0,xmm1
+	subsd xmm0,[r15+48]
 	call print_float	
 
 	call print_buffer_flush_to_memory
@@ -717,7 +759,12 @@ scatter_plot_3d:
 	movsd xmm1,[r15+72] ; yO
 	movsd xmm2,[r15+120] ; zmin
 
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
 	movsd xmm4,[r15+128]
+	addsd xmm4,[r15+56]
 	subsd xmm4,xmm2
 
 	; check	
@@ -759,6 +806,7 @@ scatter_plot_3d:
 	mov rdi,rax
 	movzx rsi, byte [r15+184]
 	movsd xmm0,xmm2
+	subsd xmm0,[r15+56]
 	call print_float	
 
 	call print_buffer_flush_to_memory
@@ -920,6 +968,10 @@ scatter_plot_3d:
 	movsd xmm1,[r15+72]
 	movsd xmm2,[r15+80]
 
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
 	addsd xmm0,[r15+96]
 	subsd xmm1,[r15+188]
 	; z unaffected
@@ -945,6 +997,10 @@ scatter_plot_3d:
 	movsd xmm0,[r15+64]
 	movsd xmm1,[r15+72]
 	movsd xmm2,[r15+80]
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
 
 	; x unaffected
 	addsd xmm1,[r15+112]
@@ -972,6 +1028,10 @@ scatter_plot_3d:
 	movsd xmm1,[r15+72]
 	movsd xmm2,[r15+80]
 
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
 	subsd xmm0,[r15+204]
 	; y unaffected
 	addsd xmm2,[r15+128]
@@ -992,6 +1052,12 @@ scatter_plot_3d:
 
 .no_axis:
 
+
+	mov r14,[r15+32] ; scatter_dataset_structure
+	mov rbx,[.axis_textcloud_geometry_address]
+	mov [.pointer_for_scatterset],rbx
+
+.scatter_set_loop:
 	; scatter point struct population
 	; TODO loop thru multiple
 
@@ -1000,8 +1066,6 @@ scatter_plot_3d:
 	test rax,rax
 	jz .died
 	push rax
-
-	mov r14,[r15+32] ; scatter_dataset_structure
 
 	mov ebx, dword [r14+76] ; nPoints
 	mov [rax+0],rbx
@@ -1053,11 +1117,19 @@ scatter_plot_3d:
 	mov rbx,1
 	mov byte [rax+24],bl
 
-	mov rbx,[.axis_textcloud_geometry_address]
+	mov rbx,[.pointer_for_scatterset]
 	mov [rbx],rax
 
-; end of scatter points
+	xor rbx,rbx
+	cmp [r14+0],rbx
+	jz .scatter_done
+       
+	mov r14,[r14+0]
+	mov [.pointer_for_scatterset],rax
+	jmp .scatter_set_loop
 
+.scatter_done:
+; end of scatter points
 
 	mov rax,[.axis_geometry_struct_address]
 
@@ -1125,6 +1197,9 @@ scatter_plot_3d:
 	dq 0
 
 .title_geometry_address:
+	dq 0
+
+.pointer_for_scatterset:
 	dq 0
 
 align 8
