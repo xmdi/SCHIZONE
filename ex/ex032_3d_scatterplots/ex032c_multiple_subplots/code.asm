@@ -122,16 +122,16 @@ START:
 	call heap_init
 
 	mov rdi,.scatter_plot_structure1
-	call scatter_plot_3d ; {rax} points to linked list of scatteplot els
+	call scatter_plot_3d ; {rax} points to linked list of scatterplot els
 	push rax
 	mov rdi,.scatter_plot_structure2
-	call scatter_plot_3d ; {rax} points to linked list of scatteplot els
+	call scatter_plot_3d ; {rax} points to linked list of scatterplot els
 	push rax
 	mov rdi,.scatter_plot_structure3
-	call scatter_plot_3d ; {rax} points to linked list of scatteplot els
+	call scatter_plot_3d ; {rax} points to linked list of scatterplot els
 	push rax
 	mov rdi,.scatter_plot_structure4
-	call scatter_plot_3d ; {rax} points to linked list of scatteplot els
+	call scatter_plot_3d ; {rax} points to linked list of scatterplot els
 
 	mov rsi,rax	
 
@@ -160,15 +160,12 @@ START:
 	jmp .loop
 
 .find_end_of_linked_list: ; linked list starts at {rax}, end returned in {rax}
-
 	cmp qword [rax],0
 	je .found_end
 	mov rax,[rax]
 	jmp .find_end_of_linked_list
-
 .found_end:
 	ret
-
 
 .perspective_structure:
 	dq 10.00 ; lookFrom_x	
@@ -272,7 +269,7 @@ START:
 	dw 0; extra stride between marker type elements {*+74}
 	dd 101; number of elements {*+76}
 	dd 0xFFFF00; default #XXXXXX RGB marker color {*+80}
-	db 20; default marker size (px) {*+84}
+	db 5; default marker size (px) {*+84}
 	db 1; default marker type (1-4) {*+85}
 	db 0x00; flags: currently unused {*+86}
 
@@ -491,11 +488,9 @@ START:
 	dw 0; extra stride between marker type elements {*+74}
 	dd 101; number of elements {*+76}
 	dd 0xFFA500; default #XXXXXX RGB marker color {*+80}
-	db 10; default marker size (px) {*+84}
+	db 5; default marker size (px) {*+84}
 	db 4; default marker type (1-4) {*+85}
 	db 0x00; flags: currently unused {*+86}
-
-
 
 .x_coords:
 	times 101 dq 0.0
