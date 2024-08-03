@@ -1136,7 +1136,7 @@ scatter_plot_3d:
 	xor rbx,rbx
 	cmp [r14+0],rbx
 	jz .scatter_done
-       
+
 	mov r14,[r14+0]
 	mov [.pointer_for_scatterset],rax
 	jmp .scatter_set_loop

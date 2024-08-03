@@ -64,14 +64,7 @@ PROGRAM_HEADER:
 
 %include "lib/math/rand/rand_int_nbytes_array.asm"
 
-%include "lib/io/print_memory.asm"
-
-%include "lib/io/print_array_float.asm"
-
-%include "lib/io/print_array_int.asm"
-
 %include "lib/io/framebuffer/parallel/scatter_plot_3d.asm"
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -191,9 +184,9 @@ START:
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
 	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
-	dq 3.0; plot origin x translation (double) {*+40}
-	dq 3.0; plot origin y translation (double) {*+48}
-	dq 3.0; plot origin z translation (double) {*+56}
+	dq 0.0; plot origin x translation (double) {*+40}
+	dq 0.0; plot origin y translation (double) {*+48}
+	dq 0.0; plot origin z translation (double) {*+56}
 	dq 0.0; origin x-coord (double) {*+64}
 	dq 0.0; origin y-coord (double) {*+72}
 	dq 0.0; origin z_coord (double) {*+80}
