@@ -112,6 +112,7 @@ rasterize_textcloud_depth:
 	;TODO parallelize
 	addsd xmm0,[.one]
 	mulsd xmm0,[framebuffer_3d_render_depth_init.half_width]
+	;addsd xmm7,[.one]
 	subsd xmm7,[.one]
 	mulsd xmm7,[framebuffer_3d_render_depth_init.half_height]
 	mulsd xmm7,[.neg]

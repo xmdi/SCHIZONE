@@ -105,13 +105,81 @@ DRAW_CROSS_CURSOR:
 
 START:
 
-	; generate scatter plot geometries
+	call heap_init
+	
+	; generate scatterplot data
+	
+	N equ 101 ; number of discrete datapoints along the x and y axes
+	mov rdi,N*N*8
 
-	mov r11,21*21
-	mov r12,.x_coords
-	mov r13,.y_coords
-	mov r14,.z_coords1
-	mov r15,.z_coords2
+	; array for x-coords (used for both datasets)
+	call heap_alloc
+	mov [.scatter_dataset_structure1+16],rax
+	mov [.scatter_dataset_structure2+16],rax
+	mov r8,rax
+	mov r12,rax
+
+	; array for y-coords (used for both datasets)
+	call heap_alloc
+	mov [.scatter_dataset_structure1+26],rax
+	mov [.scatter_dataset_structure2+26],rax
+	mov r9,rax
+	mov r13,rax
+
+	; array for z-coords1 (dataset 1 z)
+	call heap_alloc
+	mov [.scatter_dataset_structure1+36],rax
+	mov r14,rax
+
+	; array for z-coords2 (dataset 2 z)
+	call heap_alloc
+	mov [.scatter_dataset_structure2+36],rax
+	mov r15,rax
+
+	mov r11,N*N
+
+	mov rax,-10
+	mov rbx,10
+	mov rcx,N
+	dec rcx
+	cvtsi2sd xmm0,rax ; min
+	cvtsi2sd xmm1,rbx ; max -> step size
+	cvtsi2sd xmm2,rcx ; num steps
+	subsd xmm1,xmm0
+	divsd xmm1,xmm2
+	inc rcx
+
+.x_loop_outer:
+	movsd xmm3,xmm0 ; tracking x value
+	mov rdx,N
+
+.x_loop_inner:
+	movsd [r8],xmm3
+	add r8,8
+	addsd xmm3,xmm1
+
+	dec rdx
+	jnz .x_loop_inner
+
+	dec rcx
+	jnz .x_loop_outer
+
+
+	movsd xmm3,xmm0 ; tracking y value
+	mov rcx,N
+
+.y_loop_outer:
+	mov rdx,N
+
+.y_loop_inner:
+	movsd [r9],xmm3
+	add r9,8
+	dec rdx
+	jnz .y_loop_inner
+
+	addsd xmm3,xmm1
+	dec rcx
+	jnz .y_loop_outer
 
 .z_loop:
 
@@ -134,7 +202,6 @@ START:
 	dec r11
 	jnz .z_loop
 
-	call heap_init
 
 	mov rdi,.scatter_plot_structure
 	call scatter_plot_3d
@@ -160,7 +227,7 @@ START:
 	dq 0.0 ; upDir_x	
 	dq 0.0 ; upDir_y	
 	dq 1.0 ; upDir_z	
-	dq 0.2	; zoom
+	dq 0.08 ; zoom
 
 .scatter_title:
 	db `z=sin(xy)+/-5`,0
@@ -229,11 +296,11 @@ START:
 .scatter_dataset_structure1:
 	dq .scatter_dataset_structure2; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string, currently unused {*+8}
-	dq .x_coords; address of first x-coordinate {*+16}
+	dq 0; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
-	dq .y_coords; address of first y-coordinate {*+26}
+	dq 0; address of first y-coordinate {*+26}
 	dw 0; extra stride between y-coord elements {*+34}	
-	dq .z_coords1; address of first z-coordinate {*+36}
+	dq 0; address of first z-coordinate {*+36}
 	dw 0; extra stride between z-coord elements {*+44}
 	dq 0; address of first marker color element {*+46}
 	dw 0; extra stride between marker color elements {*+54}
@@ -241,20 +308,20 @@ START:
 	dw 0; extra stride between marker size elements {*+64}
 	dq 0; address of first marker type element {*+66}
 	dw 0; extra stride between marker type elements {*+74}
-	dd 21*21; number of elements {*+76}
+	dd N*N; number of elements {*+76}
 	dd 0xFFFF00; default #XXXXXX RGB marker color {*+80}
-	db 5; default marker size (px) {*+84}
+	db 2; default marker size (px) {*+84}
 	db 1; default marker type (1-4) {*+85}
 	db 0x00; flags: currently unused {*+86}
 
 .scatter_dataset_structure2:
 	dq 0; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string, currently unused {*+8}
-	dq .x_coords; address of first x-coordinate {*+16}
+	dq 0; address of first x-coordinate {*+16}
 	dw 0; extra stride between x-coord elements {*+24}
-	dq .y_coords; address of first y-coordinate {*+26}
+	dq 0; address of first y-coordinate {*+26}
 	dw 0; extra stride between y-coord elements {*+34}	
-	dq .z_coords2; address of first z-coordinate {*+36}
+	dq 0; address of first z-coordinate {*+36}
 	dw 0; extra stride between z-coord elements {*+44}
 	dq 0; address of first marker color element {*+46}
 	dw 0; extra stride between marker color elements {*+54}
@@ -262,60 +329,11 @@ START:
 	dw 0; extra stride between marker size elements {*+64}
 	dq 0; address of first marker type element {*+66}
 	dw 0; extra stride between marker type elements {*+74}
-	dd 21*21; number of elements {*+76}
+	dd N*N; number of elements {*+76}
 	dd 0x00FFFF; default #XXXXXX RGB marker color {*+80}
-	db 5; default marker size (px) {*+84}
+	db 2; default marker size (px) {*+84}
 	db 2; default marker type (1-4) {*+85}
 	db 0x00; flags: currently unused {*+86}
-
-.x_coords:
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-	dq -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-.y_coords:
-	times 21 dq -10.0
-	times 21 dq -9.0
-	times 21 dq -8.0
-	times 21 dq -7.0
-	times 21 dq -6.0
-	times 21 dq -5.0
-	times 21 dq -4.0
-	times 21 dq -3.0
-	times 21 dq -2.0
-	times 21 dq -1.0
-	times 21 dq 0.0
-	times 21 dq 1.0
-	times 21 dq 2.0
-	times 21 dq 3.0
-	times 21 dq 4.0
-	times 21 dq 5.0
-	times 21 dq 6.0
-	times 21 dq 7.0
-	times 21 dq 8.0
-	times 21 dq 9.0
-	times 21 dq 10.0
-.z_coords1:
-	times 21*21 dq 0.0
-.z_coords2:
-	times 21*21 dq 0.0
 
 .tolerance:
 	dq 0.0001

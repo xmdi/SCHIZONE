@@ -14,6 +14,10 @@ set_text_depth:
 ;	in {esi}. Font defined at {r12} and font scaling in {r10}. Depth buffer
 ; 	at {r13}. Depth of text in {xmm0}.
 
+;	push rax
+;	mov rax,0xFFFFFFFF
+;	and rsi,rax
+;	pop rax
 
 	; low byte r10 = font scale
 	; second byte r10 = text alignment
@@ -205,8 +209,11 @@ set_text_depth:
 	cmp r9d,ecx
 	jge .skip_this_pixel
 
+	
+	mov rbp,rcx
+	sub rbp,r9 ; inverted y direction
+	dec rbp
 
-	mov rbp,r9
 	imul rbp,rdx
 	add rbp,r8
 	shl rbp,2 ; {rbp} contains byte number for pixel of interest

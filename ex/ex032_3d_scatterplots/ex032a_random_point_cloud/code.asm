@@ -164,7 +164,7 @@ START:
 	dq 0.0 ; upDir_x	
 	dq 0.0 ; upDir_y	
 	dq 1.0 ; upDir_z	
-	dq 0.2	; zoom
+	dq 0.1 ; zoom
 
 .scatter_title:
 	db `Random Pointcloud`,0

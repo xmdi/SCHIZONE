@@ -84,7 +84,7 @@ rasterize_pointcloud_depth:
 	movzx r13, byte [r14+73]
 	movzx rbp, byte [r14+72]
 
-	cvtsi2sd xmm10,rbp 	; {xmm10} contains characteristic marker size
+	cvtsi2sd xmm10,r13 	; {xmm10} contains characteristic marker size
 	movsd xmm11,xmm10 
 	mulsd xmm11,[.two]
 
@@ -198,10 +198,11 @@ rasterize_pointcloud_depth:
 	add rbx,rax
 .color_set:
 	; grab marker size
+
+	mov rax,[r14+48]
 	cmp qword [r14+48],0
 	je .size_set
 	movzx r13,byte [r12]	
-	
 	cvtsi2sd xmm10,r13
 	movsd xmm11,xmm10 
 	mulsd xmm11,[.two]
@@ -212,7 +213,7 @@ rasterize_pointcloud_depth:
 .size_set:
 
 	; handle different point types 
-		
+
 	; grab marker type
 	cmp qword [r14+40],0
 	je .type_set
