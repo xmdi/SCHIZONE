@@ -1,0 +1,1222 @@
+%ifndef PLOT_AXIS_3D
+%define PLOT_AXIS_3D
+
+; input data structures
+%if 0
+
+.scatter_plot_structure:
+	dq .scatter_title; address of null-terminated title string {*+0}
+	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
+	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
+	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
+	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
+	dq 0.0; plot origin x translation (double) {*+40}
+	dq 0.0; plot origin y translation (double) {*+48}
+	dq 0.0; plot origin z translation (double) {*+56}
+	dq 0.0; origin x-coord (double) {*+64}
+	dq 0.0; origin y-coord (double) {*+72}
+	dq 0.0; origin z_coord (double) {*+80}
+	dq -5.0; x-min (double) {*+88}
+	dq 5.0; x-max (double) {*+96}
+	dq -6.0; y-min (double) {*+104}
+	dq 6.0; y-max (double) {*+112}
+	dq -7.0; z-min (double) {*+120}
+	dq 7.0; z-max (double) {*+128}
+	dq 0; title x-coordinate {*+136}
+	dq 0; title y-coordinate {*+144}
+	dq 0; title z-coordinate {*+152}
+	dd 0x000000; #XXXXXX RGB x-axis color {*+160}
+	dd 0x000000; #XXXXXX RGB y-axis color {*+164}
+	dd 0x000000; #XXXXXX RGB z-axis color {*+168}
+	dd 0x000000; #XXXXXX title RGB font color {*+172}
+	db 11; number of major x-ticks {*+176}
+	db 5; number of major y-ticks {*+177}
+	db 5; number of major z-ticks {*+178}
+	db 2; minor subdivisions per x-tick {*+179}
+	db 2; minor subdivisions per y-tick {*+180}
+	db 2; minor subdivisions per z-tick {*+181}
+	db 2; significant digits on x values {*+182}
+	db 2; significant digits on y values {*+183}
+	db 2; significant digits on z values {*+184}
+	db 32; title font size (px) {*+185}
+	db 24; axis label font size (px) {*+186}
+	db 16; tick label font size (px) {*+187}
+	dq 1.0; y-offset for x-tick labels {*+188}
+	dq -1.0; z-offset for y-tick labels {*+196}
+	dq -1.0; x-offset for z-tick labels {*+204}
+	db 2; axis & tick stroke thickness (px) (0 disables axis) {*+212}
+	db 5; x-tick fraction (/255) {*+213}
+	db 5; y-tick fraction (/255) {*+214}
+	db 5; z-tick fraction (/255) {*+215}
+	db 0x1F; flags: {*+216}
+		; bit 0 (LSB)	= show title?
+		; bit 1		= show x-label?
+		; bit 2		= show y-label?
+		; bit 3		= show z-label?
+		; bit 4		= draw ticks?
+		; bit 5		= show tick labels?
+
+.scatter_dataset_structure1:
+	dq 0; address of next dataset in linked list {*+0}
+	dq 0; address of null-terminated label string, currently unused {*+8}
+	dq .x_coords; address of first x-coordinate {*+16}
+	dw 0; extra stride between x-coord elements {*+24}
+	dq .y_coords; address of first y-coordinate {*+26}
+	dw 0; extra stride between y-coord elements {*+34}	
+	dq .z_coords; address of first z-coordinate {*+36}
+	dw 0; extra stride between z-coord elements {*+44}
+	dq .marker0_colors; address of first marker color element {*+46}
+	dw 0; extra stride between marker color elements {*+54}
+	dq .marker0_sizes; address of first marker size element {*+56}
+	dw 0; extra stride between marker size elements {*+64}
+	dq .marker0_types; address of first marker type element {*+66}
+	dw 0; extra stride between marker type elements {*+74}
+	dd 101; number of elements {*+76}
+	dd 0xFF0000; default #XXXXXX RGB marker color {*+80}
+	db 5; default marker size (px) {*+84}
+	db 5; default marker type (1-4) {*+85}
+	db 0x00; flags, currently unused: {*+86}
+
+%endif
+
+%include "lib/io/bitmap/SCHIZOFONT.asm"
+%include "lib/io/print_float.asm"
+%include "lib/io/print_buffer_reset.asm"
+%include "lib/io/print_buffer_flush_to_memory.asm"
+%include "lib/mem/memset.asm"
+%include "lib/mem/heap_alloc.asm"
+
+plot_axis_3d:
+; struct* {rax} plot_axis_3d(struct* {rdi});
+;	Converts input 3D scatter plot definition structures into renderable
+; 	3D graphics structures linked together returned in {rax}. 
+; 	WARNING: prematurely flushes print buffer.
+
+	push r15
+	push r14
+	push rbx
+	push rcx
+
+	call print_buffer_reset
+
+	mov r15,rdi
+
+	xor rax,rax
+	mov [.num_textboxes],rax
+
+	cmp byte [r15+212],0
+	je .no_axis
+
+	;;; create the axis structure	
+
+	; axis point struct
+
+	mov rdi,144
+	call heap_alloc
+	
+	test rax,rax
+	jz .died
+
+	movsd xmm0,[r15+64] ; origin x
+	addsd xmm0,[r15+40]
+	movq rbx,xmm0
+	mov [rax+48],rbx	
+	mov [rax+72],rbx	
+	mov [rax+96],rbx	
+	mov [rax+120],rbx	
+
+	movsd xmm0,[r15+72] ; origin y
+	addsd xmm0,[r15+48]
+	movq rbx,xmm0
+	mov [rax+8],rbx	
+	mov [rax+32],rbx	
+	mov [rax+104],rbx	
+	mov [rax+128],rbx	
+
+	movsd xmm0,[r15+80] ; origin z
+	addsd xmm0,[r15+56]
+	movq rbx,xmm0
+	mov [rax+16],rbx	
+	mov [rax+40],rbx	
+	mov [rax+64],rbx	
+	mov [rax+88],rbx	
+
+	movsd xmm0,[r15+88]
+	addsd xmm0,[r15+40]
+	movq [rax+0],xmm0 ; xmin x
+	movsd xmm0,[r15+96]
+	addsd xmm0,[r15+40]
+	movq [rax+24],xmm0 ; xmax x
+	
+	movsd xmm0,[r15+104]
+	addsd xmm0,[r15+48]
+	movq [rax+56],xmm0 ; ymin y
+	movsd xmm0,[r15+112]
+	addsd xmm0,[r15+48]
+	movq [rax+80],xmm0 ; ymax y
+	
+	movsd xmm0,[r15+120]
+	addsd xmm0,[r15+56]
+	movq [rax+112],xmm0 ; zmin z
+	movsd xmm0,[r15+128]
+	addsd xmm0,[r15+56]
+	movq [rax+136],xmm0 ; zmax z
+	
+	mov [.axis_point_list_array_address],rax
+
+	; axis edge struct
+	mov rdi,72
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	xor rbx,rbx ; six coupled vertex pairs
+	mov [rax+0],rbx
+	inc rbx
+	mov [rax+8],rbx
+	inc rbx
+	mov [rax+24],rbx
+	inc rbx
+	mov [rax+32],rbx
+	inc rbx
+	mov [rax+48],rbx
+	inc rbx
+	mov [rax+56],rbx
+
+	mov ebx, dword [r15+160] ; x color
+	mov dword [rax+16],ebx
+	mov ebx, dword [r15+164] ; y color
+	mov dword [rax+40],ebx
+	mov ebx, dword [r15+168] ; z color
+	mov dword [rax+64],ebx
+
+	mov [.axis_edge_list_array_address],rax
+
+	; axis wire struct
+	mov rdi,33
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,6 ; num points
+	mov [rax+0],rbx
+
+	mov rbx,3 ; num edges
+	mov [rax+8],rbx
+
+	mov rbx,[.axis_point_list_array_address]
+	mov [rax+16],rbx ; points list
+
+	mov rbx,[.axis_edge_list_array_address]
+	mov [rax+24],rbx ; edges list
+	
+	mov bl,[r15+212] ; axis thickness
+	mov byte [rax+32],bl
+
+	mov [.axis_wire_struct_address],rax
+
+	; axis geom struct
+	mov rdi,25
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,[.axis_wire_struct_address] ; wire substruct
+	mov [rax+8],rbx
+
+	mov bl,0b1001 ; type of wire
+	mov byte [rax+24],bl
+
+	mov [.axis_geometry_struct_address],rax
+
+	; NOTE: tick marks to have their own rendering struct
+
+	;;; create the grid structure	
+
+	mov bl, byte [r15+216]
+	test bl,0b10000
+	jz .no_grid
+
+	; TODO: check for at least one tick mark in x
+
+	; grid point struct
+
+	movzx rbx,byte [r15+176] ; major x ticks
+	add [.num_textboxes],rbx
+	movzx rcx,byte [r15+179] ; subdivisions per x tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi		; number of major and minor x ticks
+
+	mov rax,rdi
+
+	movzx rbx,byte [r15+177] ; major y ticks
+	add [.num_textboxes],rbx
+	movzx rcx,byte [r15+180] ; subdivisions per y tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi		; number of major and minor y ticks
+
+	add rax,rdi
+
+	movzx rbx,byte [r15+178] ; major z ticks
+	add [.num_textboxes],rbx
+	movzx rcx,byte [r15+181] ; subdivisions per z tick
+	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+	inc rdi		; number of major and minor z ticks
+
+	add rdi,rax 	; total ticks in all directions
+
+	mov [.num_grid_edges],rdi
+
+	imul rdi,rdi,24
+
+	call heap_alloc
+	mov [.grid_edge_list_array_address],rax
+	test rax,rax
+	jz .died
+	mov r13,rax
+
+	shl rdi,1
+
+	call heap_alloc
+	mov [.grid_point_list_array_address],rax
+	test rax,rax
+	jz .died
+	mov r14,rax
+
+	; x grid starts here
+
+	movzx rbx,byte [r15+176] ; major x ticks
+	movzx rcx,byte [r15+179] ; subdivisions per x tick
+	
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+88] ; xmin
+	movsd xmm1,[r15+72] ; yO
+	movsd xmm2,[r15+80] ; zO
+	
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	movsd xmm4,[r15+96]
+	addsd xmm4,[r15+40]
+	subsd xmm4,xmm0
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+	
+	movzx rbx, byte [r15+213]
+	cvtsi2sd xmm5,rbx
+	mulsd xmm5,[.byte_fraction]
+	movsd xmm6,[r15+112] ; ymax
+	subsd xmm6,[r15+104] ; ymin
+	mulsd xmm5,xmm6 	; semi tick length
+
+	xor r12,r12
+
+	inc rdi
+
+.loop_ticks_x:
+			
+	movsd xmm6,xmm1
+	addsd xmm6,xmm5
+	; put point1 at (xmm0,xmm6,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm6
+	movsd [r14+16],xmm2
+
+	movsd xmm6,xmm1
+	subsd xmm6,xmm5
+	; put point2 at (xmm0,xmm6,xmm2)
+	movsd [r14+24],xmm0
+	movsd [r14+32],xmm6
+	movsd [r14+40],xmm2
+
+	add r14,48
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+160]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
+
+	addsd xmm0,xmm4
+	
+	dec rdi
+	jnz .loop_ticks_x
+
+	; TODO: check for at least one tick mark in y
+
+	movzx rbx,byte [r15+177] ; major y ticks
+	movzx rcx,byte [r15+180] ; subdivisions per y tick
+
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0
+	movsd xmm1,[r15+104] ; ymin
+	movsd xmm2,[r15+80] ; zO
+	
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	movsd xmm4,[r15+112] ; ymax
+	addsd xmm4,[r15+48]
+	subsd xmm4,xmm1
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta y
+	
+	movzx rbx, byte [r15+214]
+	cvtsi2sd xmm5,rbx
+	mulsd xmm5,[.byte_fraction]
+	movsd xmm6,[r15+128] ; zmax
+	subsd xmm6,[r15+120] ; zmin
+	mulsd xmm5,xmm6 	; semi tick length
+
+	inc rdi
+
+.loop_ticks_y:
+			
+	movsd xmm6,xmm2
+	addsd xmm6,xmm5
+	; put point1 at (xmm0,xmm1,xmm6)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm6
+
+	movsd xmm6,xmm2
+	subsd xmm6,xmm5
+	; put point2 at (xmm0,xmm1,xmm6)
+	movsd [r14+24],xmm0
+	movsd [r14+32],xmm1
+	movsd [r14+40],xmm6
+
+	add r14,48
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+164]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
+
+	addsd xmm1,xmm4
+	
+	dec rdi
+	jnz .loop_ticks_y
+
+	; TODO: check for at least one tick mark in z
+
+	movzx rbx,byte [r15+178] ; major z ticks
+	movzx rcx,byte [r15+181] ; subdivisions per z tick
+
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0
+	movsd xmm1,[r15+72] ; y0
+	movsd xmm2,[r15+120] ; zmin
+	
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	movsd xmm4,[r15+128] ; zmax
+	addsd xmm4,[r15+56]
+	subsd xmm4,xmm2
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+	imul rdi,rcx
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta z
+	
+	movzx rbx, byte [r15+215]
+	cvtsi2sd xmm5,rbx
+	mulsd xmm5,[.byte_fraction]
+	movsd xmm6,[r15+96] ; xmax
+	subsd xmm6,[r15+88] ; xmin
+	mulsd xmm5,xmm6 	; semi tick length
+
+	inc rdi
+
+.loop_ticks_z:
+			
+	movsd xmm6,xmm0
+	addsd xmm6,xmm5
+	; put point1 at (xmm6,xmm1,xmm2)
+	movsd [r14],xmm6
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	movsd xmm6,xmm0
+	subsd xmm6,xmm5
+	; put point2 at (xmm6,xmm1,xmm2)
+	movsd [r14+24],xmm6
+	movsd [r14+32],xmm1
+	movsd [r14+40],xmm2
+
+	add r14,48
+	
+	mov [r13],r12 ; populates first edge pair and color
+	inc r12
+	mov [r13+8],r12
+	mov ebx, dword [r15+168]
+	mov [r13+16],rbx
+	inc r12
+	add r13,24
+
+	addsd xmm2,xmm4
+	
+	dec rdi
+	jnz .loop_ticks_z
+
+	; grid wire struct
+	mov rdi,33
+	call heap_alloc
+	
+	test rax,rax
+	jz .died
+	
+	mov rbx,[.num_grid_edges] ; num edges
+	mov [rax+8],rbx
+
+	shl rbx,1
+	mov [rax+0],rbx ; num points
+
+	mov rbx,[.grid_point_list_array_address]
+	mov [rax+16],rbx ; points list
+
+	mov rbx,[.grid_edge_list_array_address]
+	mov [rax+24],rbx ; edges list
+	
+	mov bl,[r15+212] ; axis thickness
+	mov byte [rax+32],bl
+
+	mov [.grid_wire_struct_address],rax
+
+	; grid geom struct
+	mov rdi,25
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,[.grid_wire_struct_address] ; wire substruct
+	mov [rax+8],rbx
+
+	mov bl,0b1001 ; type of wire
+	mov byte [rax+24],bl
+
+	mov [.grid_geometry_struct_address],rax
+
+	mov rbx,[.axis_geometry_struct_address]
+
+	mov [rbx],rax
+
+.no_grid:
+
+	mov rdi,[.num_textboxes]
+	imul rdi,rdi,36
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov [.pointcloud_array_address],rax
+
+	mov rdi,32
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.pointcloud_struct_address],rax
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.pointcloud_geometry_address],rax
+
+
+	xor rbx,rbx
+	mov [rax+0],rbx
+	mov rbx,[.pointcloud_struct_address]
+	mov [rax+8],rbx
+	mov rbx,0b11
+	mov byte [rax+24],bl
+
+	mov rax,[.pointcloud_struct_address]
+	mov rbx,SCHIZOFONT
+	mov [rax+16],rbx
+	xor rbx,rbx
+	movzx rbx,byte [r15+187]
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	add rbx,0b1000000000
+	mov [rax+24],rbx
+	mov rbx,[.pointcloud_array_address]
+	mov [rax+0],rbx	
+	mov rbx,[.num_textboxes]
+	mov [rax+8],rbx
+
+	mov rax,[.pointcloud_geometry_address]
+	mov rbx,[.grid_geometry_struct_address]
+	mov [rbx],rax
+
+	; grid tick labels start here
+
+	mov r14,[.pointcloud_array_address]
+
+	; x grid tick labels start here
+	
+	movzx rbx,byte [r15+176] ; major x ticks
+	
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+88] ; xmin
+	movsd xmm1,[r15+72] ; yO
+	addsd xmm1,[r15+188] ; yO + tick label offset
+	movsd xmm2,[r15+80] ; zO
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	movsd xmm4,[r15+96]
+	addsd xmm4,[r15+40]
+	subsd xmm4,xmm0
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+
+	inc rdi
+
+.loop_tick_labels_x:
+			
+	; put text at (xmm0,xmm1,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	push rdi
+	push rsi
+	push rdx
+	push rax
+	sub rsp,16
+	movdqu [rsp+0],xmm0
+
+	movzx rdi,byte [r15+182] ; x sig dig
+	add rdi,8 		; extra digits
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov qword [r14+24],rax
+
+	mov rdx,rdi
+	xor rsi,rsi
+	mov rdi,rax	
+	call memset
+
+	mov rdi,rax
+	movzx rsi, byte [r15+182]
+;	movsd xmm0....
+	subsd xmm0,[r15+40]
+	call print_float	
+
+	call print_buffer_flush_to_memory
+
+	movdqu xmm0,[rsp+0]
+	add rsp,16
+	pop rax
+	pop rdx
+	pop rsi
+	pop rdi
+
+;	mov qword [r14+24],.kek
+	mov ebx,dword [r15+160]
+	mov dword [r14+32],ebx
+
+	add r14,36
+
+	addsd xmm0,xmm4
+
+	dec rdi
+	jnz .loop_tick_labels_x
+
+	; y grid tick labels start here
+	
+	movzx rbx,byte [r15+177] ; major y ticks
+
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0
+	movsd xmm1,[r15+104] ; ymin
+	movsd xmm2,[r15+80] ; z0
+	addsd xmm2,[r15+196] ; zO + tick label offset
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	movsd xmm4,[r15+112]
+	addsd xmm4,[r15+48]
+	subsd xmm4,xmm1
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+
+	inc rdi
+
+.loop_tick_labels_y:
+			
+	; put text at (xmm0,xmm1,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+	
+	push rdi
+	push rsi
+	push rdx
+	push rax
+	sub rsp,16
+	movdqu [rsp+0],xmm0
+
+	movzx rdi,byte [r15+183] ; y sig dig
+	add rdi,8 		; extra digits
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov qword [r14+24],rax
+
+	mov rdx,rdi
+	xor rsi,rsi
+	mov rdi,rax	
+	call memset
+
+	mov rdi,rax
+	movzx rsi, byte [r15+183]
+	movsd xmm0,xmm1
+	subsd xmm0,[r15+48]
+	call print_float	
+
+	call print_buffer_flush_to_memory
+
+	movdqu xmm0,[rsp+0]
+	add rsp,16
+	pop rax
+	pop rdx
+	pop rsi
+	pop rdi
+
+	;mov qword [r14+24],.kek
+	mov ebx,dword [r15+164]
+	mov dword [r14+32],ebx
+	
+	add r14,36
+
+	addsd xmm1,xmm4
+	
+	dec rdi
+	jnz .loop_tick_labels_y
+
+	; z grid tick labels start here
+	
+	movzx rbx,byte [r15+178] ; major z ticks
+	
+	; tracking x y z in xmm0,xmm1,xmm2
+	movsd xmm0,[r15+64] ; x0 
+	addsd xmm0,[r15+204] ; xO + tick label offset
+	movsd xmm1,[r15+72] ; yO
+	movsd xmm2,[r15+120] ; zmin
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	movsd xmm4,[r15+128]
+	addsd xmm4,[r15+56]
+	subsd xmm4,xmm2
+
+	; check	
+	mov rdi,rbx
+	dec rdi
+
+	cvtsi2sd xmm5,rdi
+	divsd xmm4,xmm5  	; delta x
+
+	inc rdi
+
+.loop_tick_labels_z:
+			
+	; put text at (xmm0,xmm1,xmm2)
+	movsd [r14],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	push rdi
+	push rsi
+	push rdx
+	push rax
+	sub rsp,16
+	movdqu [rsp+0],xmm0
+
+	movzx rdi,byte [r15+184] ; z sig dig
+	add rdi,8 		; extra digits
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov qword [r14+24],rax
+
+	mov rdx,rdi
+	xor rsi,rsi
+	mov rdi,rax	
+	call memset
+
+	mov rdi,rax
+	movzx rsi, byte [r15+184]
+	movsd xmm0,xmm2
+	subsd xmm0,[r15+56]
+	call print_float	
+
+	call print_buffer_flush_to_memory
+
+	movdqu xmm0,[rsp+0]
+	add rsp,16
+	pop rax
+	pop rdx
+	pop rsi
+	pop rdi
+
+;	mov qword [r14+24],.kek
+	mov ebx,dword [r15+168]
+	mov dword [r14+32],ebx
+	
+	add r14,36
+
+	addsd xmm2,xmm4
+	
+	dec rdi
+	jnz .loop_tick_labels_z
+
+	;; title?
+	mov bl, byte [r15+216]
+	test bl,0b1
+	jz .no_title_text
+
+	mov rdi,24
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov [.title_position_address],rax
+	
+	
+	movsd xmm0,[r15+136]
+	addsd xmm0,[r15+40]
+	movsd [rax+0],xmm0
+	movsd xmm0,[r15+144]
+	addsd xmm0,[r15+48]
+	movsd [rax+8],xmm0
+	movsd xmm0,[r15+152]
+	addsd xmm0,[r15+56]
+	movsd [rax+16],xmm0
+
+	mov rdi,32
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.title_struct_address],rax
+
+	mov rbx,SCHIZOFONT
+	mov [rax+16],rbx
+	xor rbx,rbx
+	movzx rbx,byte [r15+185]
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	add rbx,0b1000000000
+	mov [rax+24],rbx
+	mov rbx,[.title_position_address]
+	mov [rax+0],rbx	
+	mov rbx,[r15+0]
+	mov [rax+8],rbx
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.title_geometry_address],rax
+
+	xor rbx,rbx
+	mov [rax+0],rbx
+	mov rbx,[.title_struct_address]
+	mov [rax+8],rbx	
+	xor rbx,rbx
+	mov ebx,dword [r15+172]
+;	debug_reg_h rbx
+	bts rbx,32
+;	debug_reg_h rbx
+;	debug_exit 3
+	mov [rax+16],rbx
+	mov rbx,0b10
+	mov byte [rax+24],bl
+
+	mov rax,[.title_geometry_address]
+	mov rbx,[.pointcloud_geometry_address]
+	mov [rbx],rax
+
+.no_title_text:	
+
+; 	axis titles
+
+	xor rdi,rdi
+	mov bl, byte [r15+216]
+	test bl,0b10
+	jz .no_x_text
+	inc rdi
+.no_x_text:	
+	test bl,0b100
+	jz .no_y_text
+	inc rdi
+.no_y_text:
+	test bl,0b1000
+	jz .no_z_text
+	inc rdi
+.no_z_text:
+
+	push rdi
+
+	imul rdi,rdi,36
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	mov [.axis_textcloud_array_address],rax
+
+	mov rdi,32
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.axis_textcloud_struct_address],rax
+
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+	mov [.axis_textcloud_geometry_address],rax
+
+	xor rbx,rbx
+	mov [rax+0],rbx
+	mov rbx,[.axis_textcloud_struct_address]
+	mov [rax+8],rbx
+	mov rbx,0b11
+	mov byte [rax+24],bl
+
+	mov rax,[.axis_textcloud_struct_address]
+	mov rbx,SCHIZOFONT
+	mov [rax+16],rbx
+	xor rbx,rbx
+	movzx rbx,byte [r15+186]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	add rbx,0b1000000000
+
+	mov [rax+24],rbx
+	mov rbx,[.axis_textcloud_array_address]
+	mov [rax+0],rbx	
+	pop rbx
+	mov [rax+8],rbx
+
+	mov rax,[.axis_textcloud_geometry_address]
+	mov rbx,[.title_geometry_address]
+	mov [rbx],rax
+
+	mov r14,[.axis_textcloud_array_address]
+
+	; populate the axis labels here
+
+	mov bl, byte [r15+216]
+	test bl,0b10
+	jz .put_no_x_text
+	
+	; origin location
+	movsd xmm0,[r15+64]
+	movsd xmm1,[r15+72]
+	movsd xmm2,[r15+80]
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	addsd xmm0,[r15+96]
+	subsd xmm1,[r15+188]
+	; z unaffected
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	mov rax,[r15+8]
+	mov qword [r14+24],rax
+
+	mov ebx,dword [r15+160]
+	mov dword [r14+32],ebx
+
+	add r14,36
+
+.put_no_x_text:	
+	mov bl, byte [r15+216]
+	test bl,0b100
+	jz .put_no_y_text
+
+	; origin location
+	movsd xmm0,[r15+64]
+	movsd xmm1,[r15+72]
+	movsd xmm2,[r15+80]
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	; x unaffected
+	addsd xmm1,[r15+112]
+	subsd xmm2,[r15+196]
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	mov rax,[r15+16]
+	mov qword [r14+24],rax
+
+	mov ebx,dword [r15+164]
+	mov dword [r14+32],ebx
+	add r14,36
+	
+	
+.put_no_y_text:
+	mov bl, byte [r15+216]
+	test bl,0b1000
+	jz .put_no_z_text
+
+	; origin location
+	movsd xmm0,[r15+64]
+	movsd xmm1,[r15+72]
+	movsd xmm2,[r15+80]
+
+	addsd xmm0,[r15+40]
+	addsd xmm1,[r15+48]
+	addsd xmm2,[r15+56]
+
+	subsd xmm0,[r15+204]
+	; y unaffected
+	addsd xmm2,[r15+128]
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm2
+
+	mov rax,[r15+24]
+	mov qword [r14+24],rax
+
+	mov ebx,dword [r15+168]
+	mov dword [r14+32],ebx
+	
+	
+.put_no_z_text:
+
+
+.no_axis:
+
+
+	mov r14,[r15+32] ; scatter_dataset_structure
+	mov rbx,[.axis_textcloud_geometry_address]
+	mov [.pointer_for_scatterset],rbx
+
+.scatter_set_loop:
+	; scatter point struct population
+	; TODO loop thru multiple
+
+	mov rdi,98
+	call heap_alloc
+	test rax,rax
+	jz .died
+	push rax
+
+	mov ebx, dword [r14+76] ; nPoints
+	mov [rax+0],rbx
+
+	mov rbx,[r14+16]
+	mov [rax+8],rbx
+	mov rbx,[r14+26]
+	mov [rax+16],rbx
+	mov rbx,[r14+36]
+	mov [rax+24],rbx
+	mov rbx,[r14+46]
+	mov [rax+32],rbx
+	mov rbx,[r14+66]
+	mov [rax+40],rbx
+	mov rbx,[r14+56]
+	mov [rax+48],rbx
+
+	mov bx,word [r14+24]
+	mov word [rax+56],bx
+	mov bx,word [r14+34]
+	mov word [rax+58],bx
+	mov bx,word [r14+44]
+	mov word [rax+60],bx
+	mov bx,word [r14+54]
+	mov word [rax+62],bx
+	mov bx,word [r14+74]
+	mov word [rax+64],bx
+	mov bx,word [r14+64]
+	mov word [rax+66],bx
+
+	mov ebx,dword [r14+80]
+	mov dword [rax+68],ebx
+	mov bl,byte [r14+85]
+	mov byte [rax+72],bl
+	mov bl,byte [r14+84]
+	mov byte [rax+73],bl
+
+	; offset scatterplot translation
+	mov rbx,[r15+40]
+	mov [rax+74],rbx
+	mov rbx,[r15+48]
+	mov [rax+82],rbx
+	mov rbx,[r15+56]
+	mov [rax+90],rbx
+	
+	mov rdi,25
+	call heap_alloc
+	test rax,rax
+	jz .died
+
+	xor rbx,rbx
+	mov [rax],rbx
+	mov [rax+16],rbx
+	pop rbx
+
+	mov [rax+8],rbx
+	mov rbx,1
+	mov byte [rax+24],bl
+
+	mov rbx,[.pointer_for_scatterset]
+	mov [rbx],rax
+
+	xor rbx,rbx
+	cmp [r14+0],rbx
+	jz .scatter_done
+
+	mov r14,[r14+0]
+	mov [.pointer_for_scatterset],rax
+	jmp .scatter_set_loop
+
+.scatter_done:
+; end of scatter points
+
+	mov rax,[.axis_geometry_struct_address]
+
+.died:
+	pop rcx
+	pop rbx
+	pop r14
+	pop r15
+
+	ret
+
+
+.axis_geometry_struct_address:
+	dq 0
+
+.axis_wire_struct_address:
+	dq 0
+
+.axis_point_list_array_address:
+	dq 0
+
+.axis_edge_list_array_address:
+	dq 0
+
+.grid_geometry_struct_address:
+	dq 0
+
+.grid_wire_struct_address:
+	dq 0
+
+.grid_point_list_array_address:
+	dq 0
+
+.grid_edge_list_array_address:
+	dq 0
+
+.num_grid_edges: ; 2x for points
+	dq 0
+
+.num_textboxes:
+	dq 0
+
+.pointcloud_array_address:
+	dq 0
+
+.pointcloud_struct_address:
+	dq 0
+
+.pointcloud_geometry_address:
+	dq 0
+
+.axis_textcloud_array_address:
+	dq 0
+
+.axis_textcloud_struct_address:
+	dq 0
+
+.axis_textcloud_geometry_address:
+	dq 0
+
+.title_position_address:
+	dq 0
+
+.title_struct_address:
+	dq 0
+
+.title_geometry_address:
+	dq 0
+
+.pointer_for_scatterset:
+	dq 0
+
+align 8
+.byte_fraction:
+	dq 0x3F60101010101010 
+
+%endif
