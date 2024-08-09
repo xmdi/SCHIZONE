@@ -4,12 +4,12 @@
 ; input data structures
 %if 0
 
-.scatter_plot_structure:
+.plot_structure:
 	dq .scatter_title; address of null-terminated title string {*+0}
 	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
 	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
 	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
-	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
+	dq .dataset_structure1; addr of linked list for datasets {*+32}
 	dq 0.0; plot origin x translation (double) {*+40}
 	dq 0.0; plot origin y translation (double) {*+48}
 	dq 0.0; plot origin z translation (double) {*+56}
@@ -56,27 +56,6 @@
 		; bit 4		= draw ticks?
 		; bit 5		= show tick labels?
 
-.scatter_dataset_structure1:
-	dq 0; address of next dataset in linked list {*+0}
-	dq 0; address of null-terminated label string, currently unused {*+8}
-	dq .x_coords; address of first x-coordinate {*+16}
-	dw 0; extra stride between x-coord elements {*+24}
-	dq .y_coords; address of first y-coordinate {*+26}
-	dw 0; extra stride between y-coord elements {*+34}	
-	dq .z_coords; address of first z-coordinate {*+36}
-	dw 0; extra stride between z-coord elements {*+44}
-	dq .marker0_colors; address of first marker color element {*+46}
-	dw 0; extra stride between marker color elements {*+54}
-	dq .marker0_sizes; address of first marker size element {*+56}
-	dw 0; extra stride between marker size elements {*+64}
-	dq .marker0_types; address of first marker type element {*+66}
-	dw 0; extra stride between marker type elements {*+74}
-	dd 101; number of elements {*+76}
-	dd 0xFF0000; default #XXXXXX RGB marker color {*+80}
-	db 5; default marker size (px) {*+84}
-	db 5; default marker type (1-4) {*+85}
-	db 0x00; flags, currently unused: {*+86}
-
 %endif
 
 %include "lib/io/bitmap/SCHIZOFONT.asm"
@@ -88,8 +67,9 @@
 
 plot_axis_3d:
 ; struct* {rax} plot_axis_3d(struct* {rdi});
-;	Converts input 3D scatter plot definition structures into renderable
-; 	3D graphics structures linked together returned in {rax}. 
+;	Converts input 3D plot axis definition structures into renderable
+; 	3D graphics structures linked together returned in {rax}. This
+; 	function is called by the other 3D plotting functions.
 ; 	WARNING: prematurely flushes print buffer.
 
 	push r15
@@ -1057,93 +1037,6 @@ plot_axis_3d:
 
 .no_axis:
 
-
-	mov r14,[r15+32] ; scatter_dataset_structure
-	mov rbx,[.axis_textcloud_geometry_address]
-	mov [.pointer_for_scatterset],rbx
-
-.scatter_set_loop:
-	; scatter point struct population
-	; TODO loop thru multiple
-
-	mov rdi,98
-	call heap_alloc
-	test rax,rax
-	jz .died
-	push rax
-
-	mov ebx, dword [r14+76] ; nPoints
-	mov [rax+0],rbx
-
-	mov rbx,[r14+16]
-	mov [rax+8],rbx
-	mov rbx,[r14+26]
-	mov [rax+16],rbx
-	mov rbx,[r14+36]
-	mov [rax+24],rbx
-	mov rbx,[r14+46]
-	mov [rax+32],rbx
-	mov rbx,[r14+66]
-	mov [rax+40],rbx
-	mov rbx,[r14+56]
-	mov [rax+48],rbx
-
-	mov bx,word [r14+24]
-	mov word [rax+56],bx
-	mov bx,word [r14+34]
-	mov word [rax+58],bx
-	mov bx,word [r14+44]
-	mov word [rax+60],bx
-	mov bx,word [r14+54]
-	mov word [rax+62],bx
-	mov bx,word [r14+74]
-	mov word [rax+64],bx
-	mov bx,word [r14+64]
-	mov word [rax+66],bx
-
-	mov ebx,dword [r14+80]
-	mov dword [rax+68],ebx
-	mov bl,byte [r14+85]
-	mov byte [rax+72],bl
-	mov bl,byte [r14+84]
-	mov byte [rax+73],bl
-
-	; offset scatterplot translation
-	mov rbx,[r15+40]
-	mov [rax+74],rbx
-	mov rbx,[r15+48]
-	mov [rax+82],rbx
-	mov rbx,[r15+56]
-	mov [rax+90],rbx
-	
-	mov rdi,25
-	call heap_alloc
-	test rax,rax
-	jz .died
-
-	xor rbx,rbx
-	mov [rax],rbx
-	mov [rax+16],rbx
-	pop rbx
-
-	mov [rax+8],rbx
-	mov rbx,1
-	mov byte [rax+24],bl
-
-	mov rbx,[.pointer_for_scatterset]
-	mov [rbx],rax
-
-	xor rbx,rbx
-	cmp [r14+0],rbx
-	jz .scatter_done
-
-	mov r14,[r14+0]
-	mov [.pointer_for_scatterset],rax
-	jmp .scatter_set_loop
-
-.scatter_done:
-; end of scatter points
-
 	mov rax,[.axis_geometry_struct_address]
 
 .died:
@@ -1153,7 +1046,6 @@ plot_axis_3d:
 	pop r15
 
 	ret
-
 
 .axis_geometry_struct_address:
 	dq 0
@@ -1210,9 +1102,6 @@ plot_axis_3d:
 	dq 0
 
 .title_geometry_address:
-	dq 0
-
-.pointer_for_scatterset:
 	dq 0
 
 align 8
