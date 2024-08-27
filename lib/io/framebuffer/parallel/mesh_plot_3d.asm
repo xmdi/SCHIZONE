@@ -1,15 +1,15 @@
-%ifndef CURVE_PLOT_3D
-%define CURVE_PLOT_3D
+%ifndef MESH_PLOT_3D
+%define MESH_PLOT_3D
 
 ; input data structures
 %if 0
 
-.scatter_plot_structure:
-	dq .scatter_title; address of null-terminated title string {*+0}
-	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
-	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
-	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
-	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
+.plot_structure:
+	dq .plot_title; address of null-terminated title string {*+0}
+	dq .plot_xlabel; address of null-terminated x-label string {*+8}
+	dq .plot_ylabel; address of null-terminated y-label string {*+16}
+	dq .plot_zlabel; address of null-terminated z-label string {*+24}
+	dq .plot_dataset_structure1; addr of linked list for datasets {*+32}
 	dq 0.0; plot origin x translation (double) {*+40}
 	dq 0.0; plot origin y translation (double) {*+48}
 	dq 0.0; plot origin z translation (double) {*+56}
@@ -56,7 +56,7 @@
 		; bit 4		= draw ticks?
 		; bit 5		= show tick labels?
 
-.scatter_dataset_structure1:
+.mesh_dataset_structure1:
 	dq 0; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string, currently unused {*+8}
 	dq .x_coords; address of first x-coordinate {*+16}
@@ -86,9 +86,9 @@
 %include "lib/mem/memset.asm"
 %include "lib/mem/heap_alloc.asm"
 
-curve_plot_3d:
-; struct* {rax} curve_plot_3d(struct* {rdi});
-;	Converts input 3D scatter plot definition structures into renderable
+mesh_plot_3d:
+; struct* {rax} mesh_plot_3d(struct* {rdi});
+;	Converts input 3D mesh plot definition structures into renderable
 ; 	3D graphics structures linked together returned in {rax}. 
 ; 	WARNING: prematurely flushes print buffer.
 
