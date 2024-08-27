@@ -79,10 +79,6 @@
 
 %endif
 
-%include "lib/io/bitmap/SCHIZOFONT.asm"
-%include "lib/io/print_float.asm"
-%include "lib/io/print_buffer_reset.asm"
-%include "lib/io/print_buffer_flush_to_memory.asm"
 %include "lib/mem/memset.asm"
 %include "lib/mem/heap_alloc.asm"
 %include "lib/io/framebuffer/parallel/plot_axis_3d.asm"
@@ -91,14 +87,11 @@ scatter_plot_3d:
 ; struct* {rax} scatter_plot_3d(struct* {rdi});
 ;	Converts input 3D scatter plot definition structures into renderable
 ; 	3D graphics structures linked together returned in {rax}. 
-; 	WARNING: prematurely flushes print buffer.
 
 	push r15
 	push r14
 	push rbx
 	push rcx
-
-	call print_buffer_reset
 
 	mov r15,rdi
 
