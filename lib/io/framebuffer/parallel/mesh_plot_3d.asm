@@ -10,7 +10,7 @@
 	dq .plot_xlabel; address of null-terminated x-label string {*+8}
 	dq .plot_ylabel; address of null-terminated y-label string {*+16}
 	dq .plot_zlabel; address of null-terminated z-label string {*+24}
-	dq .plot_dataset_structure1; addr of linked list for datasets {*+32}
+	dq .mesh_dataset_structure1; addr of linked list for datasets {*+32}
 	dq 0.0; plot origin x translation (double) {*+40}
 	dq 0.0; plot origin y translation (double) {*+48}
 	dq 0.0; plot origin z translation (double) {*+56}
@@ -80,8 +80,8 @@
 
 mesh_plot_3d:
 ; struct* {rax} mesh_plot_3d(struct* {rdi});
-;	Converts input 3D mesh plot definition structures at {rdi} into renderable
-; 	3D graphics structures linked together returned in {rax}. 
+;	Converts input 3D mesh plot definition linked structures at {rdi} into
+;	renderable 3D graphics structures linked together returned in {rax}. 
 
 	push r15
 	push r14
