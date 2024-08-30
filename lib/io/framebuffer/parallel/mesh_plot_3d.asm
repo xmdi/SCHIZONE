@@ -70,13 +70,14 @@
 	dd 101; number of nodes {*+46}
 	dd 101; number of elements {*+50}
 	dd 0xFF0000; default #XXXXXX RGB marker color {*+54}
-	db 5 ; nodes per element (only supports certain values) {*+58}
+	db 2 ; nodes per element (only supports certain values) {*+58}
 	db 2 ; line thickness {*+59}
 	db 0x00; flags {*+60}
 
 %endif
 
 %include "lib/mem/heap_alloc.asm"
+%include "lib/mem/memcopy.asm"
 
 mesh_plot_3d:
 ; struct* {rax} mesh_plot_3d(struct* {rdi});
@@ -87,6 +88,8 @@ mesh_plot_3d:
 	push r14
 	push rbx
 	push rcx
+	push rsi
+	push rdi
 
 	mov r14,rdi ; mesh_structure
 	mov rbx,[.axis_textcloud_geometry_address]
@@ -94,6 +97,88 @@ mesh_plot_3d:
 
 .mesh_set_loop:
 	; mesh point struct population
+
+	; check if the stride is zero, if so skip all this nonsense
+	movzx rax,word [r14+24]
+	cmp rax,0
+	jne .node_struct_required	
+
+	mov rax,[r14+16]
+	mov [.node_array_address],rax
+
+	jmp .no_node_struct_required
+
+.node_struct_required:
+	
+	; node struct
+	movzx rdi,dword [r14+46]
+	mov rcx,rdi
+	cmp rcx,0
+	je .died
+
+	imul rdi,rdi,24
+	call heap_alloc
+	jz .died
+
+	mov rdi,rax
+	mov [.node_array_address],rax
+
+	mov rdx,24
+	mov rsi,[r14+16]
+	movzx rax,word [r14+24]
+
+.node_coord_copy_loop:
+
+	call memcopy
+	add rdi,24
+	add rsi,24
+	add rsi,rax
+	dec rcx
+	jnz .node_coord_copy_loop
+	
+.no_node_struct_required:
+
+	
+
+	; axis wire struct
+	mov rdi,33
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,6 ; num points
+	mov [rax+0],rbx
+
+	mov rbx,3 ; num edges
+	mov [rax+8],rbx
+
+	mov rbx,[.axis_point_list_array_address]
+	mov [rax+16],rbx ; points list
+
+	mov rbx,[.axis_edge_list_array_address]
+	mov [rax+24],rbx ; edges list
+	
+	mov bl,[r15+212] ; axis thickness
+	mov byte [rax+32],bl
+
+	mov [.axis_wire_struct_address],rax
+
+	; axis geom struct
+	mov rdi,25
+	call heap_alloc
+
+	test rax,rax
+	jz .died
+
+	mov rbx,[.axis_wire_struct_address] ; wire substruct
+	mov [rax+8],rbx
+
+	mov bl,0b1001 ; type of wire
+	mov byte [rax+24],bl
+
+	mov [.axis_geometry_struct_address],rax
+
 
 	mov rdi,98
 	call heap_alloc
@@ -176,6 +261,8 @@ mesh_plot_3d:
 	mov rax,[.axis_geometry_struct_address]
 
 .died:
+	pop rdi
+	pop rsi
 	pop rcx
 	pop rbx
 	pop r14
@@ -187,6 +274,12 @@ mesh_plot_3d:
 	dq 0
 
 .axis_textcloud_geometry_address:
+	dq 0
+
+.node_array_address:
+	dq 0
+
+.node_array_address:
 	dq 0
 
 .pointer_for_meshset:
