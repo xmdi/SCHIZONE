@@ -50,21 +50,15 @@ PROGRAM_HEADER:
 
 %include "syscalls.asm"	; requires syscall listing for your OS in lib/sys/	
 
-%include "lib/io/bitmap/SCHIZOFONT.asm"
-
 %include "lib/io/bitmap/set_line.asm"
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_init.asm"
 
 %include "lib/io/framebuffer/parallel/framebuffer_3d_render_depth_loop.asm"
 
-%include "lib/math/rand/rand_float_array.asm"
+%include "lib/io/framebuffer/parallel/plot_axis_3d.asm"
 
-%include "lib/math/rand/rand_int_array.asm"
-
-%include "lib/math/rand/rand_int_nbytes_array.asm"
-
-%include "lib/io/framebuffer/parallel/scatter_plot_3d.asm"
+%include "lib/io/framebuffer/parallel/mesh_plot_3d.asm"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -109,39 +103,13 @@ DRAW_CROSS_CURSOR:
 
 START:
 
-	; generate scatter plot geometries
-	mov rax,-10
-	cvtsi2sd xmm0,rax
-	mov rax,10
-	cvtsi2sd xmm1,rax	
-	mov rdx,101
-	xor rsi,rsi
-	mov rdi,.x_coords
-	call rand_float_array
-	mov rdi,.y_coords
-	call rand_float_array
-	mov rdi,.z_coords
-	call rand_float_array
-	mov rdi,.marker0_types
-	mov rcx,1
-	mov r8,4
-	mov r9,1
-	call rand_int_nbytes_array
-
-	mov rdi,.marker0_sizes
-	mov rcx,1
-	mov r8,10
-	call rand_int_nbytes_array
-	mov rdi,.marker0_colors
-	mov rcx,0
-	mov r8,0xFFFFFF
-	mov r9,4
-	call rand_int_nbytes_array
-
 	call heap_init
 
-	mov rdi,.scatter_plot_structure
-	call scatter_plot_3d
+	mov rdi,.plot_structure
+	call plot_axis_3d
+
+	mov rdi,.mesh_structure
+	call mesh_plot_3d
 
 	; init rendering
 	mov rdi,.perspective_structure
@@ -166,24 +134,24 @@ START:
 	dq 1.0 ; upDir_z	
 	dq 0.1 ; zoom
 
-.scatter_title:
+.title:
 	db `Random Pointcloud`,0
 
-.scatter_xlabel:
+.xlabel:
 	db `x`,0
 
-.scatter_ylabel:
+.ylabel:
 	db `y`,0
 
-.scatter_zlabel:
+.zlabel:
 	db `z`,0
 
-.scatter_plot_structure:
-	dq .scatter_title; address of null-terminated title string {*+0}
-	dq .scatter_xlabel; address of null-terminated x-label string {*+8}
-	dq .scatter_ylabel; address of null-terminated y-label string {*+16}
-	dq .scatter_zlabel; address of null-terminated z-label string {*+24}
-	dq .scatter_dataset_structure1; addr of linked list for datasets {*+32}
+.plot_structure:
+	dq .title; address of null-terminated title string {*+0}
+	dq .xlabel; address of null-terminated x-label string {*+8}
+	dq .ylabel; address of null-terminated y-label string {*+16}
+	dq .zlabel; address of null-terminated z-label string {*+24}
+	dq 0; addr of linked list for datasets {*+32}
 	dq 0.0; plot origin x translation (double) {*+40}
 	dq 0.0; plot origin y translation (double) {*+48}
 	dq 0.0; plot origin z translation (double) {*+56}
