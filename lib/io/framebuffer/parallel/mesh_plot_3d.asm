@@ -138,6 +138,27 @@ mesh_plot_3d:
 	
 .no_node_struct_required:
 
+	movzx rcx,dword [r14+50] ; num elements
+	movzx rdx,byte [r14+58] ; num nodes per element
+
+	cmp rdx,2
+	jl .died	; bogus nodes/el
+	je .line_element
+
+.other_element:
+	; reserve enough space
+	mov rdi,rcx
+	imul rdi,rdx ; num of nodes to list for pairs
+	shl rdi,4 ; *=16 bytes per pair	
+
+	call heap_alloc
+	jz .died
+
+
+
+
+
+
 	
 
 	; axis wire struct
