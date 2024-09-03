@@ -135,7 +135,7 @@ START:
 	dq 0.1 ; zoom
 
 .title:
-	db `Random Pointcloud`,0
+	db `Spiral`,0
 
 .xlabel:
 	db `x`,0
@@ -198,40 +198,28 @@ START:
 		; bit 4		= draw ticks?
 		; bit 5		= show tick labels?
 
-.scatter_dataset_structure1:
+.mesh_dataset_structure:
 	dq 0; address of next dataset in linked list {*+0}
 	dq 0; address of null-terminated label string, currently unused {*+8}
-	dq .x_coords; address of first x-coordinate {*+16}
-	dw 0; extra stride between x-coord elements {*+24}
-	dq .y_coords; address of first y-coordinate {*+26}
-	dw 0; extra stride between y-coord elements {*+34}	
-	dq .z_coords; address of first z-coordinate {*+36}
-	dw 0; extra stride between z-coord elements {*+44}
-	dq .marker0_colors; address of first marker color element {*+46}
-	dw 0; extra stride between marker color elements {*+54}
-	dq .marker0_sizes; address of first marker size element {*+56}
-	dw 0; extra stride between marker size elements {*+64}
-	dq .marker0_types; address of first marker type element {*+66}
-	dw 0; extra stride between marker type elements {*+74}
-	dd 101; number of elements {*+76}
-	dd 0xFF0000; default #XXXXXX RGB marker color {*+80}
-	db 5; default marker size (px) {*+84}
-	db 5; default marker type (1-4) {*+85}
-	db 0x01; flags: {*+86}
-		; bit 0 (LSB)	= include in legend?
+	dq .nodes; address of first (x,y,z) coordinate set (quadwords) {*+16}
+	dw 0; extra stride between node {*+24}
+	dq .elements; address of first element {*+26}
+	dw 0; extra stride between elements (quadword) {*+34}	
+	dq .colors; address of first node color (doubleword) {*+36}
+	dw 0; extra stride between colors {*+44}
+	dd 101; number of nodes {*+46}
+	dd 101; number of elements {*+50}
+	dd 0xFF0000; default #XXXXXX RGB marker color {*+54}
+	db 2 ; nodes per element (only supports certain values) {*+58}
+	db 2 ; line thickness {*+59}
+	db 0x00; flags {*+60}
 
-.x_coords:
+.nodes:
+	times 303 dq 0.0
+.elements:	
 	times 101 dq 0.0
-.y_coords:
-	times 101 dq 0.0
-.z_coords:
-	times 101 dq 0.0
-.marker0_colors:
+.colors:
 	times 101 dd 0
-.marker0_sizes:
-	times 101 db 0
-.marker0_types:
-	times 101 db 0
 
 END:
 
