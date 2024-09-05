@@ -111,7 +111,8 @@ mesh_plot_3d:
 .node_struct_required:
 	
 	; node struct
-	movzx rdi,dword [r14+46]
+	xor rdi,rdi
+	mov edi,dword [r14+46]
 	mov rcx,rdi
 	cmp rcx,0
 	je .died
@@ -138,7 +139,8 @@ mesh_plot_3d:
 	
 .no_node_struct_required:
 
-	movzx rcx,dword [r14+50] ; num elements
+	xor rcx,rcx
+	mov ecx,dword [r14+50] ; num elements
 	movzx rdx,byte [r14+58] ; num nodes per element
 
 	cmp rdx,2
@@ -167,6 +169,24 @@ mesh_plot_3d:
 
 	test rax,rax
 	jz .died
+
+
+
+
+
+
+.line_element:
+
+
+
+
+
+
+
+
+
+
+
 
 	mov rbx,6 ; num points
 	mov [rax+0],rbx
@@ -300,7 +320,7 @@ mesh_plot_3d:
 .node_array_address:
 	dq 0
 
-.node_array_address:
+.element_array_address:
 	dq 0
 
 .pointer_for_meshset:
