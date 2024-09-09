@@ -177,6 +177,18 @@ mesh_plot_3d:
 
 .line_element:
 
+	; reserve enough space
+	mov rdi,16 ; *=16 bytes per pair	
+	call heap_alloc
+	jz .died
+
+	; pair stuff here, {rcx} contains number of elements
+.line_element_pair_loop:
+	; transfer nodes here	
+
+
+	dec rcx
+	jnz .line_element_pair_loop
 
 
 
@@ -185,14 +197,20 @@ mesh_plot_3d:
 
 
 
+	; axis wire struct
+	mov rdi,33
+	call heap_alloc
 
+	test rax,rax
+	jz .died
 
-
-	mov rbx,6 ; num points
-	mov [rax+0],rbx
-
-	mov rbx,3 ; num edges
-	mov [rax+8],rbx
+	mov [.edge_wire_struct_address],rax
+	
+	mov ecx,dword [r14+46] ; num nodes
+	mov [rax+0],rcx
+	
+	mov ecx,dword [r14+50] ; num elements
+	mov [rax+8],rcx
 
 	mov rbx,[.axis_point_list_array_address]
 	mov [rax+16],rbx ; points list
@@ -202,8 +220,6 @@ mesh_plot_3d:
 	
 	mov bl,[r15+212] ; axis thickness
 	mov byte [rax+32],bl
-
-	mov [.axis_wire_struct_address],rax
 
 	; axis geom struct
 	mov rdi,25
@@ -312,6 +328,9 @@ mesh_plot_3d:
 	ret
 
 .axis_geometry_struct_address:
+	dq 0
+
+.edge_wire_struct_address:
 	dq 0
 
 .axis_textcloud_geometry_address:
