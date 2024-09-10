@@ -182,20 +182,20 @@ mesh_plot_3d:
 	call heap_alloc
 	jz .died
 
+	mov [.element_array_address],rax
+	mov rdi,rax	; pointer to destination
+	mov rsi,[r14+26] ; pointer to first element set
 	; pair stuff here, {rcx} contains number of elements
 .line_element_pair_loop:
 	; transfer nodes here	
-
-
+	mov rax,[rsi+0]
+	mov [rdi+0],rax
+	mov rax,[rsi+8]
+	mov [rdi+8],rax
+	add rdi,16
+	add rsi,16	
 	dec rcx
 	jnz .line_element_pair_loop
-
-
-
-
-
-
-
 
 	; axis wire struct
 	mov rdi,33
@@ -204,7 +204,7 @@ mesh_plot_3d:
 	test rax,rax
 	jz .died
 
-	mov [.edge_wire_struct_address],rax
+	mov [.wire_struct_address],rax
 	
 	mov ecx,dword [r14+46] ; num nodes
 	mov [rax+0],rcx
@@ -212,10 +212,10 @@ mesh_plot_3d:
 	mov ecx,dword [r14+50] ; num elements
 	mov [rax+8],rcx
 
-	mov rbx,[.axis_point_list_array_address]
+	mov rbx,[.node_array_address]
 	mov [rax+16],rbx ; points list
 
-	mov rbx,[.axis_edge_list_array_address]
+	mov rbx,[.element_array_address]
 	mov [rax+24],rbx ; edges list
 	
 	mov bl,[r15+212] ; axis thickness
@@ -228,13 +228,13 @@ mesh_plot_3d:
 	test rax,rax
 	jz .died
 
-	mov rbx,[.axis_wire_struct_address] ; wire substruct
+	mov rbx,[.wire_struct_address] ; wire substruct
 	mov [rax+8],rbx
 
 	mov bl,0b1001 ; type of wire
 	mov byte [rax+24],bl
 
-	mov [.axis_geometry_struct_address],rax
+	mov [.geometry_struct_address],rax
 
 
 	mov rdi,98
@@ -315,7 +315,7 @@ mesh_plot_3d:
 .mesh_done:
 ; end of mesh points
 
-	mov rax,[.axis_geometry_struct_address]
+	mov rax,[.geometry_struct_address]
 
 .died:
 	pop rdi
@@ -327,10 +327,10 @@ mesh_plot_3d:
 
 	ret
 
-.axis_geometry_struct_address:
+.geometry_struct_address:
 	dq 0
 
-.edge_wire_struct_address:
+.wire_struct_address:
 	dq 0
 
 .axis_textcloud_geometry_address:
