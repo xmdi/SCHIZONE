@@ -92,7 +92,6 @@ mesh_plot_3d:
 	push rdi
 
 	mov r14,rdi ; mesh_structure
-	mov rbx,[.axis_textcloud_geometry_address]
 	mov [.pointer_for_meshset],rbx
 
 .mesh_set_loop:
@@ -156,24 +155,12 @@ mesh_plot_3d:
 	call heap_alloc
 	jz .died
 
-
-
-
-
-
-	
-
-	; axis wire struct
+	; edge struct
 	mov rdi,33
 	call heap_alloc
 
 	test rax,rax
 	jz .died
-
-
-
-
-
 
 .line_element:
 
@@ -197,7 +184,7 @@ mesh_plot_3d:
 	dec rcx
 	jnz .line_element_pair_loop
 
-	; axis wire struct
+	; wire struct
 	mov rdi,33
 	call heap_alloc
 
@@ -218,10 +205,10 @@ mesh_plot_3d:
 	mov rbx,[.element_array_address]
 	mov [rax+24],rbx ; edges list
 	
-	mov bl,[r15+212] ; axis thickness
+	mov bl,[r15+212] ; thickness
 	mov byte [rax+32],bl
 
-	; axis geom struct
+	; geom struct
 	mov rdi,25
 	call heap_alloc
 
@@ -250,9 +237,6 @@ mesh_plot_3d:
 	dq 0
 
 .wire_struct_address:
-	dq 0
-
-.axis_textcloud_geometry_address:
 	dq 0
 
 .node_array_address:
