@@ -60,6 +60,8 @@ PROGRAM_HEADER:
 
 %include "lib/io/framebuffer/parallel/mesh_plot_3d.asm"
 
+%include "lib/math/expressions/trig/cosine_sine_cordic_int.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,6 +106,45 @@ DRAW_CROSS_CURSOR:
 START:
 
 	call heap_init
+
+	movsd xmm4,.theta_start
+	movsd xmm5,.z_start
+	mov rcx,101
+	mov r14,[.nodes]
+
+.init_nodes_loop:
+
+	movsd xmm0,xmm4	
+	mov rdi,30
+	call cosine_sin_cordic_int
+
+	movsd [r14+0],xmm0
+	movsd [r14+8],xmm1
+	movsd [r14+16],xmm4
+
+	addsd xmm4,[.dtheta]
+	addsd xmm5,[.dz]
+
+	add r14,24
+	dec rcx
+	jnz .init_nodes_loop
+
+
+	mov rax,0
+
+	mov rcx,100
+	mov r14,[.elements]
+
+.init_elements_loop:
+
+	mov [r14+0],rax
+	inc rax
+	mov [r14+8],rax
+	
+	add r14,16
+	dec rcx
+	jnz .init_elements_loop
+
 
 	mov rdi,.plot_structure
 	call plot_axis_3d
@@ -217,9 +258,21 @@ START:
 .nodes:
 	times 303 dq 0.0
 .elements:	
-	times 101 dq 0.0
+	times 200 dq 0.0
 .colors:
-	times 101 dd 0
+	times 200 dd 0
+
+.theta_start:
+	dq 0.0
+
+.z_start:
+	dq -5.0
+
+.dtheta:
+	dq 0.1
+
+.dz:
+	dq 0.05
 
 END:
 
