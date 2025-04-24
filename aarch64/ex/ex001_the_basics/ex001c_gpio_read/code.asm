@@ -50,9 +50,8 @@ START:	// address label representing the entry point of our program
 .equ PIN, 19	// select LED GPIO pin here
 
 // these memory offsets are calculated automatically
-.equ GPFSEL_OFFSET ,0x4*(PIN/10)
-.equ GPSET_OFFSET, 0x1C+0x4*(PIN/32)
-.equ GPCLR_OFFSET, 0x28+0x4*(PIN/32)
+.equ GPFSEL_OFFSET, 0x4*(PIN/10)
+.equ GPLEV_OFFSET, 0x34+0x4*(PIN/32)
 .equ BIT_OFFSET, 3*(PIN%10)
 
 // /dev/gpiomem size, really don't need all this
@@ -78,45 +77,42 @@ START:	// address label representing the entry point of our program
 	svc 	0
 	// x0 points to mapped memory piece
 
+	mov 	x22, x0
+
 	add	x1, x0, GPFSEL_OFFSET // x1 = offset to GPFSEL
 	ldr	w2, [x1] // save contents of GPFSEL to w2
 
 	and	w2, w2, ~(7<<BIT_OFFSET)
-	orr	w2, w2, (1<<BIT_OFFSET)
 	str	w2, [x1]
+
+read: 	// read loop
+	add	x1, x0, GPLEV_OFFSET // offset to GPLEV
+	ldr	w2, [x1]
+	lsr 	w2, w2, (BIT_OFFSET%32)
+	//and 	w2, w2, 0xFF
+
+	mov 	x8, 93
+	mov 	x0, x2
+	svc 	0
+
+
 	
-	// init delay
-	mov 	x3, LOAD_ADDRESS
-	add 	x3, x3, delay // position independent LDR basically
-	ldr	x4, [x3]
-
-	// pin selection bit
-	mov	w2, (1<<PIN)
-
-blink: 	// blink loop
-	add	x1, x0, GPSET_OFFSET // offset to GPSET
-	str	w2, [x1]
+	mov	x8, 64	
+	mov 	x0, 1
+	mov 	x1, LOAD_ADDRESS
+	add 	x1, x1, off
+	add	x1, x1, x2
+	mov 	x2, 4
+	svc	0
 	
-	mov x3,	x4
-loop1:	// LED on
-	subs	x3, x3, 1
-	b.ne 	loop1
-
-	add	x1, x0, GPCLR_OFFSET // offset to GPCLR
-	str	w2, [x1]
-
-	mov 	x3, x4
-loop2:	// LED off
-	subs	x3, x3, 1
-	b.ne 	loop2
-
-	b 	blink
+	b 	read
 
 gpiomem_path: 
 	.asciz "/dev/gpiomem"
-
-delay:
-	.quad 400000000
+off:
+	.asciz "off\n"
+on:
+	.asciz "on \n"
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INCLUDES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
