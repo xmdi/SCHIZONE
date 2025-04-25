@@ -57,62 +57,56 @@ START:	// address label representing the entry point of our program
 // /dev/gpiomem size, really don't need all this
 .equ gpiomem_length, 4096
 
-	// Open /dev/gpiomem
-	mov x0, -100    	// dirfd = AT_FDCWD (current directory)
-	mov x1, LOAD_ADDRESS
-	add x1, x1, gpiomem_path // position independent LDR basically
-	mov w2, 2       	// flags = O_RDWR
+	// open /dev/gpiomem
+	mov w8, 56   		// open(at) syscall
 	mov w3, 0            	// mode (not used)
-	mov w8, 56   		// syscall number
-	svc 0                	// Invoke syscall
+	mov w2, 2       	// flags = O_RDWR
+	mov x1, gpiomem_path
+	add x1, x1, LOAD_ADDRESS // position independent LDR basically
+	mov x0, -100    	// dirfd = AT_FDCWD (current directory)
+	svc 0                	// execute syscall
 
+	// mmap
+	mov 	x8, 222
 	mov 	x5, 0
 	mov 	w4, w0
 	mov	w3, 1
 	mov	w2, 3
-	mov	x1, gpiomem_length // seems to work "the same" no matter what you put.
-	mov 	x0, LOAD_ADDRESS // This line and below as well. Curious...
-	add 	x0, x0, mapped_memory // (position independent LDR basically)
-	mov 	x8, 222
+	mov	x1, gpiomem_length
+	mov 	x0, mapped_memory
+	add 	x0, x0, LOAD_ADDRESS // (position independent LDR basically)
 	svc 	0
 	// x0 points to mapped memory piece
 
-	mov 	x22, x0
+	mov	x22, x0		// save gpiomem address for later
 
-	add	x1, x0, GPFSEL_OFFSET // x1 = offset to GPFSEL
-	ldr	w2, [x1] // save contents of GPFSEL to w2
+	ldr	w1, [x0, GPFSEL_OFFSET]	// clear 3 bits of GPFSEL to set PIN as input
+	and	w1, w1, ~(7<<BIT_OFFSET)
+	str	w1, [x22, GPFSEL_OFFSET]
 
-	and	w2, w2, ~(7<<BIT_OFFSET)
-	str	w2, [x1]
+read_loop:
 
-read: 	// read loop
-	add	x1, x0, GPLEV_OFFSET // offset to GPLEV
-	ldr	w2, [x1]
-	lsr 	w2, w2, (BIT_OFFSET%32)
-	//and 	w2, w2, 0xFF
+	ldr	w2, [x22, GPLEV_OFFSET] // load some pin levels
 
-	mov 	x8, 93
-	mov 	x0, x2
-	svc 	0
+	ubfx	x2, x2, PIN, 1	// extract HIGH/LOW state of PIN, cool instruction :)
+	lsl	x2, x2, 2	// multiply by four (for trick below)
+		
+	mov	x8, 64		// write syscall
+	mov 	x0, 1		// stdout
+	mov 	x1, x2		// branchless evaluation
+	add 	x1, x1, LOAD_ADDRESS // select output string
+	add	x1, x1, off 
+	mov 	x2, 4		// string length
+	svc	0		// execute syscall
 
+	b read_loop		// loop ad infinitum
 
-	
-	mov	x8, 64	
-	mov 	x0, 1
-	mov 	x1, LOAD_ADDRESS
-	add 	x1, x1, off
-	add	x1, x1, x2
-	mov 	x2, 4
-	svc	0
-	
-	b 	read
-
+off:
+	.ascii "off\n"
+on:
+	.ascii "on \n"
 gpiomem_path: 
 	.asciz "/dev/gpiomem"
-off:
-	.asciz "off\n"
-on:
-	.asciz "on \n"
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INCLUDES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

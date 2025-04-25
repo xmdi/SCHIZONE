@@ -58,23 +58,24 @@ START:	// address label representing the entry point of our program
 // /dev/gpiomem size, really don't need all this
 .equ gpiomem_length, 4096
 
-	// Open /dev/gpiomem
-	mov x0, -100    	// dirfd = AT_FDCWD (current directory)
-	mov x1, LOAD_ADDRESS
-	add x1, x1, gpiomem_path // position independent LDR basically
-	mov w2, 2       	// flags = O_RDWR
+	// open /dev/gpiomem
+	mov w8, 56   		// open(at) syscall
 	mov w3, 0            	// mode (not used)
-	mov w8, 56   		// syscall number
-	svc 0                	// Invoke syscall
+	mov w2, 2       	// flags = O_RDWR
+	mov x1, gpiomem_path
+	add x1, x1, LOAD_ADDRESS // position independent LDR basically
+	mov x0, -100    	// dirfd = AT_FDCWD (current directory)
+	svc 0                	// execute syscall
 
+	// mmap
+	mov 	x8, 222
 	mov 	x5, 0
 	mov 	w4, w0
 	mov	w3, 1
 	mov	w2, 3
-	mov	x1, gpiomem_length // seems to work "the same" no matter what you put.
-	mov 	x0, LOAD_ADDRESS // This line and below as well. Curious...
-	add 	x0, x0, mapped_memory // (position independent LDR basically)
-	mov 	x8, 222
+	mov	x1, gpiomem_length
+	mov 	x0, mapped_memory
+	add 	x0, x0, LOAD_ADDRESS // (position independent LDR basically)
 	svc 	0
 	// x0 points to mapped memory piece
 
