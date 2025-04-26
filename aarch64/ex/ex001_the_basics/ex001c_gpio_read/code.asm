@@ -90,7 +90,7 @@ read_loop:
 
 	ubfx	x2, x2, PIN, 1	// extract HIGH/LOW state of PIN, cool instruction :)
 	lsl	x2, x2, 2	// multiply by four (for trick below)
-		
+
 	mov	x8, 64		// write syscall
 	mov 	x0, 1		// stdout
 	mov 	x1, x2		// branchless evaluation
@@ -100,6 +100,24 @@ read_loop:
 	svc	0		// execute syscall
 
 	b read_loop		// loop ad infinitum
+
+read_gpio:
+
+	ldr	w2, [x22, GPLEV_OFFSET]
+
+	ubfx	x2, x2, PIN, 1	
+	lsl	x2, x2, 2
+
+	mov	x8, 64	// write syscall	
+	mov 	x0, 1
+	mov 	x1, x2
+	add 	x1, x1, LOAD_ADDRESS
+	add	x1, x1, off 
+	mov 	x2, 4
+	svc	0
+
+	b read_gpio	// loop 
+
 
 off:
 	.ascii "off\n"

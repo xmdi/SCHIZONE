@@ -92,7 +92,7 @@ START:	// address label representing the entry point of our program
 	ldr	x4, [x3]
 
 	// pin selection bit
-	mov	w2, (1<<PIN)
+	mov	w2, (1<<(PIN%32))
 
 blink: 	// blink loop
 	add	x1, x0, GPSET_OFFSET // offset to GPSET

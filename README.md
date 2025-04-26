@@ -5,7 +5,9 @@
 
 DIY implementations of "scientific" computing algorithms. Educational videos attached. Everything provided AMDG.
 
-Entirely x86-64 assembly (see language breakdown on side panel). NASM is used as the assembler.
+The codebase below uses x86-64 assembly (see language breakdown on side panel). NASM is used as the assembler.
+
+(see [aarch64](aarch64) directory for those episodes).
 
 Topics include basic math, BSD/Linux, mechanical/aerospace engineering, home/garden, finance, and maybe some embedded stuff.
 
