@@ -47,7 +47,10 @@ END_HEADER:
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .INCLUDE "SYS/LINUX/SYSCALLS.S"
+.INCLUDE "SYS/OPEN.S"
 .INCLUDE "SYS/EXIT.S"
+
+.EQU VERBOSE_LOGS,1
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -55,7 +58,12 @@ END_HEADER:
 
 START:
 
+	_OPEN_RW .FILENAME
+
 	MOV W0,25
 	B EXIT
+
+.FILENAME:
+	.ASCII "test\0"
 
 END:
