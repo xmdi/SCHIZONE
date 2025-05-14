@@ -27,6 +27,7 @@
 .IFDEF VERBOSE_LOGS
 
 .INCLUDE "IO/LOG_TEXT.S"
+.INCLUDE "IO/LOG_DECIMAL.S"
 
 OPEN_VERBOSE:
 
@@ -55,7 +56,8 @@ OPEN:	// {W0} OPEN({W0}, {X1}, {W2}, {W3});
 	SVC 0
 
 .IFDEF VERBOSE_LOGS
-	// push w0
+        SUB SP,SP,4
+        STR W0,[SP]
 	CMP W0,0
 	B.GEQ .SUCCESS
 .FAIL:
@@ -63,8 +65,12 @@ OPEN:	// {W0} OPEN({W0}, {X1}, {W2}, {W3});
 	B .QUIT
 .SUCCESS:
 	_LOG_TEXT OPEN_VERBOSE.T2 13
+        LDR W0,[SP]
+        _LOG_DECIMAL W0
+        _LOG_TEXT (OPEN_VERBOSE.T3+6) 1
 .QUIT:
-	// pop w0
+	LDR W0,[SP]
+        ADD SP,SP,4
 .ENDIF
 
 	RET
