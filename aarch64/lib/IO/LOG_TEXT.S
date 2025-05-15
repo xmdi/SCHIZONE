@@ -4,10 +4,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 .MACRO _LOG_TEXT TEXT NUM_BYTES
+	SUB SP,SP,16
+	STR LR,[SP,0]
 	MOV W2, \NUM_BYTES
 	MOV X1, \TEXT 
 	ADD X1, X1, LOAD_ADDRESS 
 	BL LOG_TEXT
+	LDR LR,[SP,0]
+	ADD SP,SP,16
 .ENDM
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,7 +20,7 @@
 LOG_TEXT:// {W0} LOG_TEXT({X1}, {W2});
 	// RETURNS NUMBER BYTES WRITTEN IN {W0}
 
-	MOV WO, SYS_STDOUT
+	MOV W0, SYS_STDOUT
 	MOV W8, SYS_WRITE
 	SVC 0
 	RET

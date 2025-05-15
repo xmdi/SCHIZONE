@@ -49,8 +49,8 @@ END_HEADER:
 .EQU VERBOSE_LOGS, 1
 
 .INCLUDE "SYS/LINUX/SYSCALLS.S"
-.INCLUDE "SYS/OPEN.S"
 .INCLUDE "SYS/EXIT.S"
+.INCLUDE "SYS/OPEN.S"
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -59,9 +59,7 @@ END_HEADER:
 START:
 
 	_OPEN_RW .FILENAME
-
-	MOV W0,25
-	B EXIT
+	_EXIT 0
 
 .FILENAME:
 	.ASCII "test\0"

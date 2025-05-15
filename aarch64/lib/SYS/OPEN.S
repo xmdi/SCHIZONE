@@ -7,7 +7,6 @@
 	MOV W3, \MODE          	// mode
 	MOV W2, \FLAGS       	// flags
 	MOV X1, \PATH
-	ADD X1, X1, LOAD_ADDRESS // position independent LDR basically
 	MOV X0, \DIR	    	// dirfd = AT_FDCWD (current directory)
 	BL OPEN
 .ENDM
@@ -29,14 +28,12 @@
 .INCLUDE "IO/LOG_TEXT.S"
 .INCLUDE "IO/LOG_DECIMAL.S"
 
-OPEN_VERBOSE:
-
-.T1:
-	.ASCII "OPENING: "
-.T2:
-	.ASCII " SUCCESS. FD="
-.T3:
-	.ASCII " FAIL.\n"
+1:
+	.ASCII "OPENING: '"
+2:
+	.ASCII "' SUCCESS. FD="
+3:
+	.ASCII "' FAIL.\n"
 
 .ENDIF
 
@@ -49,28 +46,37 @@ OPEN:	// {W0} OPEN({W0}, {X1}, {W2}, {W3});
 	// RETURNS FILE DESCRIPTOR IN {W0}
 
 .IFDEF VERBOSE_LOGS
-	_LOG_TEXT OPEN_VERBOSE.T1 9
+	SUB SP,SP,32
+	STP X0,X1,[SP,16]
+	STP X2,X3,[SP,0]
+	_LOG_TEXT 1b 10
+	LDP X0,X1,[SP,16]
+	_LOG_TEXT X1 5 // TODO: PRINT NULL TERMINATED STRING (STRLEN)
+	LDP X0,X1,[SP,16]
+	LDP X2,X3,[SP,0]
+	ADD SP,SP,32
 .ENDIF
-
+	
+	ADD X1, X1, LOAD_ADDRESS // position independent LDR basically
 	MOV W8, SYS_OPEN 
 	SVC 0
 
 .IFDEF VERBOSE_LOGS
-        SUB SP,SP,4
+        SUB SP,SP,16
         STR W0,[SP]
 	CMP W0,0
-	B.GEQ .SUCCESS
+	B.GE .SUCCESS
 .FAIL:
-	_LOG_TEXT OPEN_VERBOSE.T3 7
+	_LOG_TEXT 3b 8
 	B .QUIT
 .SUCCESS:
-	_LOG_TEXT OPEN_VERBOSE.T2 13
+	_LOG_TEXT 2b 14
         LDR W0,[SP]
-        _LOG_DECIMAL W0
-        _LOG_TEXT (OPEN_VERBOSE.T3+6) 1
+  	_LOG_DECIMAL X0
+        _LOG_TEXT (3b+7),1
 .QUIT:
 	LDR W0,[SP]
-        ADD SP,SP,4
+        ADD SP,SP,16
 .ENDIF
 
 	RET

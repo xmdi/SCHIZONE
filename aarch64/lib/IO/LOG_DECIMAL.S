@@ -1,26 +1,86 @@
 .IFNDEF LOG_DECIMAL
 
+.INCLUDE "IO/LOG_TEXT.S"
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 .MACRO _LOG_DECIMAL NUMBER // CAN ALSO PUT REGISTER
+	SUB SP,SP,16
+	STR LR,[SP,0]
 	MOV X0, \NUMBER
 	BL LOG_DECIMAL
+	LDR LR,[SP,0]
+	ADD SP,SP,16
 .ENDM
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+.ALIGN 2
+
 LOG_DECIMAL:// {W0} LOG_DECIMAL({X0});
 	// RETURNS NUMBER BYTES WRITTEN IN {W0}
 
-  // POPULATE BUFFER WITH ASCII REPRESENTION
-  // PLACE NUM DIGITS IN W3
+	MOV X1,10 // DECIMAL DIVIDEND	
+	MOV W4,0 // DIGIT COUNTER
+	MOV X6,(6f+32) // BUFFER END
+	ADD X6,X6,LOAD_ADDRESS
+	MOV X7,0 // NEGATIVE NUMBER FLAG
 
-  _LOG_TEXT .BUFFER W3
+	CMP X0,0
+	B.EQ 4f
+	B.LT 5f
+
+1: 
+
+	CMP X0,0		// CHECK IF DONE
+	B.EQ 2f
+
+	UDIV X2,X0,X1		// NEW QUOTIENT X2
+	MSUB X3,X2,X1,X0	// REMAINDER IN X3
+	MOV X0,X2		// PREP FOR NEXT ITERATION
+
+	SUB X6,X6,1		// MOVE POINTER TO PRECEDING BYTE
+	ADD W3,W3,48		// CONVERT DIGIT TO ASCII
+	STRB W3,[X6,0]		// PUSH BYTE TO BUFFER
+	ADD W4,W4,1		// INCREMENT DIGIT COUNTER
+
+	B 1b			// GO AGAIN
+
+2: // LOOP BREAKOUT
+
+	CMP X7,0
+	B.EQ 3f
+	
+	SUB X6,X6,1		// MOVE POINTER TO PRECEDING BYTE
+	MOV W3,45		// ASCII "-"
+	STRB W3,[X6,0]		// PUSH BYTE TO BUFFER
+	ADD W4,W4,1		// INCREMENT DIGIT COUNTER
+	
+3: // LOG
+
+	SUB X6,X6,LOAD_ADDRESS
+	_LOG_TEXT X6 W4
+	
 	RET
 
-.BUFFER:
-.SPACE 32
+4: // HANDLE ZERO
+
+	SUB X6,X6,1		// MOVE POINTER TO PRECEDING BYTE
+	MOV W3,48		// ASCII ZERO
+	STRB W3,[X6,0]		// PUSH BYTE TO BUFFER
+	MOV W4,1
+	B 3b
+
+5: // HANDLE NEGATIVE
+
+	NEG X0,X0
+	MOV X7,1
+	B 1b
+
+6: // BUFFER
+
+	.SPACE 32
 
 .ENDIF
