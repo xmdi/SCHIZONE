@@ -49,8 +49,10 @@ END_HEADER:
 .EQU VERBOSE_LOGS, 1
 
 .INCLUDE "SYS/LINUX/SYSCALLS.S"
-.INCLUDE "SYS/EXIT.S"
+.INCLUDE "IO/LOG_FILE.S"
 .INCLUDE "SYS/OPEN.S"
+.INCLUDE "SYS/READ.S"
+.INCLUDE "SYS/EXIT.S"
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -58,10 +60,18 @@ END_HEADER:
 
 START:
 
+	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
 	_OPEN_RW .FILENAME
+	_READ W0, .BUFFER, 32
 	_EXIT 0
 
+.BUFFER:
+	.SPACE 32
+
+.LOGFILENAME:
+	.ASCII "log.file\0"
+
 .FILENAME:
-	.ASCII "test\0"
+	.ASCII "test.file\0"
 
 END:

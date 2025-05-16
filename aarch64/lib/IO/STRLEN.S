@@ -1,0 +1,42 @@
+.IFNDEF STRLEN
+.EQU STRLEN,1
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+.MACRO _STRLEN STRING_POINTER
+	SUB SP, SP, 32
+	STR LR, [SP,16]
+	STP X1, X2, [SP,0]
+
+	MOV X0, \STRING_POINTER
+	BL STRLEN
+
+	LDR LR, [SP,16]
+	LDP X1, X2, [SP,0]
+	ADD SP, SP, 32
+.ENDM
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+STRLEN:// {W0} STRLEN({X0});
+	// RETURNS DISTANCE TO NULL BYTE FROM {X0}
+
+	ADD X0, X0, LOAD_ADDRESS 
+	MOV W2, 0	
+
+1:	
+	LDRB W1, [X0]
+	CMP W1, 0
+	B.EQ 2f
+	
+	ADD W2, W2, 1
+	ADD X0, X0, 1
+	B 1b
+
+2:
+	MOV W0, W2
+	RET
+
+.ENDIF
