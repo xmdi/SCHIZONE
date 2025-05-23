@@ -12,6 +12,12 @@
 	MOV W2, \FLAGS       	// flags
 	MOV X1, \PATH
 	MOV X0, \DIR	    	// dirfd = AT_FDCWD (current directory)
+
+/*	MOV X0,SYS_STDOUT
+	MOV X2,5
+	MOV X8,SYS_WRITE
+	SVC 0
+*/
 	BL OPEN	
 	LDP LR, X1, [SP,16]
 	LDP X2, X3, [SP,0]
@@ -64,6 +70,7 @@ OPEN:	// {W0} OPEN({W0}, {X1}, {W2}, {W3});
 	LDP X2,X3,[SP,0]
 	LDR LR,[SP,32]
 	ADD SP,SP,48
+
 .ENDIF
 	
 	ADD X1, X1, LOAD_ADDRESS // position independent LDR basically
