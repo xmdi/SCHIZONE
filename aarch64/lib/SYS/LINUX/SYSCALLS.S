@@ -32,6 +32,11 @@
 .EQU SYS_EXECUTE_PERMISSIONS, 0755
 .EQU SYS_AT_FDCWD, -100
 
+// LSEEK WHENCE MODES
+.EQU SYS_SEEK_SET, 0 // seek offset relative to file start
+.EQU SYS_SEEK_CUR, 1 // seek offset relative to current position
+.EQU SYS_SEEK_END, 2 // seek offset relative to file end
+
 /*
 ; ioctl
 %define SYS_TCGETA 0x5401
@@ -68,11 +73,6 @@
 %define SYS_ICANON 0x2 ; canonicalize input lines
 %define SYS_ISIG 0x1 ; enable INTR, QUIT, (D)SUSP signals
 %define SYS_IEXTEN 0x8000 ; enable DISCARD and LNEXT
-
-; lseek modes
-%define SYS_SEEK_SET 0 ; seek offset relative to file start
-%define SYS_SEEK_CUR 1 ; seek offset relative to current position
-%define SYS_SEEK_END 2 ; seek offset relative to file end
 
 ; input events & mouse device
 %define SYS_MOUSE_REL_X 0x00
