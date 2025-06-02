@@ -4,24 +4,39 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-.MACRO _OPEN DIR PATH FLAGS MODE
-	SUB SP, SP, 32
-	STP LR, X1, [SP,16]
-	STP X2, X3, [SP,0]
-	MOV W3, \MODE          	// mode
-	MOV W2, \FLAGS       	// flags
-	MOV X1, \PATH
-	MOV X0, \DIR	    	// dirfd = AT_FDCWD (current directory)
+.MACRO __OPEN
 
-/*	MOV X0,SYS_STDOUT
-	MOV X2,5
-	MOV X8,SYS_WRITE
-	SVC 0
-*/
-	BL OPEN	
-	LDP LR, X1, [SP,16]
-	LDP X2, X3, [SP,0]
-	ADD SP, SP, 32
+	_PUSH_VOLATILES
+
+	LDP X0,X1,[SP,VOLATILE_LENGTH]
+	LDP X2,X3,[SP,VOLATILE_LENGTH+16]
+
+	BL OPEN
+
+	MOV X20,X0
+
+	_POP_VOLATILES
+
+	MOV X0,X20
+
+.ENDM
+
+.MACRO _OPEN DIR PATH FLAGS MODE
+
+	SUB SP,SP,32
+	MOV X20,\DIR
+	STR X20,[SP,0]
+	MOV X20,\PATH
+	STR X20,[SP,8]
+	MOV X20,\FLAGS
+	STR X20,[SP,16]	
+	MOV X20,\MODE
+	STR X20,[SP,24]
+
+	__OPEN
+
+	ADD SP,SP,32
+
 .ENDM
 
 .MACRO _OPEN_RW PATH

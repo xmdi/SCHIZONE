@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-.MACRO _WRITE
+.MACRO __WRITE
 
 	_PUSH_VOLATILES
 
@@ -19,7 +19,7 @@
 
 .ENDM
 
-.MACRO __WRITE FD BUFFER NUM_BYTES
+.MACRO _WRITE FD BUFFER NUM_BYTES
 
 	SUB SP,SP,32
 	MOV X20,\FD
@@ -29,7 +29,7 @@
 	MOV X20,\NUM_BYTES
 	STR X20,[SP,16]
 
-	_WRITE
+	__WRITE
 
 	ADD SP,SP,32
 

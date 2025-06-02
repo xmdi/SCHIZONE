@@ -1,6 +1,9 @@
 .IFNDEF CHMOD
 .EQU CHMOD,1
 
+// TODO: TEST, i don't think this is set up correctly. i think i just copied and pasted unlink.
+// needs to be tested
+
 .INCLUDE "SYS/HELPER.S"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -26,7 +29,7 @@
 	MOV X20,\PERMISSIONS
 	STR X20,[SP,8]
 
-	__UNLINK
+	__CHMOD
 
 	ADD SP,SP,16
 
@@ -55,7 +58,7 @@
 
 .ALIGN 2
 
-UNLINK:	// UNLINK({W0}, {X1});
+CHMOD:	// CHMOD({W0}, {X1});
 	
 .IFDEF VERBOSE_LOGS
 
@@ -73,7 +76,7 @@ UNLINK:	// UNLINK({W0}, {X1});
 .ENDIF
 	
 	ADD X1,X1,LOAD_ADDRESS
-	MOV W8, SYS_UNLINK
+	MOV W8, SYS_CHMOD
 	SVC 0
 
 .IFDEF VERBOSE_LOGS

@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-.MACRO _READ FD BUFFER NUM_BYTES
+.MACRO __READ
 
 	_PUSH_VOLATILES
 
@@ -23,7 +23,7 @@
 
 .ENDM
 
-.MACRO __READ FD BUFFER NUM_BYTES
+.MACRO _READ FD BUFFER NUM_BYTES
 
 	SUB SP,SP,32
 	MOV X20,\FD
@@ -33,7 +33,7 @@
 	MOV X20,\NUM_BYTES
 	STR X20,[SP,16]
 
-	_READ
+	__READ
 
 	ADD SP,SP,32
 

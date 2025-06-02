@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-.MACRO _LSEEK
+.MACRO __LSEEK
 
 	_PUSH_VOLATILES
 
@@ -19,7 +19,7 @@
 
 .ENDM
 
-.MACRO __LSEEK FD, OFFSET, WHENCE
+.MACRO _LSEEK FD, OFFSET, WHENCE
 
 	SUB SP,SP,32
 	MOV X20,\FD
@@ -29,7 +29,7 @@
 	MOV X20,\WHENCE
 	STR X20,[SP,16]
 
-	_LSEEK
+	__LSEEK
 
 	ADD SP,SP,32
 
