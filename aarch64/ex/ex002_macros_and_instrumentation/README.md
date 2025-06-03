@@ -1,4 +1,4 @@
-## the basics
+## macros and instrumentation
 
 In [ex002a](ex002a_debug_log_demo), we demonstrate the basic debug logging process.
 
