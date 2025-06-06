@@ -46,7 +46,7 @@ END_HEADER:
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INCLUDES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.EQU VERBOSE_LOGS, 1
+//.EQU VERBOSE_LOGS, 1
 
 .INCLUDE "SYS/LINUX/SYSCALLS.S"
 .INCLUDE "IO/LOG_FILE.S"
@@ -61,12 +61,12 @@ END_HEADER:
 
 START:
 
-	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
+//	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
 	
 	_OPEN_RW .FILENAME
 	
-	SUB SP,SP,16
-	STR X0,[SP,0]
+//	SUB SP,SP,16
+//	STR X0,[SP,0]
 	
 	_READ X0, .BUFFER, 32
 	

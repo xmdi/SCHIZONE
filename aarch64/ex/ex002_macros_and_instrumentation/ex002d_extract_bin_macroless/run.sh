@@ -12,4 +12,4 @@ chmod +x binary # make binary executable
 
 ./binary temp binary_extractor # use the binary extractor to create the binary extractor (wow epic)
 
-rm binary temp
+rm binary

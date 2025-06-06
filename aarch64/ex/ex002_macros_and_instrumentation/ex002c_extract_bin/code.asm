@@ -46,7 +46,7 @@ END_HEADER:
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INCLUDES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.EQU VERBOSE_LOGS, 1
+//.EQU VERBOSE_LOGS, 1
 
 .INCLUDE "SYS/EXIT.S"
 
@@ -65,7 +65,9 @@ END_HEADER:
 
 START:
 
+.IFDEF VERBOSE_LOGS
 	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
+.ENDIF
 
 	// CHECK IF NUMBER OF PARAMETERS CORRECT
 	LDR X1,[SP,0]
@@ -144,8 +146,10 @@ FILE_GIVEN:
 
 	B .LOOP
 
+.IFDEF VERBOSE_LOGS
 .LOGFILENAME:
 	.ASCII "log.file\0"
+.ENDIF
 
 .IMAGE_SIZE:
 	.SPACE 8

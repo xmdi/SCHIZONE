@@ -1,5 +1,5 @@
-as code.asm -o temp -I ../../../lib # assemble the code into object file
-#as code.asm -o temp -I ../../../lib --defsym VERBOSE_LOGS=1 # assemble but verbose
+#as code.asm -o temp -I ../../../lib # assemble the code into object file
+as code.asm -o temp -I ../../../lib --defsym VERBOSE_LOGS=1 # assemble but verbose
 
 bytes=$(xxd -p -l8 -g4 -s 160 -e temp)
 bytes_trimmed="${bytes:19:8}${bytes:10:8}"
