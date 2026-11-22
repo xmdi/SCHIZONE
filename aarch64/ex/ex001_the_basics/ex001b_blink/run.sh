@@ -1,10 +1,10 @@
 as code.asm -o temp # assemble the code into object file
 
-bytes=$(xxd -p -l8 -g4 -s 160 -e temp)
-bytes_trimmed="${bytes:19:8}${bytes:10:8}"
+bytes=$(xxd -ps -l 8 -s 160 temp)
+bytes_trimmed="${bytes:14:2}${bytes:12:2}${bytes:10:2}${bytes:8:2}${bytes:6:2}${bytes:4:2}${bytes:2:2}${bytes:0:2}"
 bytes_to_end=$((16#${bytes_trimmed}+120)) # extract code size from binary
 
-xxd -p -s 64 -l "$bytes_to_end" temp | xxd -r -p > binary # cut off the boomer-bytes
+xxd -ps -s 64 -l "$bytes_to_end" temp | xxd -r -ps > binary # cut off the boomer-bytes
 
 rm temp* # remove temporary boomer object file
 chmod +x binary # make binary executable
