@@ -1,0 +1,106 @@
+.IFNDEF LCD_1602
+.EQU LCD_1602,1
+
+//.INCLUDE "IO/LOG_TEXT.S"
+
+.EQU LCD_1602_ADDR, 0x27
+.EQU LCD_1602_BL, 0x08
+.EQU LCD_1602_EN, 0x04
+.EQU LCD_1602_RS, 0x01
+
+LCD_1602_DEVICE:
+	.asciz "/dev/i2c-1"
+
+.align 2
+LCD_1602_FD:     .space 4
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/*
+.MACRO _LOG_DECIMAL NUMBER // CAN ALSO PUT REGISTER
+	SUB SP,SP,80
+	STP LR,X0,[SP,0]
+	STP X1,X2,[SP,16]
+	STP X3,X4,[SP,32]
+	STP X5,X6,[SP,48]
+	STR X7,[SP,64]
+	MOV X0,\NUMBER
+	BL LOG_DECIMAL
+	LDP LR,X0,[SP,0]
+	LDP X1,X2,[SP,16]
+	LDP X3,X4,[SP,32]
+	LDP X5,X6,[SP,48]
+	LDR X7,[SP,64]
+	ADD SP,SP,80
+.ENDM
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+.ALIGN 2
+
+LOG_DECIMAL:// {W0} LOG_DECIMAL({X0});
+	// RETURNS NUMBER BYTES WRITTEN IN {W0}
+
+	MOV X1,10 // DECIMAL DIVIDEND	
+	MOV W4,0 // DIGIT COUNTER
+	MOV X6,(6f+32) // BUFFER END
+	ADD X6,X6,LOAD_ADDRESS
+	MOV X7,0 // NEGATIVE NUMBER FLAG
+
+	CMP X0,0
+	B.EQ 4f
+	B.LT 5f
+
+1: 
+
+	CMP X0,0		// CHECK IF DONE
+	B.EQ 2f
+
+	UDIV X2,X0,X1		// NEW QUOTIENT X2
+	MSUB X3,X2,X1,X0	// REMAINDER IN X3
+	MOV X0,X2		// PREP FOR NEXT ITERATION
+
+	SUB X6,X6,1		// MOVE POINTER TO PRECEDING BYTE
+	ADD W3,W3,48		// CONVERT DIGIT TO ASCII
+	STRB W3,[X6,0]		// PUSH BYTE TO BUFFER
+	ADD W4,W4,1		// INCREMENT DIGIT COUNTER
+
+	B 1b			// GO AGAIN
+
+2: // LOOP BREAKOUT
+
+	CMP X7,0
+	B.EQ 3f
+	
+	SUB X6,X6,1		// MOVE POINTER TO PRECEDING BYTE
+	MOV W3,45		// ASCII "-"
+	STRB W3,[X6,0]		// PUSH BYTE TO BUFFER
+	ADD W4,W4,1		// INCREMENT DIGIT COUNTER
+	
+3: // LOG
+
+	SUB X6,X6,LOAD_ADDRESS
+	_LOG_TEXT X6 W4
+	
+	RET
+
+4: // HANDLE ZERO
+
+	SUB X6,X6,1		// MOVE POINTER TO PRECEDING BYTE
+	MOV W3,48		// ASCII ZERO
+	STRB W3,[X6,0]		// PUSH BYTE TO BUFFER
+	MOV W4,1
+	B 3b
+
+5: // HANDLE NEGATIVE
+
+	NEG X0,X0
+	MOV X7,1
+	B 1b
+
+6: // BUFFER
+
+	.SPACE 32
+*/
+.ENDIF

@@ -8,7 +8,7 @@
 .EQU SYS_READ, 63
 .EQU SYS_WRITE, 64
 //%define SYS_STAT 4
-//%define SYS_IOCTL 16
+.EQU SYS_IOCTL, 29
 .EQU SYS_EXIT, 93
 .EQU SYS_NANOSLEEP, 101
 //%define SYS_GETDENTS 217;78
@@ -37,8 +37,10 @@
 .EQU SYS_SEEK_CUR, 1 // seek offset relative to current position
 .EQU SYS_SEEK_END, 2 // seek offset relative to file end
 
+// IOCTL
+.EQU SYS_I2C_SLAVE, 0x0703
+
 /*
-; ioctl
 %define SYS_TCGETA 0x5401
 %define SYS_TCSETA 0x5402
 %define SYS_FBIOGET_VSCREENINFO 0x4600

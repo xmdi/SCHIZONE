@@ -50,29 +50,193 @@ END_HEADER:
 
 .INCLUDE "SYS/LINUX/SYSCALLS.S"
 .INCLUDE "IO/LOG_FILE.S"
+.INCLUDE "IO/LCD_1602.S"
 .INCLUDE "SYS/OPEN.S"
 .INCLUDE "SYS/READ.S"
-.INCLUDE "SYS/WRITE.S"
 .INCLUDE "SYS/EXIT.S"
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+msg1:   .asciz "G'day, Pi Zero!"
+msg2:   .asciz "AArch64 asm"
+
+delay_us:
+    stp  x29, x30, [sp, -32]!
+    mov  x1, 1000
+    mul  x1, x0, x1            //@ us -> ns
+    str  xzr, [sp, 16]         //@ tv_sec  = 0
+    str  x1,  [sp, 24]         //@ tv_nsec
+    add  x0, sp, 16
+    mov  x1, 0
+    mov  x8, SYS_NANOSLEEP
+    svc  0
+    ldp  x29, x30, [sp], 32
+    ret
+
+//@ i2c_write_byte: w0 = byte for the PCF8574
+i2c_write_byte:
+    stp  x29, x30, [sp, -32]!
+    strb w0, [sp, 16]
+    adr x1, LCD_1602_FD
+    ldr w0, [x1]
+    add  x1, sp, 16
+    mov  x2, 1
+    mov  x8, SYS_WRITE
+    svc  0
+    ldp  x29, x30, [sp], 32
+    ret
+
+//@ lcd_pulse: w0 = nibble|flags; latch with EN high then low
+lcd_pulse:
+    stp  x29, x30, [sp, -32]!
+    str  x19, [sp, 16]
+    mov  w19, w0
+    orr  w0, w19, LCD_1602_EN
+    bl   i2c_write_byte
+    mov  x0, 1
+    bl   delay_us
+    mov  w1, LCD_1602_EN
+    bic  w0, w19, w1
+    bl   i2c_write_byte
+    mov  x0, 50
+    bl   delay_us
+    ldr  x19, [sp, 16]
+    ldp  x29, x30, [sp], 32
+    ret
+
+//@ lcd_send: w0 = byte, w1 = mode (0 = command, RS = data)
+lcd_send:
+    stp  x29, x30, [sp, -32]!
+    stp  x19, x20, [sp, 16]
+    mov  w19, w0
+    mov  w20, w1
+    and  w0, w19, 0xF0        // @ high nibble
+    orr  w0, w0, w20
+    orr  w0, w0, LCD_1602_BL
+    bl   lcd_pulse
+    lsl  w0, w19, 4           //@ low nibble
+    and  w0, w0, 0xF0
+    orr  w0, w0, w20
+    orr  w0, w0, LCD_1602_BL
+    bl   lcd_pulse
+    ldp  x19, x20, [sp, 16]
+    ldp  x29, x30, [sp], 32
+    ret
+
+lcd_cmd:
+    mov  w1, 0
+    b    lcd_send
+
+lcd_char:
+    mov  w1, LCD_1602_RS
+    b    lcd_send
+
+//@ lcd_print: x0 = pointer to null-terminated string
+lcd_print:
+    stp  x29, x30, [sp, -32]!
+    str  x19, [sp, 16]
+    mov  x19, x0
+1:  ldrb w0, [x19], 1
+    cbz  w0, 2f
+    bl   lcd_char
+    b    1b
+2:  ldr  x19, [sp, 16]
+    ldp  x29, x30, [sp], 32
+    ret
+
+//@ lcd_init: HD44780 4-bit init sequence
+lcd_init:
+    stp  x29, x30, [sp, -16]!
+    mov  x0, 50000          //   @ >40ms after power-up
+    bl   delay_us
+
+    mov  w0, (0x30 | LCD_1602_BL)
+    bl   lcd_pulse
+    mov  x0, 4500
+    bl   delay_us
+    mov  w0, (0x30 | LCD_1602_BL)
+    bl   lcd_pulse
+    mov  x0, 200
+    bl   delay_us
+    mov  w0, (0x30 | LCD_1602_BL)
+    bl   lcd_pulse
+    mov  x0, 200
+    bl   delay_us
+
+    mov  w0, (0x20 | LCD_1602_BL)       //@ switch to 4-bit mode
+    bl   lcd_pulse
+    mov  x0, 200
+    bl   delay_us
+
+    mov  w0, 0x28              //@ 4-bit, 2 lines, 5x8 font
+    bl   lcd_cmd
+    mov  w0, 0x0C              //@ display on, cursor off
+    bl   lcd_cmd
+    mov  w0, 0x0             // @ clear
+    bl   lcd_cmd
+    mov  x0, 2000
+    bl   delay_us
+    mov  w0, 0x06            //  @ entry mode: increment
+    bl   lcd_cmd
+    ldp  x29, x30, [sp], 16
+    ret
+
 START:
+
+//  @ fd = openat(AT_FDCWD, "/dev/i2c-1", O_RDWR, 0)
+    mov  x0, SYS_AT_FDCWD
+    adr x1, LCD_1602_DEVICE
+    mov  x2, SYS_READ_WRITE
+    mov  x3, 0
+    mov  x8, SYS_OPEN
+    svc  0
+    cmp  x0, 0
+    b.lt fail
+    adr x1, LCD_1602_FD
+    str w0, [x1]
+
+    //@ ioctl(fd, I2C_SLAVE, LCD_ADDR)   (x0 still holds fd)
+    mov  x1, SYS_I2C_SLAVE
+    mov  x2, LCD_1602_ADDR
+    mov  x8, SYS_IOCTL
+    svc  0
+    cmp  x0, 0
+    b.lt fail
+
+    bl   lcd_init
+
+    mov  w0, 0x80           //   @ line 1, col 0
+    bl   lcd_cmd
+    adr x0, msg1
+    bl lcd_print
+
+    mov  w0, 0xC0        //      @ line 2, col 0
+    bl   lcd_cmd
+    adr x0, msg2
+    bl lcd_print
+
+    mov  x0, 0
+    b    done
+fail:
+    mov  x0, 1
+done:
+    mov  x8, SYS_EXIT
+    svc  0
 
 //	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
 	
-	_OPEN_RW .FILENAME
+//	_OPEN_RW .FILENAME
 	
 //	SUB SP,SP,16
 //	STR X0,[SP,0]
 	
-	_READ X0, .BUFFER, 32
+//	_READ X0, .BUFFER, 32
 	
-	_PRINT .BUFFER, 32
+//	_PRINT .BUFFER, 32
 
-	_EXIT 0
+//	_EXIT 0
 
 .BUFFER:
 	.SPACE 32
