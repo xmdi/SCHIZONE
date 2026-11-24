@@ -46,10 +46,11 @@ END_HEADER:
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INCLUDES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-//.EQU VERBOSE_LOGS, 1
+.EQU VERBOSE_LOGS, 1
 
 .INCLUDE "SYS/LINUX/SYSCALLS.S"
 .INCLUDE "IO/LOG_FILE.S"
+.INCLUDE "IO/I2C.S"
 .INCLUDE "IO/LCD_1602.S"
 .INCLUDE "SYS/OPEN.S"
 .INCLUDE "SYS/READ.S"
@@ -59,9 +60,10 @@ END_HEADER:
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-msg1:   .asciz "G'day, Pi Zero!"
+msg1:   .asciz "Oi, Pi Zero!"
 msg2:   .asciz "AArch64 asm"
 
+.align 4
 delay_us:
     stp  x29, x30, [sp, -32]!
     mov  x1, 1000
@@ -79,7 +81,7 @@ delay_us:
 i2c_write_byte:
     stp  x29, x30, [sp, -32]!
     strb w0, [sp, 16]
-    adr x1, LCD_1602_FD
+    adr x1, I2C_FD
     ldr w0, [x1]
     add  x1, sp, 16
     mov  x2, 1
@@ -185,25 +187,20 @@ lcd_init:
 
 START:
 
-//  @ fd = openat(AT_FDCWD, "/dev/i2c-1", O_RDWR, 0)
-    mov  x0, SYS_AT_FDCWD
-    adr x1, LCD_1602_DEVICE
-    mov  x2, SYS_READ_WRITE
-    mov  x3, 0
-    mov  x8, SYS_OPEN
-    svc  0
-    cmp  x0, 0
-    b.lt fail
-    adr x1, LCD_1602_FD
-    str w0, [x1]
+	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
+
+	_I2C_OPEN
 
     //@ ioctl(fd, I2C_SLAVE, LCD_ADDR)   (x0 still holds fd)
-    mov  x1, SYS_I2C_SLAVE
-    mov  x2, LCD_1602_ADDR
-    mov  x8, SYS_IOCTL
-    svc  0
-    cmp  x0, 0
-    b.lt fail
+	//MOV X0, I2C_FD
+	ADR X1, I2C_FD
+	LDR W0, [X1]
+	MOV X1, SYS_I2C_SLAVE
+	MOV X2, LCD_1602_ADDR
+	MOV X8, SYS_IOCTL
+	SVC 0
+	CMP X0, 0
+	B.LT FAIL
 
     bl   lcd_init
 
@@ -217,34 +214,12 @@ START:
     adr x0, msg2
     bl lcd_print
 
-    mov  x0, 0
-    b    done
-fail:
-    mov  x0, 1
-done:
-    mov  x8, SYS_EXIT
-    svc  0
+	_EXIT 0
 
-//	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
-	
-//	_OPEN_RW .FILENAME
-	
-//	SUB SP,SP,16
-//	STR X0,[SP,0]
-	
-//	_READ X0, .BUFFER, 32
-	
-//	_PRINT .BUFFER, 32
-
-//	_EXIT 0
-
-.BUFFER:
-	.SPACE 32
+FAIL:
+	_EXIT 7
 
 .LOGFILENAME:
 	.ASCII "log.file\0"
-
-.FILENAME:
-	.ASCII "test.file\0"
 
 END:
