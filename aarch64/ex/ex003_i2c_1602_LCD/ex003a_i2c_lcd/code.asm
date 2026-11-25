@@ -52,43 +52,17 @@ END_HEADER:
 .INCLUDE "IO/LOG_FILE.S"
 .INCLUDE "IO/I2C.S"
 .INCLUDE "IO/LCD_1602.S"
-.INCLUDE "SYS/OPEN.S"
-.INCLUDE "SYS/READ.S"
+.INCLUDE "SYS/SLEEP.S"
 .INCLUDE "SYS/EXIT.S"
 
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-msg1:   .asciz "Oi, Pi Zero!"
+msg1:   .asciz "Hey, Pi Zero!"
 msg2:   .asciz "AArch64 asm"
 
 .align 4
-delay_us:
-    stp  x29, x30, [sp, -32]!
-    mov  x1, 1000
-    mul  x1, x0, x1            //@ us -> ns
-    str  xzr, [sp, 16]         //@ tv_sec  = 0
-    str  x1,  [sp, 24]         //@ tv_nsec
-    add  x0, sp, 16
-    mov  x1, 0
-    mov  x8, SYS_NANOSLEEP
-    svc  0
-    ldp  x29, x30, [sp], 32
-    ret
-
-//@ i2c_write_byte: w0 = byte for the PCF8574
-i2c_write_byte:
-    stp  x29, x30, [sp, -32]!
-    strb w0, [sp, 16]
-    adr x1, I2C_FD
-    ldr w0, [x1]
-    add  x1, sp, 16
-    mov  x2, 1
-    mov  x8, SYS_WRITE
-    svc  0
-    ldp  x29, x30, [sp], 32
-    ret
 
 //@ lcd_pulse: w0 = nibble|flags; latch with EN high then low
 lcd_pulse:
@@ -96,14 +70,12 @@ lcd_pulse:
     str  x19, [sp, 16]
     mov  w19, w0
     orr  w0, w19, LCD_1602_EN
-    bl   i2c_write_byte
-    mov  x0, 1
-    bl   delay_us
+    _I2C_WRITE_BYTE X0
+    _MICROSLEEP 1
     mov  w1, LCD_1602_EN
     bic  w0, w19, w1
-    bl   i2c_write_byte
-    mov  x0, 50
-    bl   delay_us
+    _I2C_WRITE_BYTE X0
+    _MICROSLEEP 50
     ldr  x19, [sp, 16]
     ldp  x29, x30, [sp], 32
     ret
@@ -151,26 +123,21 @@ lcd_print:
 //@ lcd_init: HD44780 4-bit init sequence
 lcd_init:
     stp  x29, x30, [sp, -16]!
-    mov  x0, 50000          //   @ >40ms after power-up
-    bl   delay_us
+    _MICROSLEEP 50000
 
     mov  w0, (0x30 | LCD_1602_BL)
     bl   lcd_pulse
-    mov  x0, 4500
-    bl   delay_us
+    _MICROSLEEP 4500
     mov  w0, (0x30 | LCD_1602_BL)
     bl   lcd_pulse
-    mov  x0, 200
-    bl   delay_us
+    _MICROSLEEP 200
     mov  w0, (0x30 | LCD_1602_BL)
     bl   lcd_pulse
-    mov  x0, 200
-    bl   delay_us
+    _MICROSLEEP 200
 
     mov  w0, (0x20 | LCD_1602_BL)       //@ switch to 4-bit mode
     bl   lcd_pulse
-    mov  x0, 200
-    bl   delay_us
+    _MICROSLEEP 200
 
     mov  w0, 0x28              //@ 4-bit, 2 lines, 5x8 font
     bl   lcd_cmd
@@ -178,8 +145,7 @@ lcd_init:
     bl   lcd_cmd
     mov  w0, 0x0             // @ clear
     bl   lcd_cmd
-    mov  x0, 2000
-    bl   delay_us
+    _MICROSLEEP 2000
     mov  w0, 0x06            //  @ entry mode: increment
     bl   lcd_cmd
     ldp  x29, x30, [sp], 16
