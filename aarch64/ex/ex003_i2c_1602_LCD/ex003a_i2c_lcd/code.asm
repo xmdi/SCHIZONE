@@ -59,131 +59,34 @@ END_HEADER:
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;INSTRUCTIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-msg1:   .asciz "Hey, Pi Zero!"
-msg2:   .asciz "AArch64 asm"
-
-.align 4
-
-//@ lcd_pulse: w0 = nibble|flags; latch with EN high then low
-lcd_pulse:
-    stp  x29, x30, [sp, -32]!
-    str  x19, [sp, 16]
-    mov  w19, w0
-    orr  w0, w19, LCD_1602_EN
-    _I2C_WRITE_BYTE X0
-    _MICROSLEEP 1
-    mov  w1, LCD_1602_EN
-    bic  w0, w19, w1
-    _I2C_WRITE_BYTE X0
-    _MICROSLEEP 50
-    ldr  x19, [sp, 16]
-    ldp  x29, x30, [sp], 32
-    ret
-
-//@ lcd_send: w0 = byte, w1 = mode (0 = command, RS = data)
-lcd_send:
-    stp  x29, x30, [sp, -32]!
-    stp  x19, x20, [sp, 16]
-    mov  w19, w0
-    mov  w20, w1
-    and  w0, w19, 0xF0        // @ high nibble
-    orr  w0, w0, w20
-    orr  w0, w0, LCD_1602_BL
-    bl   lcd_pulse
-    lsl  w0, w19, 4           //@ low nibble
-    and  w0, w0, 0xF0
-    orr  w0, w0, w20
-    orr  w0, w0, LCD_1602_BL
-    bl   lcd_pulse
-    ldp  x19, x20, [sp, 16]
-    ldp  x29, x30, [sp], 32
-    ret
-
-lcd_cmd:
-    mov  w1, 0
-    b    lcd_send
-
-lcd_char:
-    mov  w1, LCD_1602_RS
-    b    lcd_send
-
-//@ lcd_print: x0 = pointer to null-terminated string
-lcd_print:
-    stp  x29, x30, [sp, -32]!
-    str  x19, [sp, 16]
-    mov  x19, x0
-1:  ldrb w0, [x19], 1
-    cbz  w0, 2f
-    bl   lcd_char
-    b    1b
-2:  ldr  x19, [sp, 16]
-    ldp  x29, x30, [sp], 32
-    ret
-
-//@ lcd_init: HD44780 4-bit init sequence
-lcd_init:
-    stp  x29, x30, [sp, -16]!
-    _MICROSLEEP 50000
-
-    mov  w0, (0x30 | LCD_1602_BL)
-    bl   lcd_pulse
-    _MICROSLEEP 4500
-    mov  w0, (0x30 | LCD_1602_BL)
-    bl   lcd_pulse
-    _MICROSLEEP 200
-    mov  w0, (0x30 | LCD_1602_BL)
-    bl   lcd_pulse
-    _MICROSLEEP 200
-
-    mov  w0, (0x20 | LCD_1602_BL)       //@ switch to 4-bit mode
-    bl   lcd_pulse
-    _MICROSLEEP 200
-
-    mov  w0, 0x28              //@ 4-bit, 2 lines, 5x8 font
-    bl   lcd_cmd
-    mov  w0, 0x0C              //@ display on, cursor off
-    bl   lcd_cmd
-    mov  w0, 0x0             // @ clear
-    bl   lcd_cmd
-    _MICROSLEEP 2000
-    mov  w0, 0x06            //  @ entry mode: increment
-    bl   lcd_cmd
-    ldp  x29, x30, [sp], 16
-    ret
-
 START:
 
 	_LOG_FILE .LOGFILENAME // UNCOMMENT TO SEND VERBOSE LOGS TO FILE
 
 	_I2C_OPEN
 
-    //@ ioctl(fd, I2C_SLAVE, LCD_ADDR)   (x0 still holds fd)
-	//MOV X0, I2C_FD
-	ADR X1, I2C_FD
-	LDR W0, [X1]
-	MOV X1, SYS_I2C_SLAVE
-	MOV X2, LCD_1602_ADDR
-	MOV X8, SYS_IOCTL
-	SVC 0
-	CMP X0, 0
-	B.LT FAIL
+	BL I2C_SELECT_DEVICE // NEED TO MAKE THIS MORE GENERAL, PASSING THE LCD ADDR
 
-    bl   lcd_init
+	BL LCD_1602_INIT
+	
+	MOV W0, 0X80           // LINE 1, COL 0
+	BL LCD_1602_CMD
+	ADR X0, MSG1
+	BL LCD_1602_PRINT
 
-    mov  w0, 0x80           //   @ line 1, col 0
-    bl   lcd_cmd
-    adr x0, msg1
-    bl lcd_print
-
-    mov  w0, 0xC0        //      @ line 2, col 0
-    bl   lcd_cmd
-    adr x0, msg2
-    bl lcd_print
+	MOV  W0, 0XC0        // LINE 2, COL 0
+	BL LCD_1602_CMD
+	ADR X0, MSG2
+	BL LCD_1602_PRINT
 
 	_EXIT 0
 
 FAIL:
 	_EXIT 7
+
+MSG1:   .asciz "vet disability"
+
+MSG2:   .asciz "is terrorism"
 
 .LOGFILENAME:
 	.ASCII "log.file\0"
