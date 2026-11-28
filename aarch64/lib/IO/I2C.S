@@ -45,6 +45,20 @@ I2C_FD:
 	ADD SP,SP,48
 .ENDM
 
+.MACRO _I2C_SELECT_DEVICE VALUE
+	SUB SP,SP,48
+	STP LR,X0,[SP,0]
+	STP X1,X2,[SP,16]
+	STR X8,[SP,32]
+	MOV X2, \VALUE
+	BL I2C_SELECT_DEVICE
+	LDP LR,X0,[SP,0]
+	LDP X1,X2,[SP,16]
+	LDR X8,[SP,32]
+	ADD SP,SP,48
+.ENDM
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,11 +111,11 @@ I2C_WRITE_BYTE:
 	RET
 
 I2C_SELECT_DEVICE:
-	//@ ioctl(fd, I2C_SLAVE, LCD_ADDR)
+	//@ ioctl(fd, I2C_SLAVE, DEVICE_ADDR)
 	ADR X1, I2C_FD
 	LDR W0, [X1]
 	MOV X1, SYS_I2C_SLAVE
-	MOV X2, LCD_1602_ADDR
+//	MOV X2, LCD_1602_ADDR
 	MOV X8, SYS_IOCTL
 	SVC 0
 	CMP X0, 0

@@ -65,28 +65,35 @@ START:
 
 	_I2C_OPEN
 
-	BL I2C_SELECT_DEVICE // NEED TO MAKE THIS MORE GENERAL, PASSING THE LCD ADDR
+	_I2C_SELECT_DEVICE LCD_1602_ADDR
 
-	BL LCD_1602_INIT
+	_LCD_1602_INIT
+
+	_LCD_1602_CUSTOM_CHAR 0 CROSS
+
+	_LCD_1602_SET_CURSOR 0 0
+
+	_LCD_1602_PRINT MSG1
+
+	_LCD_1602_SET_CURSOR 1 0
+
+	_LCD_1602_PRINT MSG2
 	
-	MOV W0, 0X80           // LINE 1, COL 0
-	BL LCD_1602_CMD
-	ADR X0, MSG1
-	BL LCD_1602_PRINT
-
-	MOV  W0, 0XC0        // LINE 2, COL 0
-	BL LCD_1602_CMD
-	ADR X0, MSG2
-	BL LCD_1602_PRINT
-
 	_EXIT 0
 
-FAIL:
-	_EXIT 7
+MSG1:   .asciz "jeffrey epstein"
 
-MSG1:   .asciz "vet disability"
+MSG2:   .asciz "shot JFK \010" // 8 in octal gives 0 and avoid the null-terminator issue, or you can just use slots 1-7 and skip 0
 
-MSG2:   .asciz "is terrorism"
+CROSS:
+	.BYTE 0b00000100
+	.BYTE 0b00000100
+	.BYTE 0b00011111
+	.BYTE 0b00000100
+	.BYTE 0b00000100
+	.BYTE 0b00000100
+	.BYTE 0b00000100
+	.BYTE 0b00000100
 
 .LOGFILENAME:
 	.ASCII "log.file\0"
